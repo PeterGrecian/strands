@@ -1,0 +1,20 @@
+Remote power-cycle for the astro-canon EOS dummy battery.
+
+Give the tethered EOS 2000D a remotely switchable power feed to its DR-E10
+dummy battery, so it can be power-cycled without a human at muppet's desk.
+This is the astro-canon reset nothing else can do: the dummy battery holds
+the camera's USB device alive across the physical power switch, so the ONLY
+way to clear a firmware wedge (-110 I/O in progress, silently-rejected config
+writes) or force a fresh 480M USB renegotiation is to drop the dummy-battery
+feed for ~10 s. Today that needed a hands-on unplug; it should be a command.
+
+Two candidate implementations:
+- Pico / ESP32 + MOSFET (or relay) in the DR-E10 supply line: microcontroller
+  switches the ~9/12V feed; expose a trivial HTTP/serial "off N seconds then
+  on" endpoint the astro-canon tools can hit. Self-contained, no mains switching.
+- Home-automation smart mains plug on the DR-E10's mains adapter: reuse the
+  existing Zigbee/WiFi plug stack. Coarser (whole-adapter) but no new hardware.
+
+Want: a documented off/on/cycle primitive the astro-canon eos-* tools can call
+so a wedged camera self-recovers instead of paging Peter. See astro-canon
+STATE.md "Reset ladder" (Class B) for the failure it fixes.

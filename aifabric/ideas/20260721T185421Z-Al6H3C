@@ -1,0 +1,19 @@
+IDEA (forkterm): we need to be able to RAISE a specific forkterm window, and today we can't — the terminal titles don't let us identify one. Found while juggling multiple strand windows this session.
+
+Root cause (forkterm bin line 126-131): every window launches with the SAME static title `--title="forkterm: $STRAND_NAME"`, and on xfce4-terminal --title only sets the INITIAL title — claude (and the shell) overwrite it afterwards. So: titles aren't unique (two forks into the same strand collide), aren't stable (claude clobbers them), and there's no raise/focus path at all.
+
+Proposed fix, two parts:
+
+1. Give each window a STABLE, UNIQUE handle the WM can target and claude can't clobber. Titles are the wrong hook (app-controlled). Use an X11 window identity set at launch instead:
+   - xfce4-terminal supports `--role=<str>` (sets WM_WINDOW_ROLE) — immutable by the child process. Set e.g. --role="forkterm:$STRAND_NAME:$(date +%s%N | tail -c6)" or reuse the session id.
+   - Alternatively set a distinct WM_CLASS. Either is targetable by wmctrl -x / xdotool search --role.
+   Also stamp the strand + a short id into the initial title for the human eye (belt and braces), even though it may get overwritten.
+
+2. Add `forkterm raise [strand|id]` (or `forkterm ls` + `forkterm raise <n>`):
+   - ls: enumerate live forkterm windows by role/class -> strand name + pid + age (cross-ref /proc/<pid>/cwd like we did by hand this session).
+   - raise: wmctrl -ia <winid> (or xdotool windowactivate) on the matched window. If multiple match a strand, list and disambiguate.
+   Keep it xfce/X11-first (matches the fleet), degrade gracefully if wmctrl/xdotool absent.
+
+Bonus synergy: this same window-registry solves the dup-session detection from the strand-ps bug idea (20260721T184439Z) — if forkterm knows its live windows by role, `forkterm into` can warn "a window for this strand is already open, raise it? (y/N)" instead of silently launching a duplicate. Consider building the two together: a small live-forkterm registry that both `raise` and the dup-guard read.
+
+Boundary note (keeper): pure aifabric tooling (forkterm cluster), not comms-method. Yours.

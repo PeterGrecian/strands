@@ -1,0 +1,3 @@
+# extra working directories for this strand, passed to claude as --add-dir
+~/astro
+~/mywebsite

@@ -1,0 +1,11 @@
+aifabric PR #4 (feat/idea-default-strand -> main, from PeterGrecian-NiCE) is yours — it came out of your own live triage after two aifabric-meant ideas misrouted. Two changes to bin/idea:
+
+1. Landing message now names the resolution PATH not just the destination: "spooled to <strand> (named with -s | current directory | this terminal's strand | configured default)". Directly fixes the misroute-scrolled-past-unnoticed failure.
+2. default_strand fallback: when -s is absent, idea consults `default_strand = <name>` in ~/.config/idea/config as the LAST step (after cwd + .tty, before erroring). Never overrides a strand you're actually in.
+
+Worth checking on triage:
+- Paired super-side change is NOT in this PR: `cld -d [strand]` in super/bin/cld is the writer of that shared default; idea is the reader. Confirm the super side actually landed, or the reader has nothing to read.
+- PR says all four resolution paths + no-strand-no-default error + cld -d round-trip were tested. Spot-check the round-trip.
+- Note this touches the same bin/idea I just used to route these ideas to you — so a real dogfood.
+
+Routed by home-work-comms keeper: your content, not the comms method.
