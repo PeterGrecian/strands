@@ -34,6 +34,28 @@ The lens was **not moving at all** in most drives. Proven decisively today:
 - **Switch stays on AF** (`focusmode: One Shot`). Do NOT move it to MF — MF
   hands focus to the physical ring and locks out the electronic drive; AF is
   correct for USB `manualfocusdrive`.
+- **DRIVE RELIABILITY (2026-07-22):** `--capture-preview` MUST be in the SAME
+  invocation as the drive — this is non-negotiable. **Tried "hold live view
+  open (`viewfinder=1`) then drive BARE" to dodge the intermittent hang: it
+  RE-INTRODUCED THE NO-OP BUG** — 15× bare Near-2 left the wheel flat at
+  Tenengrad 3.1, lens never moved. `viewfinder=1` held open does NOT satisfy
+  the precondition; only `--capture-preview` in-invocation does. **Lesson
+  (again): exit 0 ≠ lens moved — always verify motion by the metric, never by
+  exit code.** The `--capture-preview`+drive form *does* intermittently hang
+  ~50 s (fussy proprietary path); live with it via **timeout + one retry** per
+  drive, and **prime** after any (re)start (standalone `--capture-preview` +
+  one throwaway drive to absorb the first-call hang). Do NOT "optimise" to bare
+  drives.
+- **PROCESS PILEUP is self-reinforcing — kill-all-and-settle before retrying.**
+  When drives started hanging *reliably* (not intermittently), the cause was a
+  **pile of timed-out gphoto2 processes** fighting over the USB device (each
+  hung 40 s holding a claim), which also spiked muppet load to 7+. Firing new
+  drives on top made it worse. Fix: `pkill -9 gphoto2; sleep 2-3`, let load
+  settle, then re-prime. After cleanup, `--capture-preview`+Near-3 ran in **2 s
+  each**. So a "reliable hang" usually means stuck processes, not a camera
+  wedge — clean them first. (Muppet's OpenSearch sessions-index idles at ~3%
+  CPU; it was NOT the cause today, though if the hourly ingest goes continuous
+  it could start competing with the fussy USB timing.)
 - **BUT: one drive command per gphoto2 invocation — never batch many.** A
   20×-drive single invocation (40 `--set-config`s) *hung for 12 min* when the
   camera re-enumerated mid-drive (`error -71`, Dev 091→092): the process stuck
@@ -89,6 +111,27 @@ Fix, validated:
   cannot do Near-1; minimum useful step is **Near 3**. (The old "can't do small
   steps" was RIGHT about Near-1 — but earlier it looked like Near-3 was dead
   too, which was the viewfinder=1 no-op bug, not mechanics.)
+
+## ★★ Near 2 (MEDIUM) is the real focus tool — much sharper than Near 3 (2026-07-22)
+
+The step-size question resolved, and it's a big deal. gphoto's `manualfocusdrive`
+choices are 3 step SIZES per direction (Debian bug #778916; docs): **Near/Far 1 =
+fine (numeric 0/4), 2 = medium (1/5), 3 = coarse (2/6)** — NB the labels are
+inverted from intuition (1 is the *finest*, 3 the *coarsest*). We had only ever
+tested 3 (coarse, works) and 1 (fine, DEAD on this lens). **Never tested 2 —
+until now, and it's the winner:**
+- From the far stop, `Near 2` single steps: wheel Tenengrad
+  **1.76 → (n2_3) 1.89 → (n2_6) 4.53 → (n2_9) 104.9** — a clean sharp peak
+  at **≈9 Near-2 steps**, and **Tenengrad 105 vs the Near-3 coarse peak of only
+  ~27**. Near-3 strode OVER the true peak; Near-2 lands IN it.
+- So the usable focus ladder on this EF-S 18-55 is: **Near 1 = dead (rounds to
+  zero), Near 2 = the fine-focus tool (works, ~5× finer than Near 3), Near 3 =
+  coarse bracketing.** Peter's "fine × 5 = medium" instinct pointed the right
+  way — medium is the missing usable increment.
+- **REVISED focus recipe (supersedes the b2/Near-3 one below):** rack to far
+  stop → coarse-bracket with Near 3 if needed → **fine-focus with Near 2 to the
+  peak (~9 steps from stop on the car)**. Best-focus is much sharper than the
+  earlier "b2" ever was. Re-do the hysteresis / dither sizing with Near-2 steps.
 
 ## Blind-focus recipe — VALIDATED, reproduces across a power cycle (2026-07-22)
 
