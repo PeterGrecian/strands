@@ -82,6 +82,24 @@ own days-off (leave) are NOT yet wired — would need reading them from a calend
 Verified end-to-end: rule fires at 15:44 on a weekday, not before the window,
 not after the meeting, not on weekends, not on the 31 Aug bank holiday.
 
+## LIVE — first real xMatters page fired (2026-07-22, keeper)
+
+The timer is **armed** (`systemctl --user enable --now calendaralarm.timer`, on
+pip) and the whole path is proven end-to-end against real xMatters:
+
+- A temporary test rule paged for real at 14:44 — incident URL returned
+  (`.../incident/calendaralarm-20260722-134403-513312`), recorded in
+  `fired.json`, and the next poll did **not** re-page (de-dupe held). Test rule
+  then removed; state reset to `{}`.
+- **Bug found + fixed** (`090be6d`): the first test (14:35) silently didn't
+  fire. A rule's window was `[meeting - lead, meeting]`, so a `lead_minutes:0`
+  rule was a zero-width instant the 1-min poll always overshot (:02 past). Added
+  a 90s trailing `GRACE` (> one poll interval) → `[meeting - lead, meeting +
+  90s)`. lead-0 rules now fire, and no meeting can fall between two polls.
+
+So calendaralarm is now a working, scheduled, un-ignorable pager. Both sources
+(GCal timed events + rules.yaml) live.
+
 ## Scheduling — decided: systemd user timer (2026-07-22, Peter)
 
 Not cron — a **systemd user timer**. `systemd/calendaralarm.{service,timer}`
