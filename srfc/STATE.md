@@ -101,23 +101,41 @@ diff/analyse over history. Email can't do any of these (it only knows *my* slots
    place?" Track each recurring session's fill level over time: does it sell out,
    how many days ahead? Safe-to-plan-around vs gamble.
 
-## Plan / next steps
+## Spine BUILT + ARMED (2026-07-22) — code repo `~/srfc`
 
-- **Build the spine**: `diary.py` (login → postback → parse → structured snapshot)
-  + a 5-min systemd user timer appending JSONL snapshots to
-  `~/.local/state/srfc/diary/`. Capture **Padel only**, **all bookable days**
-  (full horizon = **13 days** for courts). Then ship #1 (holes) as first visible
-  output; history for
-  #2/#3/#5/#6 accrues meanwhile; #4 (alarm) plugs into diff engine + `alert`.
-- Scratch proof-of-concept lives in this session's scratchpad (login+postback+parse
-  scripts). Promote into real code under srfc (see "where code lives" below).
+srfc now has its own code repo **`~/srfc`** (git, `main`; not yet pushed to
+GitHub). Distinct from the strand curation dir `~/strands/srfc`.
+
+- **`diary.py`** — login (.ASPXAUTH) → `posResourceTile` postback (Padel tile
+  10010) → `resdiary.aspx` → BeautifulSoup parse → structured slots
+  {court,time,status,detail}. Key fix: postbacks must resubmit the *whole* form
+  (all inputs), then `posDisplayDate` 0..13 navigates the 14-day window.
+- **`snapshot.py`** — captures all 14 days, appends one JSONL record per poll to
+  `~/.local/state/srfc/diary/YYYY-MM-DD.jsonl`. Proven: 14 days / 919 slots.
+- **`holes.py`** — mission #1 DONE: available slots + stranded 30–60min gaps
+  ("safe for a work mtg"). Working against real data.
+- **systemd user timer `srfc-snapshot`** — every 5 min, **ARMED on pip**
+  (`systemctl --user enable --now`). Units in `~/srfc/systemd/`. History
+  accumulating now → feeds #2/#3/#5/#6.
+- Creds via `secrets get /surbiton/...`; names stored LOCAL-only (`.gitignore`
+  excludes `*.jsonl`).
+
+### Next (analysis on the accumulating history)
+
+- #3 cancellations: diff consecutive snapshots for booked→available.
+- #4 pop-down alarm: real-time diff → `super/bin/alert` (xMatters); needs "good
+  slot" definition + wire into the diff.
+- #5 court preference: fill-order / residual emptiness across snapshots.
+- #6 mix-in reliability: parse `textcolorblack a` session cells (not yet parsed)
+  + track fill over time.
+- #2 bot-speed: SEPARATE burst-poll timer around 09:30 (courts) / 07:00 (mix-ins).
+- Push `~/srfc` to GitHub (`PeterGrecian/srfc`) when Peter's ready.
 
 ## Still pending (email-source side)
 
-1. **Where surbiton.py lives** long-term — the email reader stays in
-   ~/calendaralarm as calendaralarm's source module. The NEW diary code (`diary.py`
-   + spine) is srfc's own — needs a home: likely a real `~/srfc` repo (srfc has
-   outgrown being just a calendaralarm source). Decide with Peter.
+1. **Where code lives** — RESOLVED: the email reader `surbiton.py` stays in
+   ~/calendaralarm as calendaralarm's source module; the diary/analytics code
+   lives in the new **`~/srfc`** repo. (2026-07-22.)
 2. **Booking Reminder vs Confirmation** — both treated as bookings; de-dupe key
    makes double-announce harmless. Low priority.
 3. **No live booking to end-to-end verify the page** — next time Peter books,
