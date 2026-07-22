@@ -2,6 +2,51 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## ★ BREAKTHROUGH (2026-07-22) — the lens WAS NOT MOVING for 3 weeks
+
+The whole "extreme difficulty with focus" — the flat sweeps, the identical
+`foc_NN` frames, the "stuck→burst→stuck / lens can't do small steps" model —
+was very largely an artefact of **`manualfocusdrive` being silently ignored.**
+The lens was **not moving at all** in most drives. Proven decisively today:
+
+- **Setup:** camera on a clean closed window aimed at a child's play car
+  (~15 m) + distant trees (~20 m) — both effectively at infinity for 55 mm,
+  so one focus setting has both sharp. AF-locked sharp on the car (white LV
+  box). Fixed measurement region = the car, boxed via splay `p`-key probes
+  (`~/.splay-probes.log`): **box (2740,780)–(3280,1340)** on the 6000×4000
+  frame. Metric = laplacian variance of that crop; **sharp ≈ 19**, and the
+  real Large Fine JPEG now downloads (use `.JPG`, not the embedded extract).
+- **The trap:** driving with `--set-config viewfinder=1` as its **own call**,
+  then `--set-config manualfocusdrive="Near 3"` as separate calls, **moves
+  nothing.** Ran ±12 units, then C=10 (30-unit) anti-backlash overshoots
+  (`b=0..15`): lap-var **dead flat 18–19.5**, crops **byte-identical**. The
+  element never budged. This is exactly the STATE.md tether-recipe warning,
+  but its impact was massively underappreciated — it invalidates the earlier
+  focus model.
+- **The fix (verified):** issue `--capture-preview` **and** the drive **in
+  ONE gphoto2 invocation**, interleaving `manualfocusdrive=None`:
+  `gphoto2 --capture-preview --set-config manualfocusdrive="Near 3"
+  --set-config manualfocusdrive=None …` (repeat the pair N times in the same
+  command). With this form, **20× Near 3 dropped car-box lap-var 19 → 8.6 and
+  the car was visibly, wildly blurred** (Peter: "blurred!"). Separate
+  `viewfinder=1` calls do NOT satisfy the live-view precondition;
+  `--capture-preview` in-invocation does.
+- **Switch stays on AF** (`focusmode: One Shot`). Do NOT move it to MF — MF
+  hands focus to the physical ring and locks out the electronic drive; AF is
+  correct for USB `manualfocusdrive`.
+
+**Consequences / TODO:**
+- **`eos-capture` / `eos-focus-sweep` are suspect** — if they drive via
+  separate `viewfinder=1` calls, their sweeps moved nothing and every
+  V-curve/`foc_NN` result is noise. Audit and fix them to the in-invocation
+  `--capture-preview` form before trusting any sweep.
+- **Re-examine the whole focus model.** The backlash/"can't do small steps"
+  story may be partly or wholly the no-op bug, not lens mechanics. Re-run the
+  hysteresis experiment (walk b via C≫lash overshoot) now that the lens
+  actually moves — the metric (car-box lap-var) is validated and tracks focus.
+- AF locking the play car (white box) at ~15 m = genuine sharp focus for the
+  20 m trees too (same DoF) — a good, repeatable sharp anchor for daytime work.
+
 ## Reset ladder — what actually resets this camera (read first)
 
 Two independent failure classes, and they respond to different resets. Don't
