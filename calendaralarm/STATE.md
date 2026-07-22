@@ -58,16 +58,27 @@ The bridge exists and works end-to-end. Committed to `~/calendaralarm`
   and produce a well-formed `alert` command, injected fired-record suppresses
   the matching event. No live xMatters page sent yet (dry-run only).
 
+## Scheduling — decided: systemd user timer (2026-07-22, Peter)
+
+Not cron — a **systemd user timer**. `systemd/calendaralarm.{service,timer}`
+(in the calendaralarm repo): oneshot service runs `run.sh`; timer `*:0/5`
+(every 5 min), `Persistent=true` to catch a poll missed while the laptop slept.
+User units run as `peter` (venv + GCal token in reach) and linger is enabled on
+pip, so they run without an active login. Installed as symlinks into
+`~/.config/systemd/user/`, currently `linked` + **inactive** (not armed).
+Verified: units pass `systemd-analyze verify` clean; transient systemd-run of
+`run.sh --dry-run` exited 0.
+
 ## Pending / loose ends
 
-- **Arm it.** No live page has been sent and no cron is installed (deliberate —
-  arming a real pager is Peter's call). To go live: `crontab -e` →
-  `*/5 * * * * $HOME/calendaralarm/run.sh`. First live run will page for real.
-- **Placement decision needs Peter.** The poller needs the GCal token, which
-  lives only on **pip** (a laptop, not always-on). For a reliable pager it
-  should migrate to an always-on fleet host (homepi) with token + venv copied
-  over — or become a Lambda timer (but then the token/refresh must live in the
-  cloud). Interim: cron on pip covers hours the laptop is up.
+- **Arm it.** Timer is installed but inactive — arming is Peter's deliberate
+  act: `systemctl --user enable --now calendaralarm.timer`. First live run pages
+  for real. (`systemctl --user list-timers` / `journalctl --user -u
+  calendaralarm.service -f` to watch.)
+- **Placement still open.** The GCal token lives only on **pip** (a laptop, not
+  always-on), so the timer only fires during laptop-up hours. For a reliable
+  pager, migrate the timer + token + venv to an always-on fleet host (homepi),
+  or move to a Lambda timer (then the token/refresh must live in the cloud).
 - Tune `--lead-minutes` and the severity tiers once it's run against real days.
 - Drop `CronAlarmApp.zip` unless there's a reason to keep it (still present).
 
