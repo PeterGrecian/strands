@@ -90,6 +90,34 @@ Fix, validated:
   steps" was RIGHT about Near-1 — but earlier it looked like Near-3 was dead
   too, which was the viewfinder=1 no-op bug, not mechanics.)
 
+## Blind-focus recipe — VALIDATED, reproduces across a power cycle (2026-07-22)
+
+The daytime terrestrial focus (car/trees at 15–20 m, ≈ infinity for 55 mm)
+distils to a repeatable command sequence, wheel-box Tenengrad ≈ sharp:
+
+1. **Prime live view first** (esp. after any power cycle / re-enumeration):
+   one standalone `gphoto2 --capture-preview` before any drive. **The FIRST
+   `--capture-preview`+drive after a fresh enumeration HANGS** (50 s timeout,
+   `error -70`-adjacent) — a bare `--capture-preview` clears it, then drives
+   work instantly. New quirk, add to the recipe.
+2. **Rack to the far hard stop:** 6× `Far 3` (frozen = pinned; the repeatable
+   zero reference).
+3. **Far-approach to b=2:** `Near 3 ×7` (= b2 + C=5 overshoot), then
+   `Far 3 ×5` back. Final move is Far, so lash is taken up consistently.
+
+Verified: after a full power cycle (fresh Dev, focus reset), this landed the
+wheel at Tenengrad **13.0** (peak was 16.4; the gap is cloud-brightness, not
+focus). Best focus = **b2**, peak is **narrow** (±1 Near-3 step → <1 Tenengrad).
+
+- **For stars (infinity):** infinity is slightly FAR of the 15–20 m car focus,
+  i.e. toward the stop from b2 — but the far hard stop appears to sit *past*
+  infinity (b0/b1 at the stop measured blurred), so true infinity focus is a
+  hair inside the stop, near b1–b2. Tonight: fine-check around b2 on a real
+  star with the PSF/FWHM metric (brightness-independent, unlike Tenengrad).
+- **Tool robustness:** the sweep tools must fall back to the embedded CR2 JPEG
+  when the Large Fine `.JPG` doesn't download (it's intermittent — a b4 capture
+  crashed a sweep on a missing `.JPG`). `verify_b2.py` has the fallback.
+
 ## Tonight's plan (2026-07-22 session arc)
 
 In order, each step splayed and metric-checked:
