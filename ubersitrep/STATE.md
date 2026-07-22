@@ -52,12 +52,51 @@ Recorded here as the macro plan; each becomes real work in the relevant
    as a v3-class camera to get the same breathing/dither capability fleet-wide.
    Decide as part of the "replace" branch of #2.
 
+## Repo re-evaluation sweep (started 2026-07-22)
+
+A deliberate broad pass over *all* the repos, re-evaluating each: alive /
+stalled / what's next. **Collating and planning only — not doing the work.**
+Order is by lived importance, so we start with what Peter uses daily.
+
+### tersetransporttimes (T3) — daily driver, healthy
+Android commute app (K2 bus ↔ Surbiton train ↔ Waterloo), zero-interaction via
+GPS. Clean git tree; last commit 2026-06-26 (~4 weeks ago). Two Lambdas (`t3`
+buses, `t3-trains`) behind API Gateway. **Used every day** — highest-value
+repo to keep working. Open items, in dependency order:
+
+1. **End-of-service 500 bug** — `t3.py` should return 200 `{"seconds":[]}` when
+   TfL has no K2 buses (after midnight), not HTTP 500. Commit `c48955a` claims
+   the fix, but TODO still says "in place locally, needs deploying" —
+   **ambiguity to check: is the fix actually live?** (Check only, later — not
+   deploying during the sweep.)
+2. **Waterloo→work leg** (unimplemented) — the natural next feature and a good
+   GCP entry point: Weather API decides tube-vs-bus (bus when dry, tube when
+   raining). *This then that:* the weather-decision logic comes before #3.
+3. **Bus-train `/journey` integration** — combined Lambda chaining bus→train→
+   Waterloo leg. Depends on #2's GCP groundwork.
+4. **Multi-user configurability** — explicitly parked until the app is stable
+   and worth sharing.
+
+Related: `busclock` (web prototype of the same K2 data as a clock face) — future
+undecided; re-evaluate it in the sweep too.
+
+### Next in the sweep
+Continue the broad pass over the remaining repos (order TBD with Peter):
+ansible, mywebsite, splay, home-automation, the astro repos, dotfiles, super,
+and the rest of the portfolio list in super/GLOBAL.md.
+
 ## Pending / loose ends
 
+- Continue the repo sweep (see above) — only T3 evaluated so far.
 - Flesh out the sitrep for the *other* workstreams (fleet, mywebsite, splay,
-  home-automation) — first pass above covers only the two headline efforts.
+  home-automation) — first pass covers only the two headline efforts + T3.
 - Decide the fix-vs-replace branch for astrocam (#2), which gates the v3
   question (#3).
+- **Scaffolding + `cld -s` bug** (2026-07-22): `cld -s ubersitrep` created the
+  strand as a symlink into `aifabric/method/template` and rooted a live session
+  in the template. Fixed the dir by hand; logged to the strands-system inbox.
+  This session is still template-rooted — relaunch `cld -s ubersitrep` for a
+  clean one.
 
 ## Decisions
 
