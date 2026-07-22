@@ -112,7 +112,7 @@ first reviewed.
 | testbook | 2026-01-30* | — | STALEST — Götterdämmerung LaTeX/online; unvisited |
 | nightsound | 2026-03-19* | — | Android snoring capture; unvisited |
 | busclock | 2026-04-01* | — | K2 web clock-face prototype; future undecided (see T3) |
-| calendaralarm | 2026-04-01* | — | Calendar-alert stub, marked dormant — confirm drop/revive |
+| calendaralarm | **2026-07-22** | high | ✅ REVIVED — alarms go to xMatters (house `alert` tool); strand created, see `calendaralarm` |
 | us-vs-the-machines | 2026-04-01* | — | Human-vs-AI predictions web; unvisited |
 | blescape | 2026-04-18* | — | Android stereo BLE scans; unvisited |
 | cosmic-cycling | 2026-04-28* | — | Music composition tool; unvisited |
@@ -184,13 +184,21 @@ and the rest of the portfolio list in super/GLOBAL.md.
 ## Pending / loose ends
 
 - Continue the sweep via the backlog ritual (see above) — T3, electronics,
-  rackinabox so far. **Next stalest = testbook** (untouched since Jan).
+  rackinabox, **calendaralarm (first live ritual run, revived → xMatters)** so
+  far. **Next stalest = testbook** (untouched since Jan).
 - **Universal coverage is a scaffold backlog in itself:** several repos still
-  lack a strand (testbook, nightsound, busclock, calendaralarm,
-  us-vs-the-machines, blescape, cosmic-cycling, and the Berrylands/* set), and
-  a few existing strands look like review subjects / cleanup (`victim`, the
+  lack a strand (testbook, nightsound, busclock, us-vs-the-machines, blescape,
+  cosmic-cycling, and the Berrylands/* set — calendaralarm now has one), and a
+  few existing strands look like review subjects / cleanup (`victim`, the
   typo'd `aifrbric-strandchat`, leftover convergence-test naming). Scaffold
   lazily — at each subject's first backlog visit — not in a big bang.
+- **`strands new` is BROKEN the same way `cld -s` was** (found 2026-07-22, 2nd
+  bite): its `cp -r "$SD/.template" "$DIR"` copies the `.template` *symlink* as
+  a symlink (→ aifabric/method/template) instead of the dir contents, so the
+  new strand is a symlink into the template and the sed corrupts the template.
+  Worked around by hand (`cp -rT` on the dereferenced source). One-line fix:
+  `cp -rT "$(readlink -f "$SD/.template")" "$DIR"` (or `cp -r "$SD/.template/."
+  "$DIR"`). Logged to the strands-system inbox.
 - **Electronics has no home strand.** The GPIO-drive bench work (speaker,
   P-MOSFET, Pi/Pico/ESP32 matrix) is scattered across astro-* + pwmaudio and is
   *not* the `hardware` strand's remit. Decide whether to spin out an
