@@ -36,9 +36,14 @@ Recorded here as the macro plan; each becomes real work in the relevant
    working state — see that strand's reset ladder.)
 
 2. **Break / fix / replace the actual astrocam.** astrocam is **currently
-   broken** — that's why the Canon is stepping in. The task is to diagnose and
-   either fix it or replace the unit. This is the trigger for #3: if it's being
-   replaced anyway, replace it with something better.
+   broken** — that's why the Canon is stepping in. Specifically it's the **v2
+   astrocam, and its lens is inaccurately fitted.** The branch point: **a fix
+   attempt might destroy it** (getting at the lens seating risks wrecking the
+   unit). So this is genuinely fix-*or*-replace, not fix-then-maybe-replace —
+   and because a fix could kill it anyway, replacement is a live option rather
+   than a fallback. That directly feeds #3: if it may not survive the fix, the
+   sensible replacement is a better camera, not another v2. ("break" in the
+   strand title = this risk is real, not rhetorical.)
 
 3. **Should astrocam be rebuilt as a v3 camera?** eclipticam's v3w (IMX708
    Wide) is the sensor behind the focus-**breathing** sub-pixel work

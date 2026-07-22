@@ -7,6 +7,19 @@ major workstreams. Not a code-owning strand: it reads *across* the others
 and what the next moves are. When you want the one-page answer to "where is
 everything, and where is it going", it lives here.
 
+**Purpose (Peter, 2026-07-22):** state the **"this then that" logic** and
+**capture broad sweeps**. Two jobs:
+
+- **Sequencing / dependency logic** — make the *order* explicit: X is broken,
+  so Y steps in temporarily, which raises question Z; do A before B because B
+  depends on it. The value is the connective tissue between moves, not the
+  moves in isolation. Branch points (fix vs replace, might-destroy-it-trying)
+  get named so the decision is visible.
+- **Broad sweeps** — periodically go wide across *all* the repos/workstreams
+  and re-evaluate: what's still alive, what's stalled, what deserves attention
+  next. A sweep is a deliberate pass over the whole estate, not a deep dive
+  into one thing.
+
 This strand is deliberately above the others. The sub-strands own the work and
 its detail; ubersitrep owns the *narrative* that connects them — which efforts
 are "almost done", which are load-bearing, which next step unblocks which. It's
