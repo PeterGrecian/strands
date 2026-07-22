@@ -38,16 +38,38 @@ solved by xMatters. So the build collapses to a thin bridge:
 4. **Schedule** the poller (cron on an always-on host, or a Lambda on a
    timer — decide where it runs; it needs the GCal token).
 
+## Built (2026-07-22, keeper session)
+
+The bridge exists and works end-to-end. Committed to `~/calendaralarm`
+(`bc7af07`): **`alarm.py`** + **`run.sh`** + README.
+
+- **Read → decide → alert** is wired. `alarm.py` reads upcoming *timed* events
+  (via the existing readonly OAuth token, auto-refreshed), keeps those starting
+  within `--lead-minutes` (default 15), and calls `super/bin/alert`.
+- **Importance ladder decided (first cut):** default paged event → `--warn`
+  (xMatters MEDIUM); title prefixed `!!` → `--critical` (HIGH); event marked
+  `transparency: transparent` (shown *free*) → skipped; all-day events → skipped
+  (no time to be imminent for). Rationale: colorId is null on all of Peter's
+  events, so importance can't lean on colour — default to paging any imminent
+  timed appointment, with `!!` as the opt-in escalation.
+- **De-dupe done:** fired event ids recorded in
+  `~/.local/state/calendaralarm/fired.json` (48h TTL), so a poll won't re-page.
+- **Verified** in `--dry-run`: all-day events filtered out, timed events decided
+  and produce a well-formed `alert` command, injected fired-record suppresses
+  the matching event. No live xMatters page sent yet (dry-run only).
+
 ## Pending / loose ends
 
-- Build the imminence/importance filter (step 2) — the real work.
-- Decide the escalation ladder: which events → which severity. Does every
-  paged event go `--critical`, or is there a tier?
-- Decide where the poller runs (always-on Pi via cron vs Lambda timer) and how
-  the GCal OAuth token lives there (refresh handling).
-- Drop `CronAlarmApp.zip` unless there's a reason to keep it.
-- Avoid double-paging: a fired event shouldn't re-page every poll — needs a
-  "already alerted" record.
+- **Arm it.** No live page has been sent and no cron is installed (deliberate —
+  arming a real pager is Peter's call). To go live: `crontab -e` →
+  `*/5 * * * * $HOME/calendaralarm/run.sh`. First live run will page for real.
+- **Placement decision needs Peter.** The poller needs the GCal token, which
+  lives only on **pip** (a laptop, not always-on). For a reliable pager it
+  should migrate to an always-on fleet host (homepi) with token + venv copied
+  over — or become a Lambda timer (but then the token/refresh must live in the
+  cloud). Interim: cron on pip covers hours the laptop is up.
+- Tune `--lead-minutes` and the severity tiers once it's run against real days.
+- Drop `CronAlarmApp.zip` unless there's a reason to keep it (still present).
 
 ## Decisions
 
