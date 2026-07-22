@@ -34,6 +34,18 @@ The lens was **not moving at all** in most drives. Proven decisively today:
 - **Switch stays on AF** (`focusmode: One Shot`). Do NOT move it to MF — MF
   hands focus to the physical ring and locks out the electronic drive; AF is
   correct for USB `manualfocusdrive`.
+- **BUT: one drive command per gphoto2 invocation — never batch many.** A
+  20×-drive single invocation (40 `--set-config`s) *hung for 12 min* when the
+  camera re-enumerated mid-drive (`error -71`, Dev 091→092): the process stuck
+  on `anon_pipe_read` holding a stale claim on interface 0, blocking all other
+  gphoto2 access ("Could not claim the USB device… resource busy"). Batching
+  widens the window for a mid-flight re-enum to hang the call. Drive in a loop
+  of separate invocations, each `--capture-preview` + one drive + `None`.
+- **Slow vs hung:** to tell a stuck gphoto2 from a merely-slow one, check
+  `ps -o etime,stat`, `/proc/<pid>/wchan` (a hung one sits in `anon_pipe_read`
+  / `S` making no progress) and `dmesg | grep 3-7` for a mid-drive re-enum. If
+  the device number has *changed* since the process started, its PTP session
+  is dead — killing it is then safe (no live session to corrupt).
 
 **Consequences / TODO:**
 - **`eos-capture` / `eos-focus-sweep` are suspect** — if they drive via
@@ -46,6 +58,59 @@ The lens was **not moving at all** in most drives. Proven decisively today:
   actually moves — the metric (car-box lap-var) is validated and tracks focus.
 - AF locking the play car (white box) at ~15 m = genuine sharp focus for the
   20 m trees too (same DoF) — a good, repeatable sharp anchor for daytime work.
+- **Car focus sits right at the far/infinity end.** Coarse Far-3 bracket from
+  the 20×-Near blur: only the *first* Far-3 step (c01) was even moderately
+  sharp (lap-var 9), then it fell to a frozen 7.0 tail = the **far hard stop**
+  (a real repeatable zero reference). So best focus is a few Near units in
+  from the hard stop, and Far-3 strides right over the narrow peak — fine
+  (Near-1) steps needed to land it. Peak sharp ≈19; the coarse sweep never
+  reached it.
+
+## Metric FIXED — wheel box + Tenengrad (2026-07-22)
+
+lap-var on the whole-car box was **not tracking focus** — it mis-ranked frames
+vs Peter's eye (called b1_near "fairly sharp" → lap-var floor 7.4; b2_far best
+→ only 11.1) because it's swamped by JPEG block noise and **cloud brightness
+drift** (crop mean swung 147→181 between frames as cloud illumination changed).
+Fix, validated:
+- **Region:** tight box on the play-car **wheel** (hard, high-contrast, curved
+  edges at all orientations), from splay probes: **(2847,1137)–(2947,1237),
+  100×100** on the 6000×4000 frame.
+- **Metric:** **Tenengrad** (mean squared Sobel gradient), NOT laplacian
+  variance. Ranks frames as the eye does: blur floor ≈1–2, moderate ≈9, sharp
+  ≈27. Read off the full-res `.JPG` crop.
+- **Hysteresis now stark:** at commanded b=2 (Near-3 units from far stop),
+  **far-approach Tenengrad 27.1 vs near-approach 3.6** — a huge gap. Direction
+  of approach determines whether you hit focus AT ALL. Confirms the a→b-via-C
+  rule is decisive, not just helpful. Best focus ≈ b2 reached via far-approach
+  (rack to far stop, Near-3 ×(2+C), Far-3 ×C back; C=5).
+- **Near-1 is dead motion** (separate confirmation): 20× Near-1 off the far
+  stop stayed flat 6–7, no peak, byte-near-identical frames. The lens genuinely
+  cannot do Near-1; minimum useful step is **Near 3**. (The old "can't do small
+  steps" was RIGHT about Near-1 — but earlier it looked like Near-3 was dead
+  too, which was the viewfinder=1 no-op bug, not mechanics.)
+
+## Tonight's plan (2026-07-22 session arc)
+
+In order, each step splayed and metric-checked:
+1. **Fine-focus experiment** — from the far hard stop, Near-1 single steps
+   through the peak: locate best focus AND re-test whether Near-1 actually
+   moves the element (the old "can't do small steps" claim, now the drive
+   works). Then hysteresis: approach the same focus from Near vs Far with
+   overshoot C to measure the loop width → gives the **dither overshoot size**.
+2. **Move camera behind the window glass, repeat** — same car box, same
+   metric, glass in vs out: quantifies what the glass costs (the eclipticam
+   "had to move it 8 cm off the window" mystery — measure it here). Fix if it
+   hurts is physical distance from glass, not focus.
+3. **Point at sky** — reframe to the real astro target.
+4. **Set timers / exposure for tonight's capture** (`eos-sequence`).
+
+**Focus dither at night:** the reason we may need to dither focus is the lash
+— inconsistent approach direction lands the element in slightly different
+places. Dither = always approach the focus target from ONE direction with an
+overshoot ≥ the loop width. The fine-focus/hysteresis experiment (step 1) is
+what sizes that overshoot. So the daytime experiment directly feeds the night
+recipe.
 
 ## Reset ladder — what actually resets this camera (read first)
 
