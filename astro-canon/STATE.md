@@ -2,6 +2,31 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## WHERE WE ARE (end of 2026-07-22 session)
+
+The focus problem is **cracked** after 3 weeks stuck. This session, in order:
+the lens wasn't moving at all (no-op bug fixed) → built a validated metric
+(wheel-box Tenengrad) → mapped the step ladder (**Near 2 = the real focus
+tool**, reaches Tenengrad 105, *sharper than AF*; Near 1 fine/dead-on-coarse;
+Near 3 coarse) → quantified hysteresis → validated a power-cycle-proof focus
+recipe → built + verified two night tools.
+
+**Tonight is armed:** `eos-night-watch` is **scheduled to launch at 22:00** on
+muppet (detached `nohup` waiter, PID logged to `~/tmp/canon-night/watch.log`).
+It probes every 10 min (ISO1600/4s/f5.6), logs a brightness time-series, and on
+confirmed stars escalates to `eos-psf-dither` (wide-open, Near-2 focus sweep +
+Near-1 dither for step-ratio / subpixel / breathing). Sky at session end: solid
+cloud, saturated even at 4s — correctly waiting. SD card ~empty (~620 frames
+free); frames download to muppet live, so card capacity is a non-issue.
+**Caveat:** the science escalation defaults to ISO3200/15s, untuned on real
+stars — watch the first escalation. The 22:00 waiter dies if muppet reboots /
+camera power-cycles before then.
+
+**Next session:** check `~/tmp/canon-night/` (watch.log, brightness.csv,
+science/) — did it clear, did it catch stars/planes, are the PSFs good? Then
+analyse: fine:medium:coarse step ratio from the Near-1 dither, subpixel
+reconstruction, focus breathing. Re-tune science exposure if it saturated.
+
 ## ★ BREAKTHROUGH (2026-07-22) — the lens WAS NOT MOVING for 3 weeks
 
 The whole "extreme difficulty with focus" — the flat sweeps, the identical
