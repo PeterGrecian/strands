@@ -80,6 +80,38 @@ repo to keep working. Open items, in dependency order:
 Related: `busclock` (web prototype of the same K2 data as a clock face) — future
 undecided; re-evaluate it in the sweep too.
 
+### Electronics — needs to catch up (bench work, distinct from `hardware`)
+**Note the category:** this is **electronics** — circuits and actuator drive —
+*not* the `hardware` strand, which is scoped to "the host as a machine, not the
+things a host drives" (actuators explicitly out of scope there). The pieces
+currently scatter across `astro-speaker-dither`, `astro-subpixel`, and the
+`pwmaudio` repo; **no dedicated electronics/bench strand exists yet** — spinning
+one out is a candidate (don't pre-create; decide with Peter). What needs
+catching up:
+
+1. **GPIO→speaker drive — bench-test in isolation.** The dither speaker drive
+   (`astro-speaker-dither`, still a placeholder — no bench build; PWM-DAC code
+   in `~/Berrylands/pwmaudio`) should be **separately bench-tested**, decoupled
+   from the astro use, before it's trusted in the rig. Calibrate loaded (mount
+   stiffness changes response).
+2. **GPIO→DC P-MOSFET switch — a distinct circuit.** GPIO driving a P-MOSFET as
+   a DC power switch (high-side switching) — a *different* board from the audio
+   drive above. Needs its own bench validation.
+3. **Host portability matrix: Pi / Pico / ESP32.** The GPIO drive (both the
+   speaker drive and the P-MOSFET switch) should run on **all three host
+   types** — a deliberate cross-platform exercise proving the same actuator
+   control across Raspberry Pi, Pico, and ESP32. (Intent = portability matrix,
+   not host-selection.)
+
+### rackinabox — get it cut
+Silent home-server enclosure, design **locked**: flat laser-cut, single 6 mm,
+finger-jointed corners, DXF for **SendCutSend** (the committed fab route — spec
+in `~/rackinabox/DESIGN.md`, panel generator `cad/panels.py`). Not doing it now,
+but the ordered path to a physical rack: finish the panel set (PSU baffle +
+dual-chamber divider, leg sockets, dovetail rear cable panel aren't in the DXF
+yet), **nest all panels onto a sheet layout**, confirm real ATX PSU dims, then
+get the SendCutSend quote and order. The gate is the panel set, not the vendor.
+
 ### Next in the sweep
 Continue the broad pass over the remaining repos (order TBD with Peter):
 ansible, mywebsite, splay, home-automation, the astro repos, dotfiles, super,
@@ -87,7 +119,14 @@ and the rest of the portfolio list in super/GLOBAL.md.
 
 ## Pending / loose ends
 
-- Continue the repo sweep (see above) — only T3 evaluated so far.
+- Continue the repo sweep (see above) — T3, electronics, rackinabox so far.
+- **Electronics has no home strand.** The GPIO-drive bench work (speaker,
+  P-MOSFET, Pi/Pico/ESP32 matrix) is scattered across astro-* + pwmaudio and is
+  *not* the `hardware` strand's remit. Decide whether to spin out an
+  `electronics`/bench strand.
+- **rackinabox gate = the panel set**, not the fabricator (SendCutSend is
+  committed): PSU baffle/divider, leg sockets, rear cable panel, and sheet
+  nesting must land in the DXF before a quote.
 - Flesh out the sitrep for the *other* workstreams (fleet, mywebsite, splay,
   home-automation) — first pass covers only the two headline efforts + T3.
 - Decide the fix-vs-replace branch for astrocam (#2), which gates the v3
