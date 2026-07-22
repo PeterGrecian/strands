@@ -11,21 +11,51 @@ tool**, reaches Tenengrad 105, *sharper than AF*; Near 1 fine/dead-on-coarse;
 Near 3 coarse) → quantified hysteresis → validated a power-cycle-proof focus
 recipe → built + verified two night tools.
 
-**Tonight is armed:** `eos-night-watch` is **scheduled to launch at 22:00** on
-muppet (detached `nohup` waiter, PID logged to `~/tmp/canon-night/watch.log`).
-It probes every 10 min (ISO1600/4s/f5.6), logs a brightness time-series, and on
-confirmed stars escalates to `eos-psf-dither` (wide-open, Near-2 focus sweep +
-Near-1 dither for step-ratio / subpixel / breathing). Sky at session end: solid
-cloud, saturated even at 4s — correctly waiting. SD card ~empty (~620 frames
-free); frames download to muppet live, so card capacity is a non-issue.
-**Caveat:** the science escalation defaults to ISO3200/15s, untuned on real
-stars — watch the first escalation. The 22:00 waiter dies if muppet reboots /
-camera power-cycles before then.
+**Tonight (2026-07-22) ran cloudy — no stars, but the tooling leapt forward.**
+`eos-night-watch` launched 22:00, now running as a **systemd --user unit**
+(`systemctl --user status eos-night-watch`; nohup/setsid over ssh kept dying on
+logout — systemd-run is the reliable detach). It probes every 10 min
+(ISO1600/4s/f5.6), logs brightness, and confirms stars by **STREAKS** (see
+below). Currently `--no-escalate` (log-only) — the auto-science path had bugs
+(missing-file crash, false hot-pixel triggers) so it's disabled tonight.
 
-**Next session:** check `~/tmp/canon-night/` (watch.log, brightness.csv,
-science/) — did it clear, did it catch stars/planes, are the PSFs good? Then
-analyse: fine:medium:coarse step ratio from the Near-1 dither, subpixel
-reconstruction, focus breathing. Re-tune science exposure if it saturated.
+**STREAK CONFIRMATION is the definitive star test (Peter's method), now built
+and verified live.** Stars DRIFT with Earth's rotation and streak in a long
+sub; hot pixels are fixed to the sensor and stay round dots. So: bright=cloud,
+dark gap=candidates, and a 20s sub settles it — streaks=stars, dots=hot px. No
+dark-frame/mask tuning needed. Verified tonight: a probe flagged **517
+candidate sources**, the 20s streak sub found **0 streaks / 92 dots → correctly
+"no stars"** (all hot pixels). This cuts through the night-1/3 hot-pixel trap
+that fooled us all evening. Geometry: 55mm ~13.8"/px, drift ~15"/s ~1.1 px/s →
+20s ≈ 24px streak, easily resolved. **Saturation:** 20s at ISO1600 would clip
+the LP sky (bg was 71 at 4s) — so the streak sub runs at **ISO 400** (low gain
+keeps sky off the 255 ceiling; drift is geometric, unaffected). Hot-pixel mask
+(`~/tmp/canon-night/hotpx.npy`, 276 fixed px from two cloudy frames) also folded
+into the cheap-probe detector.
+
+Sky trend tonight: bg median 116→101→71 (darkening/twilight), but every
+"source" streak-tested as hot pixels. SD card ~empty (~620 frames); frames
+download to muppet live, so card capacity is a non-issue.
+
+**Perspective (Peter):** first star took *weeks* with the Pi cameras, mag-6 +
+known orientation took *months*. A cloudy first night here is expected — the
+durable win is the tooling (focus cracked, streak-confirm, PSF tool), not
+photons. Not chasing the full astro pipeline for first light.
+
+**In progress (Peter, cloudy-night build):** the **EOS power-cycler hardware** —
+MOSFET/relay in the 12V dummy-battery feed (the ONLY reset that clears a
+firmware wedge; see Reset ladder). Software TODO when it exists: an `eos-power`
+off/on/cycle interface + auto-cycle-on-wedge hooks so the night tools
+self-recover instead of dying till morning; after any cycle the tools must
+PRIME (bare preview + throwaway drive) before driving. See the astro-canon
+idea spool.
+
+**Next session:** check `journalctl --user -u eos-night-watch` +
+`~/tmp/canon-night/brightness.csv` — did it clear, any streak-confirmed stars/
+planes? Fix `eos-psf-dither`'s missing-file crash (probe path needs the
+embedded-JPEG fallback) before re-enabling `--escalate`. Then, on a real gap:
+Near-1 dither analysis (fine:medium:coarse ratio, subpixel reconstruction,
+focus breathing), and re-tune science exposure for the LP sky.
 
 ## ★ BREAKTHROUGH (2026-07-22) — the lens WAS NOT MOVING for 3 weeks
 
