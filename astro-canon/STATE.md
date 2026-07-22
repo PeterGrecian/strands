@@ -161,6 +161,32 @@ focus). Best focus = **b2**, peak is **narrow** (±1 Near-3 step → <1 Tenengra
   when the Large Fine `.JPG` doesn't download (it's intermittent — a b4 capture
   crashed a sweep on a missing `.JPG`). `verify_b2.py` has the fallback.
 
+## Night PSF tool built + verified — `eos-psf-dither` (2026-07-22)
+
+New tool `astro/bin/eos-psf-dither` (deployed to muppet `~/bin/`, committed
+astro `1545c84`). On a clear gap it finds the brightest compact source (star OR
+plane), runs a **Near-2 focus sweep** (2D-Gaussian FWHM per step), drives back
+to best focus, then a **Near-1 fine dither** serving Peter's three uses:
+1. **fine:medium:coarse step ratio** — Near-1 shift is sub-pixel; measurable on
+   a PSF even though "dead" on coarse daytime targets.
+2. **subpixel centroid dither** — for super-resolution beyond pixel sampling.
+3. **focus breathing** — track the source's ABSOLUTE position vs focus step.
+Logs FWHM(x,y), subpixel centroid, peak, ellipticity, flux, background to CSV.
+
+Sky logic: **light pollution → cloud = BRIGHT**, clear = darker; so shoot when
+background is LOW or FALLING (not "dark"). Planes are valid targets to ~1am
+even under cloud. `--bright-gate` sets the shoot threshold.
+
+**Dry-run verified end-to-end** on the daytime car (exit 0): probe→brightness
+gate→Near-2 sweep→drive-back→Near-1 dither→PSF fit→CSV all ran. Daytime FWHM
+values are junk (no real point source) but plumbing is proven. Notably the
+Near-1 dither DID move the centroid sub-pixel (3767.07→3767.38→3766.98) —
+fine steps register at the PSF level, which uses 1-3 depend on.
+
+Tonight: `eos-psf-dither` (loop, gap-gated) once pointed at sky; tune
+`--focus-start` (~9 daytime, stars are at ∞ so maybe 1-2 less) and
+`--bright-gate` from the first probe's background reading.
+
 ## Tonight's plan (2026-07-22 session arc)
 
 In order, each step splayed and metric-checked:
