@@ -23,6 +23,42 @@ sub-pixel science, deliverables). The active frontier is the **cameras
 themselves**, and the near-term thrust is a three-move instrument refresh
 (below). **Source of truth:** the `astro-*` strand family.
 
+## URGENT NOW — astro-storage / finalize starcam (Peter, 2026-07-22)
+
+Jumped the queue: **S3 storage is increasing and starcam data needs
+finalizing. Target ≈ 1 GB/day.** Owned by the `astro-storage` strand (a mature
+strand — squash tooling, cold pipeline, glacier all exist); this is a *finalize
++ decide* task, not new build. Grounded facts pulled this session:
+
+- **What's actually growing = the astro COLD bucket**, not starcam.
+  `astro-berrylands-eu-west-1` is **~72.6 GB / 1214 objects and climbing**
+  (was 63 GB / 12 objects earlier the same session — the nightly Deep-Archive
+  ship via `cold-archive-night`). That's the `glacier-every-day` accrual and
+  the **t² cost** the strand already flagged. Cheap now (~pennies/mo) but
+  quadratic if unbounded — the lever is squash-first + lifecycle-expire raw.
+- **The starcam bucket is small AND stalled.** `starcam-berrylands-eu-west-1`
+  = **1.34 GB, STANDARD class, 673 objects**, newest key **2026-06-04** — the
+  live starcam→S3 upload appears to have **stopped ~4 June**. 16 nights
+  (05-20…06-04) of tiny derived products (~2.7 MB/night: sum/derot jpgs +
+  summaries). **`videos/` is 94% of it** (1.28 GB of mp4s). So "finalize
+  starcam" ≠ firefighting a runaway bucket — it's **defining the intended
+  end-state**: what a *finished* starcam pipeline ships per day (~1 GB target)
+  and its retention, because right now it's neither running nor bounded.
+- **gardencam is the real S3 giant** (142 GB / 41,881 objects) — different
+  stream, but worth naming if "S3 increasing" is a billing worry.
+
+**Decisions to make (this-then-that):**
+1. Is the starcam→S3 upload *meant* to be stopped since 4 June, or did it
+   break? (Determines fix-vs-finalize.)
+2. Define the ~1 GB/day starcam deliverable: which products ship daily (derived
+   jpgs/summaries are KB; the GB is video) and what's the retention/lifecycle?
+3. Bound the cold-bucket t²: apply the retention schedule (squash-first +
+   S3 lifecycle-expire raw after N months) the IDEAS.md design already sketches.
+
+Next action: **`forkterm into astro-storage`** with a finalize-starcam briefing
+carrying these numbers. (Not yet done — awaiting Peter's go, since the
+calendaralarm fork is still active.)
+
 ## astro next steps (Peter's steer, 2026-07-22)
 
 Recorded here as the macro plan; each becomes real work in the relevant
@@ -109,10 +145,11 @@ first reviewed.
 
 | Subject | Last-reviewed | Pri | Status / note |
 |---|---|---|---|
+| astro-storage | **2026-07-22** | **URGENT** | S3 growing, finalize starcam ≈1 GB/day — see "URGENT NOW" above; strand exists, forkterm pending |
+| calendaralarm | **2026-07-22** | high | ✅ LIVE — bridge built, systemd timer armed, real xMatters page fired; see `calendaralarm` STATE |
 | testbook | 2026-01-30* | — | STALEST — Götterdämmerung LaTeX/online; unvisited |
 | nightsound | 2026-03-19* | — | Android snoring capture; unvisited |
 | busclock | 2026-04-01* | — | K2 web clock-face prototype; future undecided (see T3) |
-| calendaralarm | **2026-07-22** | high | ✅ REVIVED — alarms go to xMatters (house `alert` tool); strand created, see `calendaralarm` |
 | us-vs-the-machines | 2026-04-01* | — | Human-vs-AI predictions web; unvisited |
 | blescape | 2026-04-18* | — | Android stereo BLE scans; unvisited |
 | cosmic-cycling | 2026-04-28* | — | Music composition tool; unvisited |
