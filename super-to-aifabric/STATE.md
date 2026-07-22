@@ -24,11 +24,15 @@ that work shares** — so it must be a self-contained, air-gapped surface.
   only — **pip / muppet / puppy / vole**. Rolled out + verified on all four;
   super/strands symlink resolves everywhere. vole needed the shared fleet SSH
   key (installed).
-- **PATH flip**: `~/aifabric/bin` now ahead of `super/bin` in interactive shells
-  (dotfiles commit `8886c9b`), guarded on the dir existing. Graduated tools
-  (ding/forkchat/idea) resolve from aifabric first; super/bin is the fallback
-  drawer. Non-interactive shells still reach them via super/bin's symlinks (same
-  inode). Ships to the 4 hosts via the dotfiles ansible role.
+- **PATH flip**: `~/aifabric/bin` ahead of `super/bin` for **all** shells that
+  source `.bashrc`. First landed interactive-only (commit `8886c9b`), then moved
+  **above `.bashrc`'s non-interactive early-return** (commit `bc51cea`) so
+  ssh-command / cron / script shells also get aifabric-first — needed as
+  super/bin entries get deleted. Order: aifabric/bin first (fabric canonical),
+  super/bin after (fallback drawer), both dedup-guarded. Guarded on aifabric/bin
+  existing. Ships to the 4 hosts via the dotfiles ansible role. (Only truly
+  uncovered case: bare `ssh host cmd` with no BASH_ENV — never had these dirs
+  anyway, so no regression.)
 - **`bin-shadows`** guard added to super/bin (commit `367a38e`): flags DIVERGENT
   name collisions between the two bins (silent-shadow bug); exit 1 on divergence.
   Run it after moving any tool into aifabric/bin, and from housekeeping.
@@ -49,10 +53,11 @@ has aifabric, or leak a private path). strands→aifabric links (`bin/ding`,
 - **Graduate more tools into aifabric/bin** as they settle (candidates from
   memory: `manywrapper` lib as canonical, `forkterm`, `strand-mailbox`). Each
   must be self-contained per the air-gap rule; run `bin-shadows` after each.
-  **Keep a `super/bin` symlink** to each graduated tool, else non-interactive
-  shells (which don't get aifabric-first PATH — `.bashrc` returns early) won't
-  find it. Interactive = aifabric direct; non-interactive = super/bin symlink →
-  same file. bin-shadows enforces the two never diverge.
+  Deleting the tool's `super/bin` copy/symlink is now safe (aifabric-first holds
+  in interactive AND non-interactive shells) — **provided** nothing references it
+  by the absolute path `~/super/bin/<tool>`. Grep for such hardcoded paths before
+  deleting (services, .desktop files, other scripts). bin-shadows enforces the
+  two bins never diverge while both exist.
 - **manywrapper convergence** (deferred this session): make super's tools source
   `~/aifabric/manywrapper/manywrapper.py` as canonical. Deeper — touches
   secrets/resolve-host; test carefully.
@@ -62,6 +67,22 @@ has aifabric, or leak a private path). strands→aifabric links (`bin/ding`,
   `super/strands` symlink dangles on hosts without it). Currently only the 4
   laptop-class hosts get strands; other super hosts have a dangling symlink.
   Harmless today (they don't run strand tooling) but worth a decision.
+
+## Deletion blast-radius (before removing anything from super/bin)
+
+PATH resolution is handled; the remaining risk when deleting a super/bin tool is
+**hardcoded `~/super/bin/<tool>` absolute references** (sweep re-runnable:
+`grep -rn "super/bin/" ~/super ~/ansible ~/dotfiles ~/strands`). Current
+absolute references, by tool (2026-07-22):
+- `secrets` (7×) — the big one; update all before secrets/manywrapper graduates.
+- `cfai` (4×), `splay` (2×), `sessions` (2×), `r2-put` (2×).
+- 1× each: `cld-statusline`, `yt-upload`, `strand-ps`, `splay-launcher`,
+  `ship-astro-data`, `gh-exposure-audit`, `claude-oauth-sync` (an ansible
+  systemd unit — `ExecStart=/home/peter/super/bin/claude-oauth-sync`), `bin-shadows`.
+
+Most are super-internal and won't graduate. Rule: before deleting a tool from
+super/bin, fix its absolute references (or leave a symlink). Many of these will
+never move — the list is the check, not a migration plan.
 
 ## Decisions
 
