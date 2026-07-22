@@ -56,7 +56,42 @@ Recorded here as the macro plan; each becomes real work in the relevant
 
 A deliberate broad pass over *all* the repos, re-evaluating each: alive /
 stalled / what's next. **Collating and planning only — not doing the work.**
-Order is by lived importance, so we start with what Peter uses daily.
+
+**Rotation model (Peter, 2026-07-22): least-recently-reviewed, so none are
+missed.** Some projects have been neglected; a rotation makes neglect
+impossible by construction. Each repo carries a *last-reviewed* date; the sweep
+always picks up the stalest. A visit is **variable-cost** — it might take 5
+minutes ("still fine, still dormant, next") or it might crack open into a whole
+set of strands. That's fine: the schedule guarantees *attention*, not uniform
+effort. This is the conscious-maintenance ethos (changelog-in-hand, not
+nag-popup; cf. the `hardware` strand's firmware flow) applied to projects, and
+the RRD-pyramid idea (recent = fine cadence, old = coarse but never zero)
+applied to codebases. **Mechanism = a manual ledger here, for now** (no cron/
+cloud agent until the rhythm proves itself).
+
+### Review ledger
+Last-reviewed date per repo (seeded 2026-07-22 from last-commit date as a proxy
+where no formal review has happened yet — so the stalest float to the top).
+Update the date when a repo gets a real sweep visit; add a one-line status.
+**Up next = the top unreviewed row.**
+
+| Repo | Last-reviewed | Status / note |
+|---|---|---|
+| testbook | 2026-01-30* | STALEST — Götterdämmerung LaTeX/online; unvisited |
+| nightsound | 2026-03-19* | Android snoring capture; unvisited |
+| busclock | 2026-04-01* | K2 web clock-face prototype; future undecided (see T3) |
+| calendaralarm | 2026-04-01* | Calendar-alert stub, marked dormant — confirm drop/revive |
+| us-vs-the-machines | 2026-04-01* | Human-vs-AI predictions web; unvisited |
+| blescape | 2026-04-18* | Android stereo BLE scans; unvisited |
+| cosmic-cycling | 2026-04-28* | Music composition tool; unvisited |
+| tersetransporttimes | **2026-07-22** | ✅ reviewed — daily driver, healthy (see above) |
+| — others — | | gardencam, pi-fleet, cloud-init-init, pwmaudio, home-automation, dotfiles, mywebsite, splay, osd, astro, ansible, super, strands, aifabric, rackinabox — mostly active/recent; slot in by staleness as the sweep proceeds |
+
+\* = proxy (last-commit), not a real review yet. First real visit replaces it
+with the review date.
+
+Order is by lived importance for the *active* set (started with the daily
+driver, T3), but the ledger ensures the *neglected* set can't be skipped.
 
 ### tersetransporttimes (T3) — daily driver, healthy
 Android commute app (K2 bus ↔ Surbiton train ↔ Waterloo), zero-interaction via
@@ -142,3 +177,7 @@ and the rest of the portfolio list in super/GLOBAL.md.
 - **ubersitrep is the macro-sitrep strand** (2026-07-22): top-level situation
   report reading across all workstreams; owns the connecting narrative, not
   code. Sub-strands stay the source of truth for their own detail.
+- **Repo review runs on a least-recently-reviewed rotation** (2026-07-22): a
+  per-repo last-reviewed ledger (above) always surfaces the stalest, so no
+  project is silently neglected. Visits are variable-cost (5 min → a whole set
+  of strands). Manual ledger for now; automate only if the rhythm needs it.

@@ -18,7 +18,10 @@ everything, and where is it going", it lives here.
 - **Broad sweeps** — periodically go wide across *all* the repos/workstreams
   and re-evaluate: what's still alive, what's stalled, what deserves attention
   next. A sweep is a deliberate pass over the whole estate, not a deep dive
-  into one thing.
+  into one thing. Driven by a **least-recently-reviewed rotation** (the review
+  ledger in STATE.md) so no project is silently neglected; each visit is
+  variable-cost (a 5-minute "still dormant, next" or the start of a whole set
+  of strands).
 
 This strand is deliberately above the others. The sub-strands own the work and
 its detail; ubersitrep owns the *narrative* that connects them — which efforts
