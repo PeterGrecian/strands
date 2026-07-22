@@ -58,6 +58,30 @@ The bridge exists and works end-to-end. Committed to `~/calendaralarm`
   and produce a well-formed `alert` command, injected fired-record suppresses
   the matching event. No live xMatters page sent yet (dry-run only).
 
+## Recurring-meeting rules + bank holidays (2026-07-22, keeper)
+
+Peter wanted "every weekday at 15:45, page 2 min before, not on holidays / bank
+holidays." Built as a **second alert source** (both, per his answer), committed
+`cb88f11`:
+
+- **`rules.yaml`** — human-editable standing meetings: `days` (Mon-Fri /
+  Mon,Wed,Fri / daily), `at` (local HH:MM), `lead_minutes`, `severity`,
+  `skip_holidays`. Ships with his 15:45 Mon-Fri / lead 2 / warn rule.
+- **`rules.py`** — parses the file; a rule is "due" when its meeting time is
+  within `lead_minutes` of now on a matching weekday, skipping bank holidays.
+- **`holidays.py`** — england-and-wales bank holidays from
+  `gov.uk/bank-holidays.json` (no key), cached daily, stale-cache fallback.
+- **`alarm.py`** — rules feed the *same* de-dupe + alert path as GCal events;
+  de-duped by name+date so a rule pages once/day.
+- **`requirements.txt`** added (incl. PyYAML) for venv rebuilds on migration.
+
+Scope note: "holidays" resolved to **UK bank holidays only** for now. Peter's
+own days-off (leave) are NOT yet wired — would need reading them from a calendar
+(deferred; ask how he marks leave if he wants it).
+
+Verified end-to-end: rule fires at 15:44 on a weekday, not before the window,
+not after the meeting, not on weekends, not on the 31 Aug bank holiday.
+
 ## Scheduling — decided: systemd user timer (2026-07-22, Peter)
 
 Not cron — a **systemd user timer**. `systemd/calendaralarm.{service,timer}`
