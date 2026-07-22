@@ -69,29 +69,58 @@ the RRD-pyramid idea (recent = fine cadence, old = coarse but never zero)
 applied to codebases. **Mechanism = a manual ledger here, for now** (no cron/
 cloud agent until the rhythm proves itself).
 
-### Review ledger
-Last-reviewed date per repo (seeded 2026-07-22 from last-commit date as a proxy
-where no formal review has happened yet — so the stalest float to the top).
-Update the date when a repo gets a real sweep visit; add a one-line status.
-**Up next = the top unreviewed row.**
+### The "backlog" ritual (Peter, 2026-07-22)
+The engine that drives the rotation. Wake this strand and say **"let's
+backlog"** (working name); then:
 
-| Repo | Last-reviewed | Status / note |
-|---|---|---|
-| testbook | 2026-01-30* | STALEST — Götterdämmerung LaTeX/online; unvisited |
-| nightsound | 2026-03-19* | Android snoring capture; unvisited |
-| busclock | 2026-04-01* | K2 web clock-face prototype; future undecided (see T3) |
-| calendaralarm | 2026-04-01* | Calendar-alert stub, marked dormant — confirm drop/revive |
-| us-vs-the-machines | 2026-04-01* | Human-vs-AI predictions web; unvisited |
-| blescape | 2026-04-18* | Android stereo BLE scans; unvisited |
-| cosmic-cycling | 2026-04-28* | Music composition tool; unvisited |
-| tersetransporttimes | **2026-07-22** | ✅ reviewed — daily driver, healthy (see above) |
-| — others — | | gardencam, pi-fleet, cloud-init-init, pwmaudio, home-automation, dotfiles, mywebsite, splay, osd, astro, ansible, super, strands, aifabric, rackinabox — mostly active/recent; slot in by staleness as the sweep proceeds |
+1. **Pick the stalest** subject from the ledger (top unreviewed row) —
+   least-recently-reviewed, tie-broken by priority.
+2. **Ensure it has a strand.** Every repo / Berrylands project (and, over time,
+   every subject) gets its *own* strand. Scaffold with `cld -s <name>` if it
+   doesn't exist yet.
+3. **`forkterm into <strand>`** with a turn-one briefing ("review this repo:
+   where is it, is it alive, what's next") — a cold session in the repo's own
+   dir. (`forkterm into` needs the strand to already exist — hence step 2.)
+   The fork gives it a go; the parent (this strand) stays the conductor.
+4. **Re-queue with a rating.** When the visit ends, the parent records a
+   **priority/importance rating** that sets how far back down the queue the
+   subject goes. Rating is a *weight on top of staleness*: high-importance
+   resurfaces sooner regardless of recency; low-importance sinks. Neglect is
+   still impossible (recency always pulls things up), but importance decides
+   the depth of the push-back. Stamp the last-reviewed date + the rating in the
+   ledger.
+
+A visit is variable-cost: a 5-minute "still dormant, next" *still* goes through
+the forkterm+strand path (so every subject accretes its own curation over
+time), or it cracks open into a whole set of strands.
+
+### Review ledger
+Last-reviewed date per subject (seeded 2026-07-22 from last-commit date as a
+proxy where no formal review has happened yet — so the stalest float to the
+top). **Coverage principle:** every repo and every Berrylands project gets its
+own strand and a review; strands themselves are reviewable subjects too. So
+this ledger grows to cover the whole estate, not just today's active repos.
+Update the date + rating when a subject gets a real backlog visit.
+**Up next = the top unreviewed row** (recency first, priority as tie-break).
+
+`Pri` = priority/importance rating set at the *end* of a visit — weights how far
+back down the queue it goes (high resurfaces sooner, low sinks). Blank until
+first reviewed.
+
+| Subject | Last-reviewed | Pri | Status / note |
+|---|---|---|---|
+| testbook | 2026-01-30* | — | STALEST — Götterdämmerung LaTeX/online; unvisited |
+| nightsound | 2026-03-19* | — | Android snoring capture; unvisited |
+| busclock | 2026-04-01* | — | K2 web clock-face prototype; future undecided (see T3) |
+| calendaralarm | 2026-04-01* | — | Calendar-alert stub, marked dormant — confirm drop/revive |
+| us-vs-the-machines | 2026-04-01* | — | Human-vs-AI predictions web; unvisited |
+| blescape | 2026-04-18* | — | Android stereo BLE scans; unvisited |
+| cosmic-cycling | 2026-04-28* | — | Music composition tool; unvisited |
+| tersetransporttimes | **2026-07-22** | — | ✅ reviewed — daily driver, healthy (see above) |
+| — others — | | | gardencam, pi-fleet, cloud-init-init, pwmaudio, home-automation, dotfiles, mywebsite, splay, osd, astro, ansible, super, strands, aifabric, rackinabox + the ~35 existing strands — slot in by staleness as backlog proceeds |
 
 \* = proxy (last-commit), not a real review yet. First real visit replaces it
-with the review date.
-
-Order is by lived importance for the *active* set (started with the daily
-driver, T3), but the ledger ensures the *neglected* set can't be skipped.
+with the review date and sets a Pri.
 
 ### tersetransporttimes (T3) — daily driver, healthy
 Android commute app (K2 bus ↔ Surbiton train ↔ Waterloo), zero-interaction via
@@ -154,7 +183,14 @@ and the rest of the portfolio list in super/GLOBAL.md.
 
 ## Pending / loose ends
 
-- Continue the repo sweep (see above) — T3, electronics, rackinabox so far.
+- Continue the sweep via the backlog ritual (see above) — T3, electronics,
+  rackinabox so far. **Next stalest = testbook** (untouched since Jan).
+- **Universal coverage is a scaffold backlog in itself:** several repos still
+  lack a strand (testbook, nightsound, busclock, calendaralarm,
+  us-vs-the-machines, blescape, cosmic-cycling, and the Berrylands/* set), and
+  a few existing strands look like review subjects / cleanup (`victim`, the
+  typo'd `aifrbric-strandchat`, leftover convergence-test naming). Scaffold
+  lazily — at each subject's first backlog visit — not in a big bang.
 - **Electronics has no home strand.** The GPIO-drive bench work (speaker,
   P-MOSFET, Pi/Pico/ESP32 matrix) is scattered across astro-* + pwmaudio and is
   *not* the `hardware` strand's remit. Decide whether to spin out an
@@ -178,6 +214,19 @@ and the rest of the portfolio list in super/GLOBAL.md.
   report reading across all workstreams; owns the connecting narrative, not
   code. Sub-strands stay the source of truth for their own detail.
 - **Repo review runs on a least-recently-reviewed rotation** (2026-07-22): a
-  per-repo last-reviewed ledger (above) always surfaces the stalest, so no
+  per-subject last-reviewed ledger (above) always surfaces the stalest, so no
   project is silently neglected. Visits are variable-cost (5 min → a whole set
   of strands). Manual ledger for now; automate only if the rhythm needs it.
+- **The "backlog" ritual** (2026-07-22): wake ubersitrep → "let's backlog" →
+  pick the stalest → ensure it has a strand → `forkterm into` it with a review
+  briefing → give it a go → parent re-queues it with a **priority rating**.
+  The parent strand is the conductor; the fork does the per-repo work.
+- **Universal strand coverage** (2026-07-22, Peter): *every* repo and every
+  Berrylands project gets its own strand and a review; strands themselves are
+  reviewable subjects in the rotation too. The estate is fully covered, not
+  just the currently-active repos. (Accept the resulting many thin/dormant
+  strands — the ledger keeps them from being forgotten; that's the point.)
+- **Re-queue rating = priority/importance** (2026-07-22), not a fixed cooldown:
+  a weight *on top of* recency. High-importance resurfaces sooner regardless of
+  staleness; low-importance sinks. Recency guarantees nothing is skipped;
+  priority decides the depth of the push-back.
