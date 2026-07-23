@@ -23,12 +23,11 @@
   self-recovers instead of paging Peter. See astro-canon STATE "Reset ladder"
   (Class B) for the failure it fixes.
 
-- **New `electronics` repo + strand** (promoted 2026-07-23). Peter wants a repo
-  sitting *between* home-automation and hardware: about things he makes to
-  interface stuff — electronic circuit design and construction, schematics,
-  design discussions. The astro PWM-for-speakers work could be extracted there.
-  Needs: a repo, a strand, and an area for schematics + design discussion.
-  ("sessions will tell you all about it" — mine the transcript archive for the
-  PWM/speaker-dither context before scaffolding.) See [[astro-speaker-dither]].
+- **New `electronics` repo + strand** — DONE 2026-07-23. Created `~/electronics`
+  (`PeterGrecian/electronics`, private) + the [[electronics]] strand, sitting
+  *between* home-automation and hardware: circuits Peter builds to interface
+  things (schematics + design discussion). The astro PWM-for-speakers /
+  pwmaudio driver work is slated to migrate there. See the electronics strand
+  STATE for the plan; [[astro-speaker-dither]] cross-links it.
 
 ## Decisions

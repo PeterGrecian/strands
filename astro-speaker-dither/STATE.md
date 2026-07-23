@@ -18,7 +18,11 @@ see the `pwmaudio` memory).
   simplest (no smear, no phase sync); Polaris photometry on a v3s/pole cam
   is the real prize (needs the dither because it never drifts off its pixels).
 - Confirm what part of the pwmaudio electronics is reusable vs. what needs a
-  higher-current driver for the actuator.
+  higher-current driver for the actuator. **The circuit side now has a home:**
+  the [[electronics]] strand + `~/electronics` repo (created 2026-07-23) owns
+  the driver design/build; this strand owns the astro *why* and the µm/mA
+  calibration. The pwmaudio driver work is slated to migrate into
+  `~/electronics` (see electronics STATE).
 
 ## Decisions
 
