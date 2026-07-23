@@ -20,6 +20,26 @@ They overlap by design (all land in the same ~week); running in parallel is the
 plan, so a slip in one doesn't push the others. Revisit these dates each session
 — rough by intent.
 
+## Session 2026-07-23 — triage + electronics spun out + two forks
+
+A working session, not just narrative:
+- **Triaged every strand's ideas inbox** (25 files across 8 strands) — promoted
+  the keepers into each STATE, cleared the inboxes.
+- **Fixed the scaffolder symlink bug** (both `strands new` and `cld -s`): they
+  copied the `.template` *symlink* as a symlink, so new strands became symlinks
+  into `aifabric/method/template` and the sed corrupted the shared template.
+  Fix = `cp -rT "$(readlink -f …)"`; template restored; validated by
+  scaffolding two new strands cleanly. **This item is now closed** (was the
+  long-standing pending bug).
+- **Spun out `electronics`** (strand + `~/electronics` repo) — the bench/circuit
+  layer between home-automation and hardware. A forkterm carried it forward
+  (EOS DC-switch design note, rackinabox as the live build). See its STATE.
+- **`xfer-audio-to-phone`**: a forkterm flattened the on-phone audio for
+  AntennaPod and built `super/bin/adb-wifi` (wireless adb over the tailnet, USB
+  wouldn't enumerate on pip). A **subset** (5.3 GB, spoken-word) transferred;
+  `composers`/`pop` (23 GB music) never fit the phone's ~16 GB — revisit if
+  Peter wants the music too.
+
 ## The thrust (2026-07-22)
 
 Two very large efforts are both **near "done"** — each has been a huge piece of
@@ -197,14 +217,18 @@ repo to keep working. Open items, in dependency order:
 Related: `busclock` (web prototype of the same K2 data as a clock face) — future
 undecided; re-evaluate it in the sweep too.
 
-### Electronics — needs to catch up (bench work, distinct from `hardware`)
+### Electronics — now has a home (strand + repo created 2026-07-23)
 **Note the category:** this is **electronics** — circuits and actuator drive —
 *not* the `hardware` strand, which is scoped to "the host as a machine, not the
-things a host drives" (actuators explicitly out of scope there). The pieces
-currently scatter across `astro-speaker-dither`, `astro-subpixel`, and the
-`pwmaudio` repo; **no dedicated electronics/bench strand exists yet** — spinning
-one out is a candidate (don't pre-create; decide with Peter). What needs
-catching up:
+things a host drives" (actuators explicitly out of scope there). **DONE
+2026-07-23:** spun out the `electronics` strand + `~/electronics` repo
+(`PeterGrecian/electronics`), sitting between home-automation and hardware. A
+forkterm has already landed the first design note (EOS high-side P-MOSFET DC
+switch, `~/electronics/designs/eos-dc-switch.md`) and re-prioritised: **rackinabox
+is the live bench project**, PWM-for-8R is nearly done, the EOS switch is
+deferred (astro-side command rate-limiting is the cheaper first mitigation).
+Source of truth is now `super/strands/electronics/STATE.md`. What still needs
+catching up (per that strand):
 
 1. **GPIO→speaker drive — bench-test in isolation.** The dither speaker drive
    (`astro-speaker-dither`, still a placeholder — no bench build; PWM-DAC code
@@ -245,17 +269,6 @@ and the rest of the portfolio list in super/GLOBAL.md.
   few existing strands look like review subjects / cleanup (`victim`, the
   typo'd `aifrbric-strandchat`, leftover convergence-test naming). Scaffold
   lazily — at each subject's first backlog visit — not in a big bang.
-- **`strands new` is BROKEN the same way `cld -s` was** (found 2026-07-22, 2nd
-  bite): its `cp -r "$SD/.template" "$DIR"` copies the `.template` *symlink* as
-  a symlink (→ aifabric/method/template) instead of the dir contents, so the
-  new strand is a symlink into the template and the sed corrupts the template.
-  Worked around by hand (`cp -rT` on the dereferenced source). One-line fix:
-  `cp -rT "$(readlink -f "$SD/.template")" "$DIR"` (or `cp -r "$SD/.template/."
-  "$DIR"`). Logged to the strands-system inbox.
-- **Electronics has no home strand.** The GPIO-drive bench work (speaker,
-  P-MOSFET, Pi/Pico/ESP32 matrix) is scattered across astro-* + pwmaudio and is
-  *not* the `hardware` strand's remit. Decide whether to spin out an
-  `electronics`/bench strand.
 - **rackinabox gate = the panel set**, not the fabricator (SendCutSend is
   committed): PSU baffle/divider, leg sockets, rear cable panel, and sheet
   nesting must land in the DXF before a quote.
@@ -263,11 +276,6 @@ and the rest of the portfolio list in super/GLOBAL.md.
   home-automation) — first pass covers only the two headline efforts + T3.
 - Decide the fix-vs-replace branch for astrocam (#2), which gates the v3
   question (#3).
-- **Scaffolding + `cld -s` bug** (2026-07-22): `cld -s ubersitrep` created the
-  strand as a symlink into `aifabric/method/template` and rooted a live session
-  in the template. Fixed the dir by hand; logged to the strands-system inbox.
-  This session is still template-rooted — relaunch `cld -s ubersitrep` for a
-  clean one.
 
 ## Decisions
 
