@@ -55,28 +55,33 @@ step, not the first: it can only happen once everything still needed has either
 graduated or been deliberately retired. **This session is plan-only — no tool
 moves.** The ordered plan below is the durable artifact.
 
-## The secrets knot (the thing that gates the whole endgame)
+## secrets stays in super — by definition, not as a blocker
 
-`secrets` is (a) the most-depended-on super/bin tool, (b) referenced by
-**absolute path** `~/super/bin/secrets` in live code (`cfai` 4×, `r2-put` 2×,
-`sessions` 2×), and (c) **cannot graduate to aifabric** — it talks to AWS SSM +
-the private GCS bucket `petergrecian-secrets`, exactly the personal-infra the
-air-gap rule forbids in aifabric. It's also mandated by GLOBAL.md ("never call
-SSM/GCS directly"). So `secrets` is the **permanent resident of super/bin**.
-Consequence: inverting the fallback does NOT mean super/bin empties — it means
-super/bin shrinks to a small non-graduatable core (secrets + its private-infra
-kin) that must stay reachable by some means other than the default PATH fallback
-(explicit opt-in entry, or absolute-path callers only). Loosening step, deferred:
-make `cfai`/`r2-put`/`sessions` call `secrets` via PATH (bare name) not absolute
-path — touches Cloudflare/R2 auth, test carefully.
+Earlier framing (a "secrets knot to loosen") was wrong. `secrets` is not a
+migration candidate that's *blocked* — it's simply **a super tool.** The air-gap
+split is: aifabric = the shareable method (strands, forkterms, keepers); super =
+the private kitchen (fleet, secrets, personal infra). `secrets` talks to AWS SSM
++ the private GCS bucket `petergrecian-secrets` and is mandated by GLOBAL.md — it
+is squarely, permanently super. Nothing to untie.
+
+Consequence for the endgame: inverting the fallback does **not** mean super/bin
+empties. super/bin keeps its private-infra core (secrets + kin) forever; the goal
+is only that the *graduatable method tools* leave it and it drops off the
+**default** PATH. And that's already safe for secrets today — its callers (`cfai`,
+`r2-put`, `sessions`) invoke it by **absolute path** `~/super/bin/secrets`, so it
+never needed a PATH entry. Dropping super/bin off PATH doesn't touch it. (Whether
+to later switch those callers to a bare-name PATH lookup is a taste question, not
+a requirement — deliberately NOT on the plan.)
 
 ## super/bin classification (2026-07-23, 73 entries)
 
 - **Not self-contained (source super/lib)** — air-gap blockers, cannot graduate
   as-is: `datedir`, `ssp`. (`ssp` is human-only + fleet-specific anyway → stays.)
-- **secrets cluster** (stay in super, private-infra): `secrets`,
-  `secrets_wrapper.py`, and its callers `cfai`, `r2-put`, `sessions`, `ai-gists`,
-  `yt-upload`, `hub-leases`.
+- **Private-infra core — permanent super residents, NOT migration candidates:**
+  `secrets`, `secrets_wrapper.py`, and its callers `cfai`, `r2-put`, `sessions`,
+  `ai-gists`, `yt-upload`, `hub-leases`. These are super by definition (SSM/GCS,
+  Cloudflare, fleet). They never leave; the endgame just stops relying on them
+  being on the default PATH.
 - **Live cross-refs that gate deletion** (fix before removing the super copy):
   - `claude-oauth-sync` — ansible systemd unit hardcodes
     `ExecStart=/home/peter/super/bin/claude-oauth-sync` (template
@@ -103,18 +108,16 @@ path — touches Cloudflare/R2 auth, test carefully.
    `claude-oauth-sync.service.j2`, `settings-shared.json` (cld-statusline),
    `splay.desktop` + `splay-launcher` — repoint to PATH/aifabric or accept they
    stay in super.
-5. **Loosen the secrets knot** — `cfai`/`r2-put`/`sessions` call `secrets` via
-   PATH not absolute. Then decide secrets' permanent home (stays in super/bin as
-   the non-graduatable core).
-6. **Invert the fallback (LAST)** — drop `super/bin` off the default PATH in
-   `.bashrc`; provide an explicit opt-in for the residual super-only core, OR
-   confirm every survivor is reached by absolute path / systemd and needs no PATH
-   entry. Roll out via the dotfiles ansible role to the 4 hosts. Verify nothing
-   breaks in interactive + non-interactive + cron shells.
+5. **Invert the fallback (LAST)** — drop `super/bin` off the default PATH in
+   `.bashrc`. The private-infra core (secrets + kin) stays in super/bin and is
+   fine off-PATH: its callers already use absolute paths. Confirm every remaining
+   super-only survivor is reached by absolute path / systemd (or give it an
+   explicit opt-in entry). Roll out via the dotfiles ansible role to the 4 hosts.
+   Verify nothing breaks in interactive + non-interactive + cron shells.
 
 - **manywrapper convergence** (still deferred): make super's tools source
   `~/aifabric/manywrapper/manywrapper.py` as canonical. Deeper — touches
-  secrets/resolve-host; test carefully. Related to step 5.
+  resolve-host; test carefully.
 - **scrub-to-public prep** — ongoing air-gap audit of aifabric (fleet
   hostnames, personal-infra references) before it goes public.
 - Consider whether every host that has `super` should also get `strands` (the
