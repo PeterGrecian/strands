@@ -81,12 +81,13 @@ The bridge exists and works end-to-end. Committed to `~/calendaralarm`
 - **Read → decide → alert** is wired. `alarm.py` reads upcoming *timed* events
   (via the existing readonly OAuth token, auto-refreshed), keeps those starting
   within `--lead-minutes` (default 15), and calls `super/bin/alert`.
-- **Importance ladder decided (first cut):** default paged event → `--warn`
-  (xMatters MEDIUM); title prefixed `!!` → `--critical` (HIGH); event marked
-  `transparency: transparent` (shown *free*) → skipped; all-day events → skipped
-  (no time to be imminent for). Rationale: colorId is null on all of Peter's
-  events, so importance can't lean on colour — default to paging any imminent
-  timed appointment, with `!!` as the opt-in escalation.
+- **Importance ladder (revised 2026-07-23 — see below):** default paged event
+  → `--critical` (xMatters HIGH); title prefixed `~~` → `--warn` (soft nudge,
+  opt-*down*); event marked `transparency: transparent` (shown *free*) →
+  skipped; all-day events → skipped (no time to be imminent for). Rationale:
+  colorId is null on all of Peter's events, so importance can't lean on colour
+  — default to paging any imminent timed appointment. (First cut used `--warn`
+  as the default with `!!` opting up; that proved too quiet — reversed.)
 - **De-dupe done:** fired event ids recorded in
   `~/.local/state/calendaralarm/fired.json` (48h TTL), so a poll won't re-page.
 - **Verified** in `--dry-run`: all-day events filtered out, timed events decided
@@ -146,6 +147,27 @@ pip, so they run without an active login. Installed as symlinks into
 Verified: units pass `systemd-analyze verify` clean; transient systemd-run of
 `run.sh --dry-run` exited 0.
 
+## Severity raised to HIGH + response convention (2026-07-23, Peter)
+
+**A real meeting was missed** because it paged at `--warn` (xMatters MEDIUM) —
+too quiet to reach him. Fixed by defaulting everything to `--critical` (HIGH):
+
+- `rules.yaml` — the 15:45 "Afternoon meeting" rule: `warn` → `critical`.
+- `alarm.py` `decide_severity` — default timed calendar event: `--warn` →
+  `--critical`. Marker convention **inverted**: `~~`-prefix now opts *down* to
+  `--warn` (soft nudge); the old `!!`-opts-up marker is gone (HIGH is default).
+- `rules.py` — fallback default for a rule omitting `severity`: `warn` →
+  `critical`.
+- Verified: rule loads as `critical`; normal event → `--critical`, `~~` event →
+  `--warn`, transparent → skipped. Timer picks it up on next poll (no restart).
+
+**xMatters response convention — Close** ([[xmatters-response-close]]): when an
+alarm fires, **Close** it (not just Acknowledge). Each alarm is a fire-and-forget
+nudge — nothing re-escalates (de-dupe = one page per event/day), so Acknowledge
+buys nothing and leaves a growing pile of open incidents. Close tidies it away.
+(Acknowledge-then-Close is the *real* on-call lifecycle — worth practising since
+xMatters here is also a canary for Peter's work on-call, but not required.)
+
 ## Pending / loose ends
 
 - **Arm it.** Timer is installed but inactive — arming is Peter's deliberate
@@ -156,7 +178,8 @@ Verified: units pass `systemd-analyze verify` clean; transient systemd-run of
   always-on), so the timer only fires during laptop-up hours. For a reliable
   pager, migrate the timer + token + venv to an always-on fleet host (homepi),
   or move to a Lambda timer (then the token/refresh must live in the cloud).
-- Tune `--lead-minutes` and the severity tiers once it's run against real days.
+- Tune `--lead-minutes` once it's run against more real days. (Severity tiers
+  now settled: HIGH default — see 2026-07-23 section.)
 - Drop `CronAlarmApp.zip` unless there's a reason to keep it (still present).
 
 ## Decisions
@@ -165,3 +188,7 @@ Verified: units pass `systemd-analyze verify` clean; transient systemd-run of
   house `alert` tool → xMatters escalation, not a custom alarm app. xMatters
   is inherently the "requires effort to silence" channel the project wanted.
   Kills the build-an-Android-app path.
+- **Alarms page at HIGH, respond with Close** (2026-07-23, Peter): default
+  severity is `--critical` (MEDIUM proved too quiet — a meeting was missed); on
+  receipt, **Close** the xMatters incident rather than only Acknowledge, since
+  nothing re-escalates. See the 2026-07-23 section for the code changes.
