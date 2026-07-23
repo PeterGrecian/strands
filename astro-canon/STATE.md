@@ -2,6 +2,77 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## Focus-experiment algorithm — `eos-focus-cycle` (for the next clear night)
+
+**Philosophy: capture BLIND, analyse NEXT DAY.** Finding stars is hard enough;
+don't measure focus live. Step through a deterministic focus grid, tag every
+frame with its exact focus coordinate, analyse offline. Tool:
+`astro/bin/eos-focus-cycle` (on muppet `~/bin/`).
+
+**The grid (Peter's spec):**
+- **MEDIUM = Near-2** setpoints: focus-start ±4 → 9 setpoints (default centre b9,
+  the daytime car estimate; stars at ∞ are near but not identical).
+- **FINE = Near-1** dither: 0–8 within each medium (Near-1 is sub-pixel — dead on
+  coarse targets but moves the PSF fractionally; today's dither confirmed it).
+- **1 × 30s RAW sub per position** (30s = max reliable timed; bulb >30s unsolved).
+- Grid = 9×9 = 81 positions/cycle ≈ 54 min; a ~90-min dark window ≈ 1.6 cycles,
+  ~100+ subs. **Cycle repeats while the gap lasts** (repeats give statistics for
+  the medium:fine ratio + hysteresis).
+
+**Traversal (Peter's choice — rigor over speed):** RE-RACK to the far hard stop
+and re-approach each medium fresh via anti-backlash, so every coordinate is
+reached the same way (hysteresis-consistent). Costs drive overhead; buys
+trustworthy coordinates.
+
+**Exposure:** moderate fixed ISO 1600 (focus > gain — a sharp PSF needs far less
+gain; if PSF isn't ~few px, the fix is focus not ISO), RAW, f/5.6, 30s.
+
+**Next-day analysis (offline, per Peter):** for each frame → stretch raw → find
+the star (confirm via motion between frames) → measure PSF **FWHM AND peak/area,
+cross-checked** → plot PSF vs (medium, fine) → best focus = the minimum; also
+yields the medium:fine step ratio, the subpixel dither, and focus breathing
+(star absolute position vs focus). `cr2-to-fits` feeds the astrocam pipeline.
+
+## ★★★ FIRST LIGHT — the EOS 2000D has stars (2026-07-23)
+
+**Confirmed stars in the EOS frames from the cloudy night of 22–23 July.** Found
+the morning after by taking the dark-window **20s streak subs' CR2 raw** and
+applying an aggressive percentile stretch (brighten in post, on LINEAR data —
+lo/hi ≈ 2–6 of 255, i.e. the sky was genuinely faint). Stars that were
+**invisible in the JPEG** (crushed below the tone curve — the night-3 lesson,
+proven again) emerged clearly. **Confirmed the definitive way: sources MOVE
+between the two ~10-min-apart probe frames** — a hot pixel is welded to the
+sensor and cannot move; drift = real stars.
+
+**But the stars are WILDLY DEFOCUSED — this is now the #1 issue.** Measured on
+a confirmed star (probed in 2 frames, drifted 734→968 px = motion-confirmed):
+**FWHM ≈ 30 px, full blob ≈ 169 px** (a sharp star is FWHM ~2-3 px). Peak only
+477 above sky 823 — because the light is smeared over ~22,000 px. The night run
+**never applied the focus procedure** (captured at whatever blurred position the
+lens sat at) — so first light was achieved DESPITE being ~100px out of focus;
+focused frames will be dramatically better.
+
+**Focus is the master control, not gain (Peter's key insight).** Defocus spreads
+the light over ~3000× the area, making each pixel ~3000× fainter — which is what
+tempted us toward high ISO. Fix the PSF (30px → few px) and the star becomes a
+bright point needing FAR LESS gain, with the sky unsaturated. **Rule: if the PSF
+isn't ~few px, reduce gain and fix focus first.** Tonight's #1 job: run the
+Near-2 focus procedure ON A STAR (rack far stop → Near-2 toward peak, watch PSF
+shrink), bracket around it (daytime car-focus at 15m ≠ exactly ∞), THEN capture.
+
+Lessons this cements:
+- **RAW is non-negotiable** — the stars were always there, buried under the
+  8-bit tone curve. Brighten by stretching linear raw in post, never trust the
+  JPEG for faint-star presence.
+- **The 20s streak-test verdict "0 streaks / all hot pixels" was a FALSE
+  NEGATIVE** — 20s wasn't long enough for trails to clear the threshold, and it
+  ran on JPEG-equivalent data. The metric isn't wrong in principle, but needs
+  longer subs AND to run on stretched raw. (Motion-between-frames is the more
+  robust confirmation — cheaper than long streaks.)
+- Pipeline validated: `cr2-to-fits` + `rawpy` on muppet; and a dark night frame
+  DOES compress well (30s CR2 18 MB → fits.fz 8.3 MB, 2.2× smaller — the size
+  win appears on real dark data, not the bright daytime test).
+
 ## WHERE WE ARE (end of 2026-07-22 session)
 
 The focus problem is **cracked** after 3 weeks stuck. This session, in order:
@@ -142,6 +213,29 @@ The lens was **not moving at all** in most drives. Proven decisively today:
   from the hard stop, and Far-3 strides right over the narrow peak — fine
   (Near-1) steps needed to land it. Peak sharp ≈19; the coarse sweep never
   reached it.
+
+## Field orientation — a TREE fiducial at bottom-right (2026-07-23)
+
+The EOS dawn frames (probe/streak captures at ~04:00–04:23 BST, before full
+saturation — 04:33+ are solid 255) show the camera's foreground: **a tree at
+bottom-right of frame.** This is a fixed fiducial → **we know exactly which
+patch of sky the EOS is pointed at.** Value:
+- Anchors the frame to a known bearing/altitude — a shortcut toward the
+  "known orientation" milestone (which took *months* on the Pi cameras).
+- The astrocam (Pi) has its own tree at bottom-LEFT of *its* frame and shot
+  clear star trails the same night (petergrecian.co.uk/astro/astrocam/night/
+  2026-07-22, `max.jpg`). Both cameras share the garden foreground → their
+  fields overlap in a known way; astrocam trails tell us which sky the EOS
+  tree-corner looks at.
+- **TODO:** `p`-probe the tree's exact corner in an EOS frame to record precise
+  pixel coords for the fiducial; cross-reference bearing with the astrocam.
+
+**Also learned (streak-test length):** the astrocam pulls visible star trails
+from **1-minute** subs (its 10-min frames are 10×1-min stacks). Our EOS streak
+test was only **20s** — too short to register trails through this LP, which is
+why it saw only hot pixels while the astrocam saw stars. Next EOS night wants
+**≥1-min subs**; the 2000D caps at 30s timed, so this needs **bulb mode**
+(`--set-config bulb=1` … hold … `bulb=0`) for minute-plus integration.
 
 ## Metric FIXED — wheel box + Tenengrad (2026-07-22)
 
