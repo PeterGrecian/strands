@@ -32,19 +32,30 @@ Prior art that belongs to this strand but lives elsewhere for now:
 
 ## Pending / loose ends
 
-- **EOS DC switch — resolve rail voltage then build.** Design note done; open
-  question is 5V vs 7.4V (Canon dummy battery wants ~7.4–8.4V; `now.txt` target
-  is 7.4V/2A). Confirm the dummy battery's input rating, pick Q1 accordingly,
-  bench-test with a trimpot before connecting the camera. Pico W inside → WiFi
-  switch.
-- **PWM amp for camera-tilt dithering.** Driver for the tilt-dither actuator —
-  currently a Darlington; open question whether it should be a high-side
-  P-MOSFET like the EOS switch. Overlaps the voice-coil driver work below;
-  decide the driver topology once.
-- **`rackinabox`** — CAD + pro-fabricated enclosure for fans and electronics:
-  mild-steel rectangular tube, mostly glued, baffled ATX PSU, IKEA Lack table as
-  frame. Mechanical/packaging project; scope and whether it belongs in this
-  strand TBD.
+**Priority as of 2026-07-23:** rackinabox is the live bench project (in front of
+Peter now). PWM-for-8R is almost finished. The EOS switch dropped in urgency —
+see its note.
+
+- **`rackinabox` — LIVE, on the bench now.** CAD + pro-fabricated enclosure for
+  fans and electronics: mild-steel rectangular tube, mostly glued, baffled ATX
+  PSU, IKEA Lack table as frame. Mechanical/packaging project; scope and whether
+  it fully belongs in this strand still TBD, but it's the active build.
+- **PWM amp for 8R — almost finished.** The PWM-as-DAC / driver stage feeding an
+  8Ω load (the pwmaudio line of work). Close to done; finish and write up the
+  final circuit + findings. Feeds the tilt-dither / voice-coil actuator.
+- **EOS DC switch — build deferred, still wanted as recovery hatch.** *Why it
+  exists:* the **camera itself hangs when astro bombards it with commands**, and
+  the switch is the power-cycle recovery. So it's a watchdog reset, not just
+  remote on/off. If the **astro side rate-limits its commands** the camera
+  behaves better and needs power-cycling less often — that mitigation is the
+  cheaper first move, which is why the hardware build is now lower priority. Keep
+  the design (`~/electronics/designs/eos-dc-switch.md`); build when the astro-side
+  fix isn't enough. Open question when built: 5V vs 7.4V rail (confirm dummy
+  battery input), Pico powered via a front-end buck (not VSYS-direct at 7.4V).
+- **PWM amp for camera-tilt dithering.** Driver topology for the tilt-dither
+  actuator — currently a Darlington; open question whether it should be a
+  high-side P-MOSFET like the EOS switch. Overlaps the 8R/voice-coil driver
+  work; decide the driver topology once.
 
 - **Migrate pwmaudio's circuit-design content into `~/electronics`** (decided
   new-repo-now, migrate-later 2026-07-23). Move `wiring.md`, the driver design
