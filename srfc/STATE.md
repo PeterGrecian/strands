@@ -103,8 +103,9 @@ diff/analyse over history. Email can't do any of these (it only knows *my* slots
 
 ## Spine BUILT + ARMED (2026-07-22) — code repo `~/srfc`
 
-srfc now has its own code repo **`~/srfc`** (git, `main`; not yet pushed to
-GitHub). Distinct from the strand curation dir `~/strands/srfc`.
+srfc now has its own code repo **`~/srfc`** → **`PeterGrecian/srfc` (private)** on
+GitHub. Distinct from the strand curation dir `~/strands/srfc`. Code only — the
+`*.jsonl` snapshot history (contains members' names) is git-ignored, stays local.
 
 - **`diary.py`** — login (.ASPXAUTH) → `posResourceTile` postback (Padel tile
   10010) → `resdiary.aspx` → BeautifulSoup parse → structured slots
@@ -129,7 +130,6 @@ GitHub). Distinct from the strand curation dir `~/strands/srfc`.
 - #6 mix-in reliability: parse `textcolorblack a` session cells (not yet parsed)
   + track fill over time.
 - #2 bot-speed: SEPARATE burst-poll timer around 09:30 (courts) / 07:00 (mix-ins).
-- Push `~/srfc` to GitHub (`PeterGrecian/srfc`) when Peter's ready.
 
 ## Still pending (email-source side)
 
