@@ -46,21 +46,75 @@ has aifabric, or leak a private path). strands→aifabric links (`bin/ding`,
 `.template`) are the safe direction. Every tool that graduates into
 `aifabric/bin` must be self-contained (no `source super/lib/...`).
 
-## Pending / next
+## Decision (2026-07-23): invert the fallback — end-state target set
 
-- **Wire `bin-shadows` into housekeeping** (`cld -k` / all-repos-status path) so
-  a divergent duplicate is caught automatically, not just by hand.
-- **Graduate more tools into aifabric/bin** as they settle (candidates from
-  memory: `manywrapper` lib as canonical, `forkterm`, `strand-mailbox`). Each
-  must be self-contained per the air-gap rule; run `bin-shadows` after each.
-  Deleting the tool's `super/bin` copy/symlink is now safe (aifabric-first holds
-  in interactive AND non-interactive shells) — **provided** nothing references it
-  by the absolute path `~/super/bin/<tool>`. Grep for such hardcoded paths before
-  deleting (services, .desktop files, other scripts). bin-shadows enforces the
-  two bins never diverge while both exist.
-- **manywrapper convergence** (deferred this session): make super's tools source
+Peter's call: the **target end-state is super/bin OFF the default PATH** —
+aifabric/bin becomes the sole primary, not just the first entry. Today super/bin
+is still a PATH fallback (73 tools, only 3 graduated), so the flip is the *last*
+step, not the first: it can only happen once everything still needed has either
+graduated or been deliberately retired. **This session is plan-only — no tool
+moves.** The ordered plan below is the durable artifact.
+
+## The secrets knot (the thing that gates the whole endgame)
+
+`secrets` is (a) the most-depended-on super/bin tool, (b) referenced by
+**absolute path** `~/super/bin/secrets` in live code (`cfai` 4×, `r2-put` 2×,
+`sessions` 2×), and (c) **cannot graduate to aifabric** — it talks to AWS SSM +
+the private GCS bucket `petergrecian-secrets`, exactly the personal-infra the
+air-gap rule forbids in aifabric. It's also mandated by GLOBAL.md ("never call
+SSM/GCS directly"). So `secrets` is the **permanent resident of super/bin**.
+Consequence: inverting the fallback does NOT mean super/bin empties — it means
+super/bin shrinks to a small non-graduatable core (secrets + its private-infra
+kin) that must stay reachable by some means other than the default PATH fallback
+(explicit opt-in entry, or absolute-path callers only). Loosening step, deferred:
+make `cfai`/`r2-put`/`sessions` call `secrets` via PATH (bare name) not absolute
+path — touches Cloudflare/R2 auth, test carefully.
+
+## super/bin classification (2026-07-23, 73 entries)
+
+- **Not self-contained (source super/lib)** — air-gap blockers, cannot graduate
+  as-is: `datedir`, `ssp`. (`ssp` is human-only + fleet-specific anyway → stays.)
+- **secrets cluster** (stay in super, private-infra): `secrets`,
+  `secrets_wrapper.py`, and its callers `cfai`, `r2-put`, `sessions`, `ai-gists`,
+  `yt-upload`, `hub-leases`.
+- **Live cross-refs that gate deletion** (fix before removing the super copy):
+  - `claude-oauth-sync` — ansible systemd unit hardcodes
+    `ExecStart=/home/peter/super/bin/claude-oauth-sync` (template
+    `claude-oauth-sync.service.j2`).
+  - `cld-statusline` — `dotfiles/.claude/settings-shared.json` hardcodes it.
+  - `splay` — `dotfiles/.local/share/applications/splay.desktop` `Exec=` hardcodes
+    it; `splay-launcher` falls back to the absolute path (tries `which` first).
+- **Cruft to just delete/trash** (not tools): 6× `wifi-speedtest-*.csv`,
+  `__pycache__`, stray `ssp_test`/`ssp.md`.
+- **Everything else** — fleet/personal-infra tools that mostly never graduate
+  (astro, wifi, stereo, vm, ssh helpers). super/bin stays their home.
+
+## Ordered plan to reach the inverted end-state
+
+1. **Wire `bin-shadows` into housekeeping** (all-repos-status / `cld -k`) — close
+   the guard so divergence is caught automatically. (Smallest, do first.)
+2. **Trash the cruft** — the `wifi-speedtest-*.csv` data files + `__pycache__`
+   out of super/bin (via `trash`, not rm).
+3. **Graduate the zero-live-ref, self-contained tools** into aifabric/bin
+   (the strand/method tools: `forkterm`, `strand-mailbox`, `strand-ps`, `strands`
+   itself — verify each is self-contained first; run `bin-shadows` after each;
+   delete the super copy once no absolute ref remains).
+4. **Fix the 3 hardcoded live refs** so those tools can graduate cleanly:
+   `claude-oauth-sync.service.j2`, `settings-shared.json` (cld-statusline),
+   `splay.desktop` + `splay-launcher` — repoint to PATH/aifabric or accept they
+   stay in super.
+5. **Loosen the secrets knot** — `cfai`/`r2-put`/`sessions` call `secrets` via
+   PATH not absolute. Then decide secrets' permanent home (stays in super/bin as
+   the non-graduatable core).
+6. **Invert the fallback (LAST)** — drop `super/bin` off the default PATH in
+   `.bashrc`; provide an explicit opt-in for the residual super-only core, OR
+   confirm every survivor is reached by absolute path / systemd and needs no PATH
+   entry. Roll out via the dotfiles ansible role to the 4 hosts. Verify nothing
+   breaks in interactive + non-interactive + cron shells.
+
+- **manywrapper convergence** (still deferred): make super's tools source
   `~/aifabric/manywrapper/manywrapper.py` as canonical. Deeper — touches
-  secrets/resolve-host; test carefully.
+  secrets/resolve-host; test carefully. Related to step 5.
 - **scrub-to-public prep** — ongoing air-gap audit of aifabric (fleet
   hostnames, personal-infra references) before it goes public.
 - Consider whether every host that has `super` should also get `strands` (the
