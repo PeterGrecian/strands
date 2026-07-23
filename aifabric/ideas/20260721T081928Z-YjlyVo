@@ -1,7 +1,0 @@
-Checking $PATH for an existing tool should be prioritised — higher up the reflex than it currently is.
-
-Twice in one session I hand-rolled something a house tool already did: first almost re-deriving mailbox delivery, then hand-writing an ideas/ file when the 'idea' tool exists on PATH. The check-house-tools-first rule is already memory (feedback_check_house_tools), but it fires too late — after I've started building. The fix is to make 'is there already a tool for this on PATH?' the FIRST move, before writing any helper, glue, or file-drop: a quick 'compgen -c | grep', 'ls ~/super/bin', or '<verb> --help' costs one call and catches exactly these near-misses.
-
-Concretely for aifabric/the strand system: worth a one-line convention at the top of the ideas/README and the strand ritual — 'before hand-rolling, grep PATH + ls super/bin' — so the reflex is documented where sessions actually look, not just in memory. Bonus: an 'idea --hints'-style discoverability nudge, or having 'cld' session-start surface the key house tools, would make the tool visible before the temptation to reinvent it.
-
-Provenance: aifabric-sessions strand, 2026-07-21, after two house-tool near-misses in one session (mailbox, then the idea tool itself).

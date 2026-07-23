@@ -1,1 +1,0 @@
-Vocab (Peter 2026-07-19): strandterm / strandchat = the RESIDENT things (a strand's live session in terminal / browser), however born; forkterm/forkchat = spawning mechanisms only. Completes the substrate-agnostic active-strand grid: an active strand shows two faces, strandterms and strandchats. Rename discussions (in/into, forkchat PR) should adopt this split.

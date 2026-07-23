@@ -1,9 +1,0 @@
-cld session exit should clean up its `ding --arm` waiters.
-
-Hit today reaching a live astro-canon session: I wanted to ding its tty and read the reply, but there was no armed waiter, so the poke could only land on the tty, not enter the running REPL. That case is fine (the session chose not to arm). The gap is the other direction: a session that DID arm a waiter (ding --arm as a background task) and then exits/crashes/closes can leave the waiter orphaned, still blocked on inotify against MAILBOX.md. Orphaned waiters are invisible-until-you-ps and misbehave: a future ding gets silently consumed by a dead session's waiter, or the mailbox is truncated (consume-on-read) with no live session behind it.
-
-Ask: on cld session exit, tear down any ding --arm waiters it spawned — via a trap/cleanup in cld (the natural owner, since waiters are per-session background tasks) rather than trusting each session to disarm by hand.
-
-Bonus: a 'ding --list' / stale-waiter reaper (find ding --arm processes whose parent shell is gone) self-heals the crash case where an exit trap never fires.
-
-Provenance: aifabric-sessions strand, 2026-07-21, while reaching a live astro-canon session via the mailbox.

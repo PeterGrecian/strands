@@ -367,6 +367,39 @@ used; without frictionless capture the spool stays empty):
   (2026-07-11) — check it gains/has full anatomy.
 - No strand has completed a full weekly loop yet — revisit the ritual after
   the first real astro-deliverables session.
+- **Sessions archive warming a tepid fork** (promoted 2026-07-23). Can the
+  sessions archive warm an otherwise-tepid fork? I.e. briefing generation
+  assisted by `sessions search` — the keeper's index as a tepid-warming
+  service. Connects the "tepid" vocab + lazy-context ideas: a cold fork gets
+  briefed from the transcript archive instead of from nothing.
+
+## Scaffolder symlink bug — FIXED (2026-07-23)
+
+`strands new <name>` and `cld -s <name>` both did `cp -r "$SD/.template" "$DIR"`,
+but `.template` is itself a **symlink** (→ `aifabric/method/template`, the
+convergence pattern). `cp -r` copies a symlink *as a symlink*, so the new strand
+dir became a symlink back to the template — and the scaffolder's `sed
+s/{{name}}/…/` then rewrote the **shared template** through it. Hit twice
+(ubersitrep 2026-07-22 morning; then `xfer-audio-to-phone`, which left the
+template substituted to `xfer-audio-to-phone` + a stray `colour` file).
+
+Fix (2026-07-23): both call sites now use
+`cp -rT "$(readlink -f "$SD/.template")" "$DIR"` — `readlink -f` dereferences
+the symlink, `cp -rT` copies its *contents* as the destination dir. Verified in
+scratch (produces a real dir, not a symlink). Template restored to `{{name}}`
+placeholders; stray `colour` trashed; the broken `xfer-audio-to-phone` symlink
+removed. If Peter still wants an `xfer-audio-to-phone` strand, re-scaffold it
+with the now-fixed `strands new`.
+
+## Vocab: strandterm/strandchat vs forkterm/forkchat (Peter 2026-07-19)
+
+- **strandterm / strandchat** = the RESIDENT things — a strand's live session
+  in a terminal / in a browser, *however born*.
+- **forkterm / forkchat** = the spawning *mechanisms* only.
+
+This completes the substrate-agnostic active-strand grid: an active strand
+shows two faces — strandterms and strandchats. Rename discussions (`in`/`into`,
+the forkchat PR) should adopt this split.
 
 ## Repo-shape principle — deployment target is not a domain (2026-07-13)
 

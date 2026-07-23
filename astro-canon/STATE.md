@@ -812,6 +812,19 @@ short ferrite'd known-good mini-B cable.
   re-judge after the detector uses the hot-pixel mask.
 - Zoom is manual and not parfocal — zoom first, focus second; re-sweep
   after any zoom touch.
+- **Dedicated tether host if sessions-index ingest goes continuous**
+  (promoted 2026-07-23; conditional, not-now). Today the fussy gphoto2
+  drive path hung when muppet load spiked — root cause was a stuck-gphoto2
+  pileup (self-inflicted), *not* OpenSearch (idles ~3% CPU). But the
+  aifabric-sessions ingest is currently HOURLY; if it goes CONTINUOUS it
+  would compete with the camera's timing-sensitive USB path more often. If
+  that starts biting the drive path, move the tethered EOS off muppet to a
+  dedicated host. Candidate `vole` (Acer C720) is NOT ready — parked
+  mid-flash to MrChromebox UEFI, half-dead screen, 2 GB RAM, and it's the
+  aifabric x86 tiebreaker node. Moving the tether is a real project: install
+  gphoto2, replicate the udev autosuspend rule (04a9:32e1 power/control=on),
+  mask gvfs-gphoto2-volume-monitor, port the whole tether recipe. A Pi could
+  also serve. Revisit only if muppet load actually starts biting.
 
 ## Decisions
 

@@ -148,6 +148,65 @@ Tool code (the harder, higher-value extraction — needs per-tool decoupling + s
     `splay hints` would be the second `hints` instance (two = a pattern). The
     keeper doc is a strong "first filled-in concept" for the portfolio.
 
+## Ideas triaged in (2026-07-23)
+
+Promoted from the ideas inbox. Grouped; forkterm/strand-ps cluster reconciled.
+
+**forkterm / liveness cluster** (the strand-ps "bug" was self-retracted — no
+strand-ps ever existed; `strands` already has `/proc`-based `live_cwds()` done
+right; the near-miss was operator error. Two real remainders survive):
+- **forkterm dup-session guard** — factor `live_cwds()` out of `super/bin/strands`
+  into a shared helper (a real `strand-ps` / `strands ps` could be that entry
+  point, which PR #5's method-graduation note was gesturing at). Then
+  `forkterm into <strand>` consults it and warns "a live session already has cwd
+  in this strand — raise it? (y/N)" before launching a duplicate.
+- **forkterm window raise + stable handle** — today windows can't be identified
+  or raised: every window launches with the same static `--title="forkterm:
+  $STRAND"`, and on xfce4-terminal `--title` only sets the *initial* title
+  (claude clobbers it). Fix: give each window an immutable X11 identity at launch
+  — `--role="forkterm:$STRAND:<shortid>"` (or a distinct WM_CLASS), targetable by
+  `wmctrl -x` / `xdotool search --role`. Add `forkterm ls` (enumerate live
+  windows by role → strand + pid + age, cross-ref `/proc/<pid>/cwd`) and
+  `forkterm raise [strand|id]` (`wmctrl -ia`). xfce/X11-first, degrade gracefully.
+  Pairs naturally with the dup-guard (one small live-forkterm registry feeds both).
+
+**ding waiter cleanup on cld exit** — on `cld` session exit, tear down any
+`ding --arm` waiters that session spawned, via a trap/cleanup in `cld` (the
+natural owner — waiters are per-session background tasks), rather than trusting
+each session to disarm by hand. Bonus: a `ding --list` / stale-waiter reaper
+(find `ding --arm` procs whose parent shell is gone) self-heals the crash case
+where the exit trap never fires. (Partly addressed by the 2026-07-21 `--reap`
+work above — check overlap before building.)
+
+**check-PATH-first reflex** — make "is there already a tool for this on PATH?"
+the *first* move before writing any helper/glue/file-drop, not a rule that fires
+after building has started. Already in memory (`feedback_check_house_tools`) but
+too late-firing. Document it where sessions actually look: a one-line convention
+at the top of `ideas/README` and in the strand ritual — "before hand-rolling,
+`compgen -c | grep` / `ls ~/super/bin` / `<verb> --help`". Prompted by two
+house-tool near-misses in one session (nearly re-derived mailbox delivery, then
+hand-wrote an ideas/ file when `idea` already existed).
+
+**auto-stranding** — every repo should have a strand; every subproject in
+Berrylands too; they should all live in `~/strands`. Worth an auto-scaffold pass.
+
+**auto-trust cld starting dirs** — "can we auto-trust cld starting dirs? yes I
+trust them." Skip the per-dir trust prompt for the strand/`--add-dir` set that
+`cld` itself hands to claude.
+
+**always monitor the mailbox** — a session should always be watching its mailbox
+(relates to the ding/strandchat waiter work).
+
+**remote-to-Slack an existing session** — `cld --remote` starts a *new*
+backgrounded Remote Control session and posts the connect URL to Slack. Can we
+instead attach remote-control to an *already-running* session? (Peter, asked
+2026-07-23.)
+
+**mywebsite favicon inconsistency** (reroute → mywebsite) — favicons are
+inconsistent: sometimes the tick shows (could be cleaned up), sometimes not.
+Possibly only the desktop/home-screen icons on a phone. Not aifabric's domain;
+recorded here for routing to the mywebsite work.
+
 ## Published (2026-07-17) — early push for collaboration
 
 `PeterGrecian/aifabric` created on GitHub, **private**, and `PeterGrecian-NiCE`

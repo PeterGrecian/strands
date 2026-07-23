@@ -24,6 +24,20 @@ curation files. See memory `project_splay_lab.md` for splay's role.
   in place deliberately (2026-07-17) for whoever was implementing it —
   don't sweep it into a splay-tweaks commit.
 
+- **`splay --hints` for AI discovery** (promoted 2026-07-23). Add a `--hints`
+  subcommand/flag in the house-tool style (cf. `secrets hints`, `sessions
+  --hints`) so a session discovers splay's IPC/handoff/probe interface without
+  reverse-engineering it. Makes the running-instance handoff and probe verbs
+  self-documenting to Claude.
+
+- **Splay probes spam the strandterm** (promoted 2026-07-23). Launching a
+  splay in a strandterm and running probes pushes text onto the terminal,
+  making it hard to read. No settled solution — candidate: splay shouldn't
+  write to stdout at all (or route probe/status output somewhere the terminal
+  isn't the sink). Worth thinking about alongside the background/`-fg` launch
+  feature already noted above, since detached splays and stdout noise are the
+  same surface.
+
 ## Decisions
 
 - Auto-select on arrival applies to **both** auto-reload and manual `r`

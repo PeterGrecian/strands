@@ -75,6 +75,11 @@ Sub-folder grouping + emoji live in `classify.py` (`HOT_GROUPS`, `HOT_ORDER`,
   3. Import `bookmarks-clean.html`. Verify folders, then re-check on a second synced device.
   4. `me`/`N`/`hot` may want hand-tuning after Peter sees them in situ.
 - Consider whether `hot` and `home` overlap too much (both have logins).
+- **Open question from Peter (promoted 2026-07-23): is the sort using git?**
+  He asked and didn't get an answer. Also wants to *see* the new
+  `bookmarks-clean.html` before it's imported — i.e. review the generated
+  file (or the artifact) first. Answer the git question and make sure the
+  preview-before-import step is honoured.
 
 ## Decisions
 
