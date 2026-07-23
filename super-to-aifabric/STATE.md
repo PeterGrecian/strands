@@ -62,17 +62,40 @@ Candidates that are genuinely aifabric's (strands/forkterm/method): `forkterm`,
 Everything else in super/bin is super's and **stays** — secrets, wifi-speedtest,
 astro, fleet, ssh helpers. Not the concern.
 
-**One real hazard to watch (not urgent):** `aifabric/bin` is PATH position 1,
-*ahead of `/usr/bin`*. A future graduated tool named like a system binary
-(`test`, `time`, `ip`, `[`, …) would silently shadow it for every shell. Safe
-today (only `ding`/`forkchat`/`idea`). Worth adding a check to `bin-shadows` for
-aifabric-vs-system collisions, or just: don't name a tool after a coreutil.
-
 **Only two things need care when deleting a super copy:** (a) it's self-contained;
 (b) nothing calls it by the absolute path `~/super/bin/<tool>`. Known live
 absolute refs that would need fixing if their tool ever graduated:
 `claude-oauth-sync` (ansible systemd unit), `cld-statusline` (settings-shared.json),
 `splay` (splay.desktop). None of those three are aifabric tools, so likely moot.
+
+**PATH hazard — FIXED 2026-07-23** (dotfiles `3c50611`). aifabric/bin used to be
+*prepended* (position 1, ahead of `/usr/bin`), so a tool named like a coreutil
+would shadow the system binary. Now both aifabric/bin and super/bin are
+**appended** — aifabric still resolves before super, but both sit after the
+system dirs. Verified from clean env: `/usr/bin` < `aifabric/bin` < `super/bin`.
+
+## The 3-step migration plan (Peter's framing, 2026-07-23)
+
+1. **Verify aifabric tools use `~/strands` — DONE (verified).** `idea` has NO
+   path baked in: it resolves the strands root via `$STRANDS_DIR` → `strands_dir=`
+   in `~/.config/idea/config` → derived from `$PWD`. Air-gap clean already.
+   `ding`/`forkchat` only name "strands" in comments.
+
+2. **Clean super/bin.** Delete super copies of graduated tools (`ding`/`forkchat`/
+   `idea` already same-inode), graduate the remaining method tools (`forkterm`,
+   `strand-mailbox`, `strand-ps`, `strands`). Each gated by self-contained + no
+   absolute-path caller; run `bin-shadows` after each. This is the bulk.
+
+3. **Sever `super/strands` (the big LAST move — a decommission, not cleanup).**
+   `super/strands` is a symlink → `~/strands`; "cleaning" it means making super
+   stop knowing strands exists. The seam already exists: `strands` and `strand-ps`
+   read `SD="${STRANDS_DIR:-$SUPER/strands}"`, so just flip their default to
+   `~/strands`. `forkterm` hardcodes `STRANDS_DIR="$SUPER/strands"` (no override) —
+   add the override there. Then update ansible `git-repos/link_strands.yml` to
+   stop creating the symlink, and remove `~/super/strands`. **Complete repoint set**
+   (the whole blast radius, live code only): `super/bin/{strands,strand-ps,forkterm}`
+   + `ansible/roles/git-repos/{link_strands.yml,main.yml}`. Small and known.
+   Must be last: nothing may still read `super/strands/<name>` when the link goes.
 
 ## Decisions
 
