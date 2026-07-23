@@ -2,6 +2,41 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## → PRODUCT PIVOT + design spec (2026-07-22/23) — read this first
+
+The strand grew from "the pager" into a **personal alarm product**. A design
+spec exists (published Artifact — ask Peter for the URL; source at
+`scratchpad/calendaralarm-design.html`, v0.3). Two live-fire lessons reshaped it:
+
+1. **Delivery was wrong.** The real 15:45 rule fired via **Slack** and Peter's
+   verdict was *"my alarms was much more effective"* — the phone alarm made
+   noise, demanded dismissal, was in-hand. So the target is **a real phone alarm
+   (audible, dismiss-requiring, snoozable)**, not a message. This reopens the
+   founding "xMatters, no custom app" decision. See [[delivery-must-be-a-real-alarm]].
+2. **xMatters stays anyway** — two other reasons: it's a **canary** for Peter's
+   work on-call settings, and a way to **understand how xMatters works**. So
+   delivery is a **per-alarm channel choice** (phone alarm / xMatters / both /
+   Slack-soft), NOT a severity tier. **"Severity" is dropped** from the UI.
+
+**Authoring model** ([[alarm-authoring-model]]): the "new alarm" form leads with
+**radio buttons for schedule type** — one-off / weekly (every 7d) / days-of-week
+/ "it's complicated". Real cases: dentist (one-off), running club (weekly),
+morning wakeup (daily set), **padel mix rotation** (the complicated one). The
+rotation is computable: 3 groups × 1hr back-to-back (this week 18:30 adv / 19:30
+int / 20:30 beg), Peter is **intermediates** (19:30 now), slot advances +1/week,
+`(anchor_slot + weeks) % 3`. A **snooze button** is required.
+
+**Store decision:** source of truth → **DynamoDB behind mywebsite** (which
+already runs Lambda + API GW + Dynamo + PWA — on existing rails). Webapp = CRUD
++ NL-entry page. Home = grow the calendaralarm strand (srfc stays its email
+source child).
+
+**OPEN, ask next session:** (a) THE question — how to deliver a real phone alarm
+(push+sound / Android full-screen intent / companion app; pip is now on
+Tailscale with the phone reachable at 100.102.111.126 — relevant); (b) which
+weekday padel is on (NOT Tuesday) + lead; (c) auth on the webapp; (d) build
+order confirmed: schedule model+one-off → store → phone delivery → API/webapp.
+
 ## First backlog visit (2026-07-22)
 
 Reviewed via the ubersitrep backlog rotation (first live run of the ritual).
