@@ -25,8 +25,26 @@ Prior art that belongs to this strand but lives elsewhere for now:
     `project-pwmaudio`.
 - **`~/astro/design/speaker-dither-rig.md`** — the astro-side design (mostly
   the *why*: sub-pixel dither, ~1 µm/mA, 0.1 px ≈ 0.77 µm, RC fc≈10 Hz).
+- **`~/electronics/designs/eos-dc-switch.md`** (2026-07-23) — first design note
+  landed: high-side P-MOSFET DC switch (2N3904 NPN buffer + IRF9540/AO3401),
+  GPIO/Pico-W driven, distilled from a design chat. Raw chat kept at
+  `~/electronics/chats/dcpower-switch`.
 
 ## Pending / loose ends
+
+- **EOS DC switch — resolve rail voltage then build.** Design note done; open
+  question is 5V vs 7.4V (Canon dummy battery wants ~7.4–8.4V; `now.txt` target
+  is 7.4V/2A). Confirm the dummy battery's input rating, pick Q1 accordingly,
+  bench-test with a trimpot before connecting the camera. Pico W inside → WiFi
+  switch.
+- **PWM amp for camera-tilt dithering.** Driver for the tilt-dither actuator —
+  currently a Darlington; open question whether it should be a high-side
+  P-MOSFET like the EOS switch. Overlaps the voice-coil driver work below;
+  decide the driver topology once.
+- **`rackinabox`** — CAD + pro-fabricated enclosure for fans and electronics:
+  mild-steel rectangular tube, mostly glued, baffled ATX PSU, IKEA Lack table as
+  frame. Mechanical/packaging project; scope and whether it belongs in this
+  strand TBD.
 
 - **Migrate pwmaudio's circuit-design content into `~/electronics`** (decided
   new-repo-now, migrate-later 2026-07-23). Move `wiring.md`, the driver design
