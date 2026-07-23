@@ -4,6 +4,22 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## Rough schedule (Peter, 2026-07-23 — soft targets, revise freely)
+
+Parallel workstreams, not a queue — separate forkterm tracks progressing at
+once. Dates are **rough targets** (momentum + slippage-catching, not
+commitments), anchored to today.
+
+| Workstream | Est. | Rough target | |
+|---|---|---|---|
+| **astro-storage** (finalize starcam ≈1 GB/day) | ~4 days | **~2026-07-27** | urgent; smallest scope |
+| **astro-cam** (instrument refresh: canon-primary / fix-or-replace astrocam / v3?) | few days | **~2026-07-26–27** | hardware-gated (weather, parts) |
+| **aifabric** (polish + portfolio-bar scrub → public) | ~1 week | **~2026-07-30** | background track |
+
+They overlap by design (all land in the same ~week); running in parallel is the
+plan, so a slip in one doesn't push the others. Revisit these dates each session
+— rough by intent.
+
 ## The thrust (2026-07-22)
 
 Two very large efforts are both **near "done"** — each has been a huge piece of
@@ -275,3 +291,7 @@ and the rest of the portfolio list in super/GLOBAL.md.
   a weight *on top of* recency. High-importance resurfaces sooner regardless of
   staleness; low-importance sinks. Recency guarantees nothing is skipped;
   priority decides the depth of the push-back.
+- **The big efforts carry rough target dates** (2026-07-23): soft finish-line
+  estimates (see schedule table up top), parallel not serial, revised each
+  session. Aim is momentum + catching slippage, not commitment — so a slipped
+  date is information, not a failure.
