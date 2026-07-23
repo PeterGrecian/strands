@@ -168,6 +168,38 @@ buys nothing and leaves a growing pile of open incidents. Close tidies it away.
 (Acknowledge-then-Close is the *real* on-call lifecycle — worth practising since
 xMatters here is also a canary for Peter's work on-call, but not required.)
 
+## Webapp built — password-protected CRUD + rules API (2026-07-23, Peter)
+
+The authoring interface is live: **https://www.petergrecian.co.uk/calendaralarm**.
+The design-spec store decision (DynamoDB behind mywebsite) is now real.
+
+- **Auth:** HTTP Basic Auth (reused `check_basic_auth`, same pattern as
+  glacier/gardencam) against SSM `/calendaralarm/page-password` (eu-west-1
+  SecureString; also mirrored into the house `secrets` store). Guards the whole
+  `/calendaralarm` route — page *and* API.
+- **Store:** new DynamoDB table `calendaralarm-rules` (PAY_PER_REQUEST, key
+  `id` uuid). Dedicated least-priv IAM policy (needs DeleteItem). Terraform in
+  `mywebsite/terraform/{dynamodb,iam}.tf`.
+- **Route:** `mywebsite/lambda/routes/calendaralarm.py` — dark iOS-style CRUD
+  page + JSON API: `GET/POST/PUT/DELETE /calendaralarm/api/rules`. `GET`
+  returns **enabled rules only** (the poller feed); the page shows all incl.
+  disabled. Severity dropdown defaults to **critical**. Server-side validation
+  of days/time/severity, `at` normalised to HH:MM.
+- **Poller now reads the API.** `rules.py` `load_rules()` fetches the live API
+  (Basic Auth pw from `secrets get`), **falls back to local `rules.yaml`** on
+  any failure so a blip never silences alarms; memoised one-fetch-per-poll.
+  **Gotcha recorded:** Cloudflare WAF 403s the default `Python-urllib` UA — the
+  poller sets a normal `User-Agent`.
+- The real 15:45 "Afternoon meeting" rule is **seeded into the webapp** and read
+  back live by the poller. `rules.yaml` remains as the offline fallback copy.
+- Verified end-to-end: 401 without auth, page renders, full CRUD cycle via
+  curl, poller reads live (no fallback). mywebsite/surbiton test suites pass
+  (4 pre-existing unrelated gardencam-auth failures untouched by this change).
+
+**First build slice was CRUD only** (per the Scope decision). NL-entry page and
+the schedule-type radio model (one-off / weekly / days / rotation) from the
+design spec are **not built yet** — next.
+
 ## Pending / loose ends
 
 - **Arm it.** Timer is installed but inactive — arming is Peter's deliberate
@@ -178,6 +210,14 @@ xMatters here is also a canary for Peter's work on-call, but not required.)
   always-on), so the timer only fires during laptop-up hours. For a reliable
   pager, migrate the timer + token + venv to an always-on fleet host (homepi),
   or move to a Lambda timer (then the token/refresh must live in the cloud).
+  (The webapp store is now cloud-side, so a Lambda-timer poller reading the API
+  is more attractive than before — but it still needs the GCal token.)
+- **Webapp next:** NL-entry page + schedule-type radio model (one-off / weekly /
+  days-of-week / rotation) from the design spec — CRUD is the only slice built.
+- **rules.yaml vs webapp drift.** Now two rule stores: the webapp (source of
+  truth) and the local YAML (fallback). The 15:45 rule lives in both; if edited
+  in the webapp, the YAML fallback goes stale. Consider auto-syncing the YAML
+  from the API on each successful fetch so the fallback stays current.
 - Tune `--lead-minutes` once it's run against more real days. (Severity tiers
   now settled: HIGH default — see 2026-07-23 section.)
 - Drop `CronAlarmApp.zip` unless there's a reason to keep it (still present).
