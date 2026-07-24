@@ -2,6 +2,93 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## ★★★ CAPTURE PATH FIXED + tonight's run armed (2026-07-24 session)
+
+Three real capture bugs found and fixed — these had been silently sabotaging
+every capture-heavy session (they're why escalation was disabled and why the
+camera kept wedging). All committed to astro, deployed to muppet, validated on
+real captures:
+
+1. **`eosremoterelease=Immediate` → AF-lock wedge (THE big one).** `Immediate`
+   triggers autofocus *before* firing; on a dark/blank sky **AF cannot lock**,
+   so the shutter hangs half-pressed and the camera wedges busy (`0x2019 PTP
+   Device Busy` / `-110 I/O in progress`) — a Class-B firmware wedge only a 12V
+   pull clears. **Fix: `eosremoterelease="Press Full"` (fires directly, no AF
+   wait) + always `"Release Full"` after.** This supersedes the old
+   `Immediate`+`None` idea (a held Immediate also wedges, but the AF-lock is the
+   root cause). Applied to eos-focus-cycle, eos-psf-dither, eos-night-watch.
+2. **Lowercase `%C` case mismatch (the real "capture/download failed").**
+   gphoto2's `--filename …%C` expands to a **lowercase** extension
+   (`probe_000.cr2`), but the tools looked for uppercase `.CR2` → `os.path
+   .exists` failed on every good frame → every probe logged "capture failed"
+   and `--once` exited having done nothing. **Fix: case-insensitive `_find()`.**
+   THIS, not the wedge, is why the focus runs produced no data early on.
+3. **`fullres` brittleness** — hardcoded `==(6000,4000)` embedded-JPEG match and
+   unconditional `open(.CR2)`. Fixed: take the **largest** embedded JPEG; don't
+   crash when a JPG/CR2 is absent (the old "missing-file crash").
+
+**Camera-handling lesson: NEVER `pkill -9 gphoto2` mid-capture.** It killed the
+process holding the PTP session while the shutter was pressed (before Release
+Full) → instant wedge. The tools' own Press→Release flow is safe; only forced
+mid-flight kills strand a held shutter. To stop a run cleanly, `systemctl --user
+stop <unit>` (lets the current frame finish) — don't kill -9 gphoto2.
+
+## ★★★ The "cloud" all evening was the CAMERA POINTING AT THE CEILING LIGHT (2026-07-24)
+
+A humbling correction. Repeated "clouded out / 93% full flat raw" verdicts were
+**wrong** — the sky was clear and star-rich all night (astrocam pulled loads of
+star trails, `petergrecian.co.uk/astro/astrocam/night/2026-07-23`, colour-sweep
+video). The EOS was **pointed indoors at the room's ceiling light + lampshade.**
+The bright diffuse glow filling every frame = the ceiling light; the hard-edged
+blob at frame bottom = the lampshade; 93% well-fill = an indoor lamp, not LP
+cloud. **A bright-flat raw is NOT necessarily cloud — it can be wrong aim / a
+local light source.** The brightness metric cannot tell "LP cloud" from "indoor
+lamp"; both saturate. astrocam sharing the garden is the cross-check: if the EOS
+lacks stars astrocam has, suspect the EOS rig (aim/focus/foreground), not the
+weather. **Fix applied by Peter: surrounded the camera with black paper** to
+kill stray light; camera to be re-aimed at open sky.
+
+## Tonight's capture design — `eos-focus-cycle` d-schedule (2026-07-24)
+
+Peter's design, built and validated end-to-end (raws + boosted JPEGs +
+manifest + dawn-safe loop all confirmed on real captures):
+
+- **`d` = MEDIUM (Near-2) steps from the ∞ hard stop.** Star focus is in
+  **d=0..9** (d=9 = daytime play-car focus; true star focus a hair inside that,
+  ~7–9, since ∞ is slightly *far* of 15 m). Medium-only for now — **Near-1 fine
+  dither deferred** until the sharpest d is known.
+- **Pairing constraint:** need same-d images ~3 min apart for motion/blink star
+  confirmation (stars drift, hot px don't). At ~1 image/min, a group of 3 foci
+  shot twice puts each d's pair 3 images (~3 min) apart.
+- **The swapped d-schedule (24 images/pass):**
+  `9 6 3 · 9 6 3 · 8 5 2 · 8 5 2 · 6 3 0 · 6 3 0 · 7 4 1 · 7 4 1`.
+  Groups of 3 spaced by 3 (max spread); each group shot twice → 3-min pair per
+  d; groups walk the comb down to cover d=0..9. The **630-before-741 swap**
+  evens out the twice-sampled d=3 & d=6 (their inter-pair gap 14→8 min).
+- **Re-rack every image** to the far stop → d×Near-2 (hysteresis-consistent,
+  Peter's choice — costs ~45s/image drive overhead, ~85s/image total).
+- **Sun gate (astrocam-style):** waits for sun < −12° (nautical dark) before
+  starting, stops at dawn (sun > −9°). Dependency-free NOAA sun-altitude formula
+  (muppet has no ephem). Surbiton 51.395°N/−0.292°E baked as default. Tonight's
+  dark window ≈ **22:45 → 03:45 BST (~5h)** → **~210 images, ~8–9 passes**, each
+  d ~8–16 subs.
+- **Deliverables = boosted JPEGs stretched from LINEAR raw** (percentile 50–99.9;
+  faint stars emerge from below the JPEG tone curve — first-light lesson), in
+  `out/jpeg/`, **named d-FIRST: `d03_p01_i00.jpg`** so `splay out/jpeg/` groups
+  every frame of one focus-d together in time order → **blink a d-block to see
+  stars drift.** Raw CR2s stay pass-first (capture order). manifest.csv logs
+  t_utc, pass, seq_i, d, got_file, jpeg per frame.
+
+**ARMING TONIGHT (after a 12V pull to clear the wedge; camera currently wedged
+from a mid-capture kill):**
+```
+ssh muppet:  eos-focus-tonight            # -> ~/tmp/canon-focus-YYYYMMDD, detached
+```
+`eos-focus-tonight` wraps `eos-focus-cycle` in `systemd-run --user` (reliable
+detach; nohup/setsid die on logout) + journald. It waits for dark itself, so
+arm it any time. Watch: `journalctl --user -u <unit> -f`. Next morning:
+`splay ~/tmp/canon-focus-YYYYMMDD/jpeg/`.
+
 ## Focus-experiment algorithm — `eos-focus-cycle` (for the next clear night)
 
 **Philosophy: capture BLIND, analyse NEXT DAY.** Finding stars is hard enough;
