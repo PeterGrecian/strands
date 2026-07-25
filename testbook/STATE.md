@@ -2,6 +2,94 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## PIVOT — 2026-07-25: from print/web guide to an assisted sleep-listening app
+
+Same session as the first review below. Peter wants to morph testbook a third
+time — print → website → **app**. This is now the strand's forward direction;
+the review below records where the *print* project got to (its content and
+pipeline become seed material, not the deliverable).
+
+### The vision
+
+An **Android app** for people who listen to audiobook readings to fall asleep.
+It solves four problems that ordinary players + a timer don't:
+
+1. **Sleep-timer length** — no good fixed answer; too short = you wake to reset
+   it, too long = hours wasted playing to an asleep listener.
+2. **Wind-back-to-comprehension** — when you drift off and wake, find the last
+   point you actually *took in*, without scrubbing around half-asleep.
+3. **Synopsis** for complex works (Götterdämmerung; a dense novel).
+4. **Interspersed reader notes** — Shakespeare et al. need glosses woven *into*
+   the text at the right moments, not in a separate appendix.
+
+### The core mechanic (Peter's design — this is the whole app)
+
+**Rewind by narrative landmark, not by time.** On resume the app does *not* ask
+"how many minutes back?" It asks **spoiler-safe comprehension questions** keyed
+to plot beats you've already passed:
+
+> "Did you get to where Bilbo meets the dwarves?" → tap **yes** → it asks about
+> the *next* beat → the moment you tap **no / not sure**, playback resumes from
+> the **start of that beat**.
+
+A few-tap recognition walk back to the last thing you registered — fast, doable
+half-asleep, no scrubbing. **Spoiler constraint is essential:** each prompt may
+only describe a beat *behind* your furthest-heard position and must be a
+*recognition* cue, never a *preview* of what's coming. So beats are walked
+backward from the furthest point reached, and prompts are written to reveal
+nothing ahead.
+
+### The unifying data structure
+
+Three of the four problems reduce to one thing: **a timeline of spoiler-safe
+narrative landmarks, each with an audio timestamp.** The same beat list drives
+comprehension-rewind (2), anchor points for interspersed notes (4), and the
+synopsis (3). **This is exactly what testbook already is** — scenes with
+track/time boundaries + synopsis + interspersed performer/plot notes. The print
+guide is the first fully-authored title and the template for the per-work
+authoring format. testbook content is reused, not discarded.
+
+The fourth (timer length, 1) is solved by **history, not asking** — same
+philosophy as the rewind. The comprehension-rewind already reveals, each night,
+roughly where the listener stopped registering (the furthest beat *not* reached
+on resume ≈ sleep onset). Logging that over several nights gives a personal
+"you typically fade ~18–25 min in" estimate — per title and per reader, since a
+gripping book keeps you up longer than a dull one — which becomes the **default
+timer suggestion**. So the two features feed each other: rewind *produces* the
+sleep-onset data that tunes the timer.
+
+### Decisions captured this session
+
+- **Platform: Android native.** Peter listens on his phone (pixel-6a, on the
+  tailnet); wants offline, screen-off playback and real timer/notification
+  control. He already has Android repos (T3, blescape, nightsound) as prior art.
+- **Rewind = landmark comprehension questions**, spoiler-safe, as above. This is
+  the defining feature. (Not time-based skip, not auto drift-detection.)
+- **Timer default = learned from previous nights.** Estimate sleep-onset from the
+  rewind data (furthest beat not reached ≈ where they faded) and suggest a timer
+  from the running history, per title/reader. History-driven, not a fixed value.
+- **Scope for now: capture the vision only.** No app repo yet, no build. Revisit
+  to design/spike when Peter picks it up.
+
+### Open questions for the next app session
+
+- **Content authoring format** — how to encode {beat label, audio timestamp,
+  spoiler-safe recognition prompt, interspersed note} per title. Generalise
+  testbook's markdown into this. One title's worth is the MVP corpus.
+- **Where do the audio + timestamps come from?** BYO audiobook file + manual/
+  assisted beat-tagging? Aligning a known reading to the beat list is real work.
+- **Timer suggestion logic** — approach decided (learn sleep-onset from prior
+  nights' rewind data; see above). Open: cold-start default before any history;
+  whether onset inference is reliable enough from the rewind alone or wants a
+  nudge from nightsound (snore-onset) / phone-idle signals.
+- **MVP title** — Götterdämmerung (authored, but opera not audiobook) vs. a
+  spoken-word book Peter actually sleeps to (e.g. The Hobbit, per his example).
+  The Bilbo example suggests the real first title is a novel, with Wagner as the
+  format proof.
+- **New repo** vs. extend an existing Android repo. Likely new.
+
+---
+
 ## First review — 2026-07-25
 
 First-ever review visit (via ubersitrep backlog rotation; repo last touched
@@ -79,13 +167,18 @@ paperback (single-page PDF, perfect binding) — if that's the real goal, the
 whole A6-imposition/`imp.bash`/booklet thread in TODO.md is a dead end and
 should be deleted. The Windows/Overleaf/Acrobat worries are moot: build on pip.
 
-**Priority rating (feeds ubersitrep re-queue): LOW–MEDIUM.** It's a personal,
-non-urgent creative project with no external dependency or decay risk — nothing
-breaks by leaving it. But it is *much* closer to done than "stalled since
-January" implied: content is drafted, the pipeline provably works, and the
-remaining work (art + a build script) is well-defined. Re-queue as a
-pick-up-when-in-the-mood project, not an obligation. Bump to MEDIUM only if
-Peter wants a finished artifact in hand.
+**Priority rating (feeds ubersitrep re-queue): LOW–MEDIUM *for the print book*.**
+It's a personal, non-urgent creative project with no external dependency or
+decay risk. But it is *much* closer to done than "stalled since January"
+implied: content is drafted, the pipeline provably works, and the remaining work
+(art + a build script) is well-defined.
+
+**NOTE — superseded by the app pivot (see top of file).** As of 2026-07-25 the
+strand's forward direction is the sleep-listening app, not finishing the print
+book. The print artifacts (content + PDF pipeline) become seed material for the
+app. For the re-queue: rate the *strand* on the app ambition (a real build,
+higher energy, clear killer feature — MEDIUM, and rising if Peter engages),
+while the print book itself stays a LOW-priority "finish someday" side output.
 
 ## Pending / loose ends
 

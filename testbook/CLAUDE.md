@@ -1,17 +1,27 @@
 # Strand: testbook
 
-**Mission:** finish *Götterdämmerung on the Go* — a personal, pocket-sized
-(5"×8", ~60 page) print listening-guide to Wagner's final opera, keyed to the
-Barenboim / Bayreuth 1991-92 recording (69 tracks, 4h27). A scene = one
-vinyl-side (3–5 tracks) = one page-spread: image on the left (even) page, text
-on the right (odd). Interleaved essays (Barenboim / Wagner / Bayreuth / King
-Ludwig) and performer biographies. Target output: a print-ready PDF for Amazon
-KDP paperback.
+**Mission (as of 2026-07-25 — pivoting):** an **assisted sleep-listening app**
+for Android. Peter listens to audiobook readings to fall asleep; the app solves
+the four problems that breaks: (1) how long to set the sleep timer, (2) how to
+wind back to the last thing you actually registered before drifting off, (3)
+synopses for complex works, (4) reader notes (e.g. Shakespeare) interspersed
+with the text at the right moments. *Götterdämmerung on the Go* becomes the
+first fully-authored title and the template for the annotation format — not the
+product itself.
 
-**Repos it spans:** just `~/testbook` (self-contained: markdown source +
-artwork + build). Deliverable = the KDP PDF.
+**Lineage:** this strand has morphed twice. It began as a **print** listening-
+guide to Wagner's Götterdämmerung (5"×8" KDP paperback), then became a **website**
+page (`Götterdämmerung on the Go` on petergrecian.co.uk), and is now morphing
+into the **app**. The Wagner content and its per-scene synopsis + interspersed-
+notes structure carry forward as the app's first title and authoring template.
 
-**The design brief lives in `~/testbook/README.md` — read it first.**
+**Repos:** `~/testbook` holds the existing Wagner content (markdown, and the
+built PDF pipeline — see STATE). The app will need its own repo/build (Android;
+Peter's Android repos: T3, blescape, nightsound). Deliverable = the app; the
+Wagner guide is seed content.
+
+**The original print design brief is `~/testbook/README.md`; the app vision is
+in STATE.md.**
 
 ## Session ritual
 
