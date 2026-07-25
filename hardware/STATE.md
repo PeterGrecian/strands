@@ -43,6 +43,42 @@
 
 ## Pending / loose ends
 
+- **muppet photodisk (sdb, ST3360320AS 360G) is FAILING — retire on 6 TB arrival
+  (2026-07-25).** Not the 2026-07-15 power event this time — the drive itself is
+  dying. SMART: **274 Current_Pending_Sector** (unreadable *now*), **190
+  Reallocated_Sector_Ct**, **305 Reported_Uncorrect**, 312 ATA errors (recent all
+  UNC on READ DMA EXT), 37,974 power-on hours (~4.3 yr). `overall-health: PASSED`
+  is misleading — the attributes say end-of-life. Ran **hot at 46 °C** (sdc sat at
+  34 °C same chassis); **a cooling fan was put on the drive → dropped to 38 °C**,
+  so thermal risk is handled for the bridge period. **A 6 TB disk arrives ~2026-07-27**;
+  plan is **ddrescue the whole of sdb onto it in one pass** (bad-sector-tolerant,
+  NOT rsync/cp which stall on the 274 pending sectors), verify, then retire sdb.
+  - **This disk was cog's old system disk.** Mounted at `/mnt/photodisk` (ext4,
+    sdb1), 257 G used. **Correction to the 2026-07-16 note below:** starcam-backup
+    lives HERE on photodisk (`/mnt/photodisk/backups/starcam-backup`), *not* on
+    muppet's root fs as previously recorded.
+  - **Backup-coverage map built 2026-07-25** (what has a 2nd copy vs single-copy on
+    the dying disk):
+    - ✅ **SAFE** — `images` 61 G, `audio` 32 G, Dropbox/pastdev/dev/Documents:
+      full 2nd copy on **pip `/mnt/cog`** (a local copy of the cog system disk;
+      NOT the NFS mounts — pip's `~/eclipticam-frames`, `~/astrocam-frames` are
+      autofs NFS mounts *back to muppet*, not copies, and pip has only 27 G free
+      so it can't hold the bulk). `audio` also on bigdisk.
+    - ✅ **secured today** — rsync'd starcam nights **05-20, 05-22, 05-23** (+ the
+      already-present 05-26, 05-30) from sdb → **bigdisk** (sdc, healthy: 0
+      pending/realloc, 8221 h). 5 of 6 nights now duplicated. bigdisk at ~35 G free.
+    - ❌ **STILL SINGLE-COPY on dying sdb** (too big for bigdisk's 35 G free; wait
+      for 6 TB): **starcam 2026-05-21 (40 G)** and **eclipticam-frames/day (21 G)**
+      (bigdisk has eclipticam `night/` ~54 G but not `day/`).
+    - **S3 does NOT hold the raw starcam backup** — `starcam-berrylands-eu-west-1`
+      is only 1.3 G (published site: frames/nights/sightings/videos), and
+      `astro-berrylands-eu-west-1` (73 G) has astrocam/eclipticam prefixes but not
+      the starcam dated dirs. So this rsync closed a real gap.
+  - **Also stop exercising the dying disk:** OpenSearch writes `osd-snapshots` +
+    `opensearch-data` onto sdb (osd-snapshots touched 04:37 the morning of
+    2026-07-25) — repoint those at bigdisk / the 6 TB. Not yet done.
+
+
 - **vole — FLASHED ✅, Debian installing (2026-07-19).** The screen problem was
   cracked: MrChromebox **UEFI Full ROM flash SUCCEEDED** (confirmed on-screen:
   Board PEPPY, Haswell, Fw WP Disabled → option 2). vole is now a UEFI PC.
@@ -164,7 +200,10 @@
   4732fe64-…-647cfe20c88b — the disk that threw the JBD2 journal error)
   fsck'd clean (exit 0, nothing lost — backups/ + temp/, 96G), remounted rw,
   write-tested. SMART on both Seagates PASSED — confirms power event, not drive
-  damage. **Root cause NOT yet fixed:** photodisk is back on the *same* USB
+  damage. **[UPDATE 2026-07-25: photodisk/sdb has since genuinely FAILED — 274
+  pending sectors etc. — see the top of Pending. That 2026-07-16 "PASSED, not
+  drive damage" reading no longer holds for sdb; it's now end-of-life.]**
+  **Root cause NOT yet fixed:** photodisk is back on the *same* USB
   power feed. The connector solder job (solder+heatshrink, not Wago) is the
   outstanding physical fix — do it at the bench when convenient.
 - **Fixed the disappearing-disk symptom:** photodisk had NO fstab entry (was a
@@ -186,8 +225,10 @@
   via ansible `roles/nfs-server` (generator mask + tolerate-missing exportfs
   drop-in); daemon-reexec'd. Deployed + committed to ansible.
 - **starcam camera retired, but its data still needs processing (2026-07-16).**
-  The starcam *camera* is retired; its ~106 GB of raw FITS frames (~44k files,
-  2026-05-20…05-30) on muppet's root fs (`~/starcam-backup`) **still need
+  [Location correction 2026-07-25: the frames are on **photodisk/sdb** at
+  `/mnt/photodisk/backups/starcam-backup`, not muppet's root fs — see the failing-disk
+  entry at the top of Pending.] The starcam *camera* is retired; its ~106 GB of raw
+  FITS frames (~44k files, 2026-05-20…05-30) **still need
   processing**, so the `starcam-backup` NFS export STAYS live (muppet exports it,
   pip mounts it at `~/starcam-muppet` to process). Withdraw the export + reclaim
   the 106 G (which is a third of muppet's 94%-full root) only once processed.
@@ -214,6 +255,28 @@
 
 ## Decisions
 
+- **muppet's dim screen: WON'T FIX — flogging a dead horse (2026-07-22).**
+  Symptom is dim, worse on the *left-hand side* → classic backlight/LED-driver
+  (edge-lit panel not propagating light across), not GPU (no artefacts) and not
+  software. Realistic fix = whole panel-assembly swap on an X1 Carbon Gen 9
+  (cheap-ish part, fiddly job). But muppet is **deliberately headless** (NFS/
+  compute, driven over SSH) — a working screen adds nothing to its role. Decision
+  stands: leave it headless, don't diagnose or swap the panel.
+- **Fleet ceiling is RAM, not cores (2026-07-22).** All three x86 boxes sit at
+  ~7.5 GiB: pip (i5-8265U Whiskey Lake — the fleet's *slowest* CPU), muppet
+  (8-core Tiger Lake), puppy (i5-1135G7 Tiger Lake, fastest clock). So demoting
+  pip to a compute node buys little (weakest CPU; muppet+puppy already cover
+  compute). If Peter buys a new laptop, it becomes the daily driver; pip's best
+  second life is bench/spare, not compute. Don't buy dedicated compute unless a
+  specific workload is CPU-starved — current astro/OpenSearch pressure is
+  disk/retention, not CPU.
+- **New laptop = non-urgent shopping quest, driven by future capacity
+  (2026-07-22).** Not a fix-it-now: fallback if pip pops is already covered
+  (phone + keyboard, or another host + monitor). The forward driver is that
+  **muppet and puppy WILL get overloaded** at some stage — so the eventual buy
+  should add a genuinely capable third x86 node: **more than 8 GiB RAM** (the
+  standing fleet ceiling) and a CPU newer than pip's, not a like-for-like pip
+  replacement. It becomes daily driver; pip drops to bench/spare fallback.
 - **Firmware updates are reviewed consciously via `cld -k` housekeeping**, not
   installed from unexplained desktop popups. (2026-07-11, from pip-maintenance)
 - **Connectors: solder + heatshrink, not Wago.** Wago lever-nuts are for
