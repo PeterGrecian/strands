@@ -79,15 +79,46 @@ manifest + dawn-safe loop all confirmed on real captures):
   stars drift.** Raw CR2s stay pass-first (capture order). manifest.csv logs
   t_utc, pass, seq_i, d, got_file, jpeg per frame.
 
-**ARMING TONIGHT (after a 12V pull to clear the wedge; camera currently wedged
-from a mid-capture kill):**
-```
-ssh muppet:  eos-focus-tonight            # -> ~/tmp/canon-focus-YYYYMMDD, detached
-```
-`eos-focus-tonight` wraps `eos-focus-cycle` in `systemd-run --user` (reliable
-detach; nohup/setsid die on logout) + journald. It waits for dark itself, so
-arm it any time. Watch: `journalctl --user -u <unit> -f`. Next morning:
-`splay ~/tmp/canon-focus-YYYYMMDD/jpeg/`.
+## ★★★ ARMED — autonomous nightly capture + self-recovery (2026-07-25)
+
+Capture is now armed to run **every night automatically, like astrocam.** No
+manual arming needed.
+
+**`eos-focus.service`** — a **system** service on muppet (installed to
+`/etc/systemd/system/`, `enabled`, `Restart=always`), runs `eos-focus-cycle`
+forever. The tool self-gates on the sun: sleeps through the day (polls every
+2 min), wakes at nautical dark (~22:45 BST), captures the d-schedule, stops at
+dawn, then the service loops back to waiting. Each night's data lands in a
+**dated subdir** `~/tmp/canon-focus-nightly/<YYYY-MM-DD>/` (so one long-running
+service separates nights). Survives reboots. Verified starting + waiting-for-
+dark 2026-07-25. Gotcha fixed: `%h` in a *system* service expands to `/root`,
+not `User=peter`'s home — the ExecStart path is hardcoded.
+- watch: `journalctl -u eos-focus.service -f`
+- next morning: `splay ~/tmp/canon-focus-nightly/<date>/jpeg/`  (grouped by d)
+- stop/disable: `sudo systemctl stop|disable eos-focus.service`
+- (`eos-focus-tonight`, the systemd-run --user launcher, remains for one-off
+  manual runs — but the service is now the normal path.)
+
+**Wedge self-recovery protocol** (in `eos-focus-cycle`, built around the live
+lesson that *transient busy states self-clear — don't power-cycle on the first
+sign*). On a capture returning NO FILE:
+1. **gentle release** (Release Full + None + viewfinder=0) + settle 15s, re-test
+   — clears the common transient.
+2. **grace window** — poll up to 90s for a self-clear (many do) before touching
+   power.
+3. **LAST RESORT: `eos-power cycle`** (12V pull) — only if still wedged after
+   the grace window, and capped by `--power-budget` (default 4/run) so a hard
+   fault never thrashes the relay. After a cycle: wait for re-enumeration →
+   prime → restore exposure → re-shoot the frame.
+
+**`eos-power` (off/on/cycle/status)** — controls the 12V dummy-battery relay
+(the only reset that clears a Class-B wedge). **Relay hardware is a fleet Pi
+GPIO relay, but host/pin/polarity are TBD** — `_relay_set()` in `eos-power` is
+a clearly-marked stub that, until wired, logs "would set power X" and exits
+non-zero, so recovery degrades safely (logs "power-cycle unavailable" rather
+than hanging). **TODO: wire the relay, fill in RELAY_HOST/RELAY_PIN/
+RELAY_ACTIVE_HIGH + `_relay_set()`.** Test polarity by pulsing + watching the
+camera's lsusb Dev number drop.
 
 ## Focus-experiment algorithm — `eos-focus-cycle` (for the next clear night)
 
