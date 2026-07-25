@@ -20,6 +20,41 @@
 
 ## Incoming carries reviewed (the keeper's log)
 
+- **aifabric PRs #7 / #8 / #9 — the tooling-graduation wave. All reviewed,
+  merged, feedback logged (2026-07-23 → 2026-07-25).** Three consecutive
+  work-side (`PeterGrecian-NiCE`) PRs → `main`, PR-only, none direct-pushed —
+  the gate operating routinely now, not exceptionally. All were tooling
+  (aicli/cld/sessions/recolour/idea/spool graduating into `aifabric/bin`), so
+  the *feature* triage is aitooling's, not this keeper's; the keeper's job was
+  the **air-gap hygiene gate** on each carry, plus a correctness pass since no
+  other reviewer sits between work and home `main`.
+  - **#7 (aicli/cld personas + sessions + recolour + idea routing): MERGED,
+    squash.** High-effort review → no blocking bugs. The one that mattered for
+    this keeper: **`sessions` was scrubbed clean** — home-LAN IPs (192.168.0.10/
+    .11) → `localhost` default, and the baked `Admin123!@Secure` password
+    de-baked to a required env var. That is the exact IP/secret exposure this
+    keeper had been tracking (see the 2026-07-21 quarantine entries below),
+    remediated *by the work side itself* before landing in the public-facing
+    canonical repo. Self-policed carry — the model working.
+  - **#8 (aicli dogfood: create/live-filter/raise/new): MERGED, squash.**
+    Content-clean. Also carries the method feedback loop working the *other*
+    way: the work side wrote the **"dogfood on `main`; branches are temporary
+    PR transport only, then deleted; PR is the only push path home"** rule into
+    the README — that IS this strand's subject, articulated work-side and
+    carried home. Correctness note (non-blocking, raise is experimental): the
+    auto-raise-when-live default `die`s on Linux (powershell-only impl) instead
+    of falling back to launch — feedback posted to the PR for follow-up.
+  - **#9 (generic `spool` primitive; `idea` refitted onto it): MERGED, squash.**
+    Content-clean; tested end-to-end. Flagged the `idea`→`spool` deploy
+    dependency (needs `spool` beside `idea`) — verified **already satisfied on
+    pip** (both resolve to `aifabric/bin/`, `spool_cmd` finds `$here/spool`), so
+    a non-issue here; also noted the empty PR body as a convention slip (#7/#8
+    carried Summary+Validation; the self-contained body is what lets a PR travel
+    the gap).
+  - **Boundary verdict for the wave: no work content crossed onto personal
+    infra.** All three are generic tooling + method docs; the only work-identity
+    trace is the PR authorship (`PeterGrecian-NiCE`), which is the gate's
+    signature, not leaked content.
 - **aifabric PR #5 — `method/keepers.md` comms clause. Verdict: CLEAN, endorsed
   (2026-07-21).** The work-side keeper (`work-home-comms`, as `PeterGrecian-NiCE`)
   carried back a refinement of *this strand's own subject* and handed it to the
