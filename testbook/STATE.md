@@ -58,6 +58,71 @@ gripping book keeps you up longer than a dull one — which becomes the **defaul
 timer suggestion**. So the two features feed each other: rewind *produces* the
 sleep-onset data that tunes the timer.
 
+### Layered content per landmark — audio vs. TTS
+
+Refinement (2026-07-25): a landmark doesn't hold *one* stream, it holds **N
+layers**, and the audio-vs-synthesised question is answered **per layer**:
+
+- **Reading of the work** = **real recording, never TTS.** Performance needs
+  acting; synthesised voice is worse than nothing here. Bring-your-own audio
+  (commercial audiobook, or public-domain LibriVox — solo or full-cast
+  "dramatic"). The app plays the file, doesn't generate it.
+- **Commentary / reader-notes / synopsis** = **TTS is fine, by design.** It's
+  explanatory, not performed ("the Wife of Bath is Chaucer's most famous
+  pilgrim…"). Shown on screen and optionally spoken via TTS. This is the layer
+  Peter authors — the value-add, and exactly what testbook already is.
+- **Translation / modernisation** = middle ground — TTS acceptable (it's a gloss,
+  not a performance), real recording nicer if available.
+
+So the authoring format is **N layers per landmark**, not a fixed reading+note.
+Different works stack different layers:
+
+| Work | Layers per chunk/landmark |
+|---|---|
+| Plain novel (The Hobbit) | reading + occasional note |
+| Götterdämmerung | music/reading + synopsis + performer/plot notes |
+| **Canterbury Tales** | **original Middle English + modern English + commentary** |
+
+### MVP direction: Canterbury Tales in ~2-minute triplets
+
+Peter's chosen concrete MVP (2026-07-25): **Canterbury Tales**, sequenced in
+**~2-minute chunks**, each chunk a **triplet** played in order —
+**(1) original Middle English → (2) modern English → (3) commentary** — before
+moving to the next chunk. Why it's a *better* MVP than plain Shakespeare or a
+novel: Middle English genuinely *requires* the modern-English layer, so the
+multi-layer structure isn't optional polish — the app earns its keep on the
+first tale. The small self-contained triplet is also inherently sleep-friendly:
+no cliffhanger to keep you awake, natural pause points, and the modern+commentary
+layers mean drifting off mid-chunk loses little.
+
+**The link to GotG (Peter's words: "the link to GotG is there"):** identical
+shape. testbook scene = one vinyl side = synopsis + interspersed notes; Canterbury
+chunk = ~2 min = original + gloss + commentary. Same landmark-timeline-with-
+layered-content structure, different layer count. Götterdämmerung, Canterbury,
+and a plain novel are one app with N tuned per work.
+
+**"Götterdämmerung with TTS interludes" (Peter, 2026-07-25) — and it may be the
+better MVP.** The layered model resolves the awkwardness flagged in the first
+review (Wagner is an *opera*, not an audiobook — it didn't fit a "reading+notes"
+app). Now it fits perfectly: layer 1 = the **Barenboim music** for a vinyl-side
+chunk (real recording, obviously never TTS); layer 2 = a **TTS interlude** —
+Peter's existing scene synopsis + "listen for this leitmotif" notes — dropped
+*between* the sung sections. Same triplet shape as Canterbury.
+
+Why this may beat Canterbury as the first build: **the content already exists.**
+The 16 scene synopses + performer/leitmotif notes are written; the recording is
+a known 69-track / 4h27 timeline; the vinyl-side "scene" boundaries are already
+the landmarks. Canterbury needs a modern-English translation authored from
+scratch and has iffy Middle-English audio sourcing. Götterdämmerung needs
+neither — shortest path to a working demo, and it's the truest expression of
+the print→web→app morph (the print book *becomes* the app's first title).
+
+**Two candidate MVPs, both captured; pick at build time:**
+- *Götterdämmerung* — content ready, timeline known, best morph story. But BYO
+  Barenboim recording, and music+interlude interleaving is the playback pattern.
+- *Canterbury* — the layered structure is most *necessary* here (ME needs
+  translation), but layers 2–3 must be authored and layer-1 audio sourced.
+
 ### Decisions captured this session
 
 - **Platform: Android native.** Peter listens on his phone (pixel-6a, on the
@@ -68,24 +133,40 @@ sleep-onset data that tunes the timer.
 - **Timer default = learned from previous nights.** Estimate sleep-onset from the
   rewind data (furthest beat not reached ≈ where they faded) and suggest a timer
   from the running history, per title/reader. History-driven, not a fixed value.
+- **Reading = real recording; commentary = TTS.** Per-layer, not per-app. Never
+  synthesise the performed reading; TTS the explanatory layers freely.
+- **Content = N layers per landmark**, not fixed reading+note. Layer count tuned
+  per work.
+- **MVP = one of two, decide at build time.** *Götterdämmerung* (Barenboim music
+  + TTS synopsis/leitmotif interludes — content already exists, best morph story)
+  or *Canterbury Tales* (~2-min triplets, ME → modern EN → commentary — structure
+  most necessary but content must be authored/sourced). Both are the same
+  layered app; GotG is the shorter path to a demo.
 - **Scope for now: capture the vision only.** No app repo yet, no build. Revisit
   to design/spike when Peter picks it up.
 
 ### Open questions for the next app session
 
-- **Content authoring format** — how to encode {beat label, audio timestamp,
-  spoiler-safe recognition prompt, interspersed note} per title. Generalise
-  testbook's markdown into this. One title's worth is the MVP corpus.
+- **Content authoring format** — how to encode {landmark label, audio timestamp,
+  spoiler-safe recognition prompt, **and N content layers** (reading-audio ref,
+  modern-EN text/audio, commentary text-for-TTS)} per title. Generalise
+  testbook's markdown into this. Canterbury (first tale) is the MVP corpus.
+- **Middle-English audio sourcing** — layer 1 for Chaucer is the hard one:
+  LibriVox has Canterbury Tales but ME-pronunciation quality varies a lot.
+  Layers 2 (modern EN) and 3 (commentary) Peter authors/generates + TTS.
 - **Where do the audio + timestamps come from?** BYO audiobook file + manual/
-  assisted beat-tagging? Aligning a known reading to the beat list is real work.
+  assisted beat-tagging? Aligning a known reading to the landmark list is real
+  work. For Canterbury the ~2-min chunking gives natural landmark boundaries.
+- **TTS engine** — on-device Android TTS vs. a better cloud/neural voice for the
+  commentary layer (offline-at-night matters; screen-off playback).
+- **Licensing / commercial-vs-personal** — public-domain-only path (LibriVox +
+  Furness/PD commentary + own notes) keeps a sellable app clean; Folger TEI is
+  CC-BY-NC (personal only); commercial audiobooks are BYO-from-own-library.
+  Decide early — it constrains sources.
 - **Timer suggestion logic** — approach decided (learn sleep-onset from prior
   nights' rewind data; see above). Open: cold-start default before any history;
   whether onset inference is reliable enough from the rewind alone or wants a
   nudge from nightsound (snore-onset) / phone-idle signals.
-- **MVP title** — Götterdämmerung (authored, but opera not audiobook) vs. a
-  spoken-word book Peter actually sleeps to (e.g. The Hobbit, per his example).
-  The Bilbo example suggests the real first title is a novel, with Wagner as the
-  format proof.
 - **New repo** vs. extend an existing Android repo. Likely new.
 
 ---
