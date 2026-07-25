@@ -183,7 +183,7 @@ first reviewed.
 |---|---|---|---|
 | astro-storage | **2026-07-22** | **URGENT** | S3 growing, finalize starcam ≈1 GB/day — see "URGENT NOW" above; strand exists, forkterm pending |
 | calendaralarm | **2026-07-22** | high | ✅ LIVE — bridge built, systemd timer armed, real xMatters page fired; see `calendaralarm` STATE |
-| testbook | 2026-01-30* | — | STALEST — Götterdämmerung LaTeX/online; unvisited |
+| testbook | 2026-07-25 (in progress) | TBD | 🔄 first backlog visit LIVE (forkterm) — Götterdämmerung print listening-guide; stalled on LaTeX 8-up imposition. Fork to report is-it-alive / biggest-blocker / next-move + Pri; re-queue when it lands |
 | nightsound | 2026-03-19* | — | Android snoring capture; unvisited |
 | busclock | 2026-04-01* | — | K2 web clock-face prototype; future undecided (see T3) |
 | us-vs-the-machines | 2026-04-01* | — | Human-vs-AI predictions web; unvisited |
@@ -261,11 +261,13 @@ and the rest of the portfolio list in super/GLOBAL.md.
 ## Pending / loose ends
 
 - Continue the sweep via the backlog ritual (see above) — T3, electronics,
-  rackinabox, **calendaralarm (first live ritual run, revived → xMatters)** so
-  far. **Next stalest = testbook** (untouched since Jan).
+  rackinabox, **calendaralarm (first live ritual run, revived → xMatters)**, and
+  **testbook (backlog visit LIVE 2026-07-25 — awaiting the fork's report + Pri)**
+  so far. **Next stalest after testbook = nightsound** (last touched Mar).
 - **Universal coverage is a scaffold backlog in itself:** several repos still
-  lack a strand (testbook, nightsound, busclock, us-vs-the-machines, blescape,
-  cosmic-cycling, and the Berrylands/* set — calendaralarm now has one), and a
+  lack a strand (nightsound, busclock, us-vs-the-machines, blescape,
+  cosmic-cycling, and the Berrylands/* set — calendaralarm + testbook now have
+  one), and a
   few existing strands look like review subjects / cleanup (`victim`, the
   typo'd `aifrbric-strandchat`, leftover convergence-test naming). Scaffold
   lazily — at each subject's first backlog visit — not in a big bang.
