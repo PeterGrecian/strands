@@ -168,6 +168,39 @@ buys nothing and leaves a growing pile of open incidents. Close tidies it away.
 (Acknowledge-then-Close is the *real* on-call lifecycle — worth practising since
 xMatters here is also a canary for Peter's work on-call, but not required.)
 
+## 'calendar' sound tier — own phone sound + DND override (2026-07-25, Peter)
+
+The HIGH klaxon (`--critical`) was *too loud* for routine appointments. Added a
+dedicated **`calendar`** tier so calendar alarms carry their own phone sound,
+distinct from real-incident klaxons. xMatters plays one sound per priority, so
+`calendar` rides **MEDIUM** (reserved in practice for calendaralarm). See
+[[calendaralarm-sound-tiers]].
+
+- **`alerting/lambda/handler.py`** — new `calendar` preset → xMatters MEDIUM,
+  no AI appraisal, Slack `alerts`. Renders as `[CALENDAR]` in the summary.
+- **`super/bin/alert`** — new `--calendar` flag + docs.
+- **calendaralarm** — `calendar` is now the **default** tier for both GCal
+  events (`decide_severity`) and rules (`rules.yaml`/`rules.py`/webapp). Title
+  `!!` opts *up* to `--critical` (klaxon, can't-miss), `~~` opts *down* to
+  `--warn`. Webapp dropdown relabelled "Sound / severity", blue `calendar`
+  badge, default `calendar`. Live 15:45 rule switched to `calendar`.
+- All three Lambdas/tools deployed; validation + severity mapping tested.
+
+**Phone-side (Peter, on his device — not in code):**
+- Sound for the MEDIUM/calendar tier is **set** in the xMatters app.
+- **DND override enabled** so it works as a real alarm (e.g. 3am wake-up to
+  drive to the airport). This grows the blast radius: a false/duplicate page now
+  *wakes him* — the `fired.json` de-dupe (durable, atomic, survives sleep/wake)
+  is what prevents a 3am repeat, and it's verified holding in production.
+- **Escalation profile: rings 10× at 1-min intervals** until Closed (~10 min
+  total, then stops). One page = up to 10 rings; the next poll does not stack a
+  second 10-ring set (de-dupe). Closing once cancels all remaining rings.
+
+**Note:** a true **one-off** 3am alarm isn't expressible yet (rules are
+recurring-only) — use a temporary daily rule (delete after) or a Google Calendar
+event (the GCal source now pages one-offs at `--calendar` automatically). The
+schedule-type model (one-off / weekly / rotation) remains unbuilt.
+
 ## Webapp built — password-protected CRUD + rules API (2026-07-23, Peter)
 
 The authoring interface is live: **https://www.petergrecian.co.uk/calendaralarm**.
@@ -183,8 +216,9 @@ The design-spec store decision (DynamoDB behind mywebsite) is now real.
 - **Route:** `mywebsite/lambda/routes/calendaralarm.py` — dark iOS-style CRUD
   page + JSON API: `GET/POST/PUT/DELETE /calendaralarm/api/rules`. `GET`
   returns **enabled rules only** (the poller feed); the page shows all incl.
-  disabled. Severity dropdown defaults to **critical**. Server-side validation
-  of days/time/severity, `at` normalised to HH:MM.
+  disabled. Severity dropdown defaults to **calendar** (was critical — see the
+  2026-07-25 sound-tier section). Server-side validation of days/time/severity,
+  `at` normalised to HH:MM.
 - **Poller now reads the API.** `rules.py` `load_rules()` fetches the live API
   (Basic Auth pw from `secrets get`), **falls back to local `rules.yaml`** on
   any failure so a blip never silences alarms; memoised one-fetch-per-poll.
