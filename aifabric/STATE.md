@@ -209,6 +209,27 @@ inconsistent: sometimes the tick shows (could be cleaned up), sometimes not.
 Possibly only the desktop/home-screen icons on a phone. Not aifabric's domain;
 recorded here for routing to the mywebsite work.
 
+## bin migration — cld/sessions divergence to reconcile (2026-07-25)
+
+Five strand/session tools graduated from `super/bin` to `aifabric/bin` on
+2026-07-25 (`strands`, `strand-ps`, `strand-mailbox`, `forkterm`,
+`cld-statusline` — canonical here, no super symlink; PATH puts aifabric/bin
+first). **Still OPEN — a divergence `bin-shadows` flags:**
+
+- **`cld`** — `aifabric/bin/cld` is a symlink → `aicli` (the graduated multi-
+  backend form), but `super/bin/cld` is a **different, older real file** (17 KB,
+  the strand launcher). They have diverged. Reconcile: decide whether `aicli`
+  fully supersedes super's `cld` (then super/bin/cld → symlink or delete) or
+  whether super's cld has behaviour `aicli` lacks that must be folded in.
+- **`sessions`** — `aifabric/bin/sessions` (16.6 KB) and `super/bin/sessions`
+  (17.1 KB) are **both real and different**. Diff them, pick the canonical
+  (aifabric), fold any super-only behaviour in, then converge.
+
+Care: `super/bin/cld` computes `STRANDS_DIR="$BIN/../strands"` — the same
+location-relative coupling the moved tools had; if cld ever moves, fix that
+too. Verify with `bin-shadows` (must end 0 divergent) and smoke-test
+`cld -s <strand>` + `sessions search` after converging.
+
 ## Published (2026-07-17) — early push for collaboration
 
 `PeterGrecian/aifabric` created on GitHub, **private**, and `PeterGrecian-NiCE`
