@@ -1,0 +1,5 @@
+# aicli/cld runtime droppings — per-launch terminal state written into a strand
+# dir on every launch, never source. (colour is intentional durable state and
+# stays tracked.)
+.title
+.tty

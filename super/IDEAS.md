@@ -11,8 +11,6 @@ or dropped — then deleted from this file.
 routed to their strands' spools via `idea`; homepi trove secured to
 ~/archives/. Remaining, for the super strand:)
 
-- cleft has fable usage separate from the rest.
-- cleft: can we use that more?
 - forkchat at home: needs tailscale on a home node (fleet isn't on tailscale
   yet — that's the real prerequisite); homepi IS powerful enough (stdlib-only,
   the tool's own docs say a Pi 4 is ample). Plus Peter wants an AI filter on
