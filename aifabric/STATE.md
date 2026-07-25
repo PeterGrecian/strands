@@ -214,21 +214,30 @@ recorded here for routing to the mywebsite work.
 Five strand/session tools graduated from `super/bin` to `aifabric/bin` on
 2026-07-25 (`strands`, `strand-ps`, `strand-mailbox`, `forkterm`,
 `cld-statusline` — canonical here, no super symlink; PATH puts aifabric/bin
-first). **Still OPEN — a divergence `bin-shadows` flags:**
+first). **RESOLVED (2026-07-25, aifabric-bin-migration sub-strand) — `bin-shadows`
+now 0 divergent:**
 
-- **`cld`** — `aifabric/bin/cld` is a symlink → `aicli` (the graduated multi-
-  backend form), but `super/bin/cld` is a **different, older real file** (17 KB,
-  the strand launcher). They have diverged. Reconcile: decide whether `aicli`
-  fully supersedes super's `cld` (then super/bin/cld → symlink or delete) or
-  whether super's cld has behaviour `aicli` lacks that must be folded in.
-- **`sessions`** — `aifabric/bin/sessions` (16.6 KB) and `super/bin/sessions`
-  (17.1 KB) are **both real and different**. Diff them, pick the canonical
-  (aifabric), fold any super-only behaviour in, then converge.
+- **`cld`** — `aicli` made a true SUPERSET of super's old `cld` (folded in
+  `-k` housekeeping, `--remote`+Slack, `--tmux`+orphan detection, `ding --reap`
+  before/after, health warnings, `--hints`), then `super/bin/cld` → symlink →
+  `aifabric/bin/cld`. Claude backend now runs as a child (not exec) so
+  after-reap/after-push run; copilot still execs. Fleet helpers resolved on
+  $PATH via `fleet_helper()`; the `$BIN/../strands` coupling is gone (STRANDS_DIR
+  resolves from `~/.config/idea/config`). aifabric `6cff4e1`, super `bde32a7`.
+- **`sessions`** — aifabric kept canonical; super's LAN node defaults +
+  `secrets get /osd/admin-password` fallback folded in *lazily* (no import-time
+  fetch, no baked credential). `super/bin/sessions` → symlink. Verified live.
+  aifabric `015fa93`, super `e9119d9`.
+- **Bonus:** `aicli-completion.bash` (existed but unsourced) wired into dotfiles
+  `.bashrc` + updated with the new flags. dotfiles `3c5def1`.
 
-Care: `super/bin/cld` computes `STRANDS_DIR="$BIN/../strands"` — the same
-location-relative coupling the moved tools had; if cld ever moves, fix that
-too. Verify with `bin-shadows` (must end 0 divergent) and smoke-test
-`cld -s <strand>` + `sessions search` after converging.
+Verified: `bin-shadows` = 5 same-inode, 9 aifabric-only, **0 divergent**;
+stubbed-`claude` smoke tests of every folded flow; `sessions` stats/search/show
+live. See the aifabric-bin-migration strand STATE for full detail.
+
+Deliberate behaviour change: unknown strand now DIES with a `--create` hint,
+not super's interactive scaffold prompt (non-interactive-safe; the prompt was a
+documented automation footgun).
 
 ## Published (2026-07-17) — early push for collaboration
 
