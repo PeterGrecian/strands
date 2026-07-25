@@ -155,11 +155,13 @@ Promoted from the ideas inbox. Grouped; forkterm/strand-ps cluster reconciled.
 **forkterm / liveness cluster** (the strand-ps "bug" was self-retracted — no
 strand-ps ever existed; `strands` already has `/proc`-based `live_cwds()` done
 right; the near-miss was operator error. Two real remainders survive):
-- **forkterm dup-session guard** — factor `live_cwds()` out of `super/bin/strands`
-  into a shared helper (a real `strand-ps` / `strands ps` could be that entry
-  point, which PR #5's method-graduation note was gesturing at). Then
-  `forkterm into <strand>` consults it and warns "a live session already has cwd
-  in this strand — raise it? (y/N)" before launching a duplicate.
+- **forkterm dup-session guard** — the shared entry point now EXISTS:
+  **`super/bin/strand-ps`** (built 2026-07-21, on PATH, `/proc`-based, `-s
+  <name>` filters, `--hints`) is the "real strand-ps" PR #5 gestured at.
+  Remaining work: `forkterm into <strand>` should consult `strand-ps -s
+  <strand>` (dup = >1 row) and warn "a live session already has cwd in this
+  strand — raise it? (y/N)" before launching a duplicate. (Absorbed here from
+  the retired `aifabric-strand-ps` strand, archived 2026-07-25.)
 - **forkterm window raise + stable handle** — today windows can't be identified
   or raised: every window launches with the same static `--title="forkterm:
   $STRAND"`, and on xfce4-terminal `--title` only sets the *initial* title

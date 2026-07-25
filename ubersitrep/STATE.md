@@ -192,6 +192,19 @@ first reviewed.
 | tersetransporttimes | **2026-07-22** | — | ✅ reviewed — daily driver, healthy (see above) |
 | — others — | | | gardencam, pi-fleet, cloud-init-init, pwmaudio, home-automation, dotfiles, mywebsite, splay, osd, astro, ansible, super, strands, aifabric, rackinabox + the ~35 existing strands — slot in by staleness as backlog proceeds |
 
+**Archived 2026-07-25** (retired from the active list; recoverable under
+`strands/archive/`, shown by `strands -a`):
+- `aifabric-spool` — empty strand; its job (the ideas-spool) shipped as the
+  `idea` tool and was folded into the aifabric strand. Nothing to lose.
+- `aifabric-strand-ps` — the `strand-ps` tool is built + on PATH; its two
+  unbuilt forkterm follow-ups (dup-guard, window-raise) live on in the
+  aifabric STATE. Superseded.
+- **Kept live** (NOT archiveable): `aifabric-sessions` — running infrastructure
+  (hourly ingest timer active + enabled, OSD cluster green) with open work
+  (semantic search, OSD-endpoints→config). Dormant ≠ archiveable.
+- **Archive mechanism** (Peter's steer): `git mv` to `strands/archive/`; the
+  `strands` tool hides `archive/` by default, `-a`/`--and-archived` includes it.
+
 \* = proxy (last-commit), not a real review yet. First real visit replaces it
 with the review date and sets a Pri.
 
