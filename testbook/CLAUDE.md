@@ -1,8 +1,17 @@
 # Strand: testbook
 
-*(Mission not yet written: say what this strand is, which repos it spans,
-and where its deliverables live. Fill this in by hand or define it with
-Claude at the start of the first session.)*
+**Mission:** finish *Götterdämmerung on the Go* — a personal, pocket-sized
+(5"×8", ~60 page) print listening-guide to Wagner's final opera, keyed to the
+Barenboim / Bayreuth 1991-92 recording (69 tracks, 4h27). A scene = one
+vinyl-side (3–5 tracks) = one page-spread: image on the left (even) page, text
+on the right (odd). Interleaved essays (Barenboim / Wagner / Bayreuth / King
+Ludwig) and performer biographies. Target output: a print-ready PDF for Amazon
+KDP paperback.
+
+**Repos it spans:** just `~/testbook` (self-contained: markdown source +
+artwork + build). Deliverable = the KDP PDF.
+
+**The design brief lives in `~/testbook/README.md` — read it first.**
 
 ## Session ritual
 
