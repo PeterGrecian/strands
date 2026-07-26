@@ -4,10 +4,22 @@
 
 ## What exists
 
-- `super/bin/cld` sets the terminal background per strand via OSC 11/10
-  (like ssp): colour applied before claude launches, restored to
-  `#1a1a1a` after. Works in plain and `--tmux` modes (set on the outer
-  terminal before tmux starts); `--remote` untouched.
+- `super/bin/cld` (→ `aifabric/bin/aicli`) sets the terminal background
+  per strand via OSC 11/10 (like ssp): colour applied before claude
+  launches, restored to `#1a1a1a` after. Works in plain and `--tmux`
+  modes (set on the outer terminal before tmux starts); `--remote`
+  untouched.
+- **Restore is now guaranteed on every exit path** (2026-07-26). It used
+  to leak the strand colour: (a) the reassert loop — which re-paints the
+  colour at 0.2/1/3/8s to survive the backend retitling — kept firing for
+  up to 8s *after* a short session ended, clobbering the restore; (b) the
+  restore was a single straight-line statement, skipped on signal exits
+  and unreachable past `exec copilot`. Fixes: reassert job is tracked
+  (`REASSERT_PID`) and killed before restore; an EXIT trap plus
+  INT/TERM/HUP handlers guarantee restore; copilot runs as a child (not
+  exec) so the trap fires; `restore_terminal_colours_on_exit` is guarded
+  against double-emit and writes to the real tty. Verified via pty
+  harness (clean exit + real Ctrl-C both end on `1a1a1a`, once).
 - Colours are stored as rrggbb hex in `<strand>/colour` — in git, so
   portable across machines, hand-editable to override. Auto-assigned on
   first launch: n × 137.508° (golden angle) on the hue wheel at S=0.5
