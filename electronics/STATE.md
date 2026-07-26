@@ -15,8 +15,10 @@ Prior art that belongs to this strand but lives elsewhere for now:
   - Stage 1 (done 2026-07-09): 220R → 8R speaker on GPIO18, pigpio
     `hardware_PWM` for clean tones (software PWM warbles on single-core A+).
   - Stage 2 (done 2026-07-09): 2N3904 low-side driver — louder but
-    **beta-limited at ~200 mA** (speaker sees 0.5–1.5 V not 0–4.8 V); upgrade
-    to BC337 or logic-level MOSFET pending.
+    **beta-limited at ~200 mA** (speaker sees 0.5–1.5 V not 0–4.8 V).
+  - Stage 2b (done 2026-07-25): **darlington 2N3904 → B882** — 2N3904 drives
+    the B882 power stage, coil now pulls full available current. Force cap
+    cleared, "the speaker drive works." See `pwmaudio/wiring.md` Stage 2b.
   - Dither tooling: `pwm-sine`, `pwm-pattern`, `pwm-ramp` (MOD_PCT=0 =
     smooth silent 20 kHz ramp, uncommitted). Circuit + findings in
     `pwmaudio/wiring.md`; experiments in `pwmaudio/experiments/`.
@@ -40,9 +42,11 @@ see its note.
   fans and electronics: mild-steel rectangular tube, mostly glued, baffled ATX
   PSU, IKEA Lack table as frame. Mechanical/packaging project; scope and whether
   it fully belongs in this strand still TBD, but it's the active build.
-- **PWM amp for 8R — almost finished.** The PWM-as-DAC / driver stage feeding an
-  8Ω load (the pwmaudio line of work). Close to done; finish and write up the
-  final circuit + findings. Feeds the tilt-dither / voice-coil actuator.
+- **PWM amp for 8R — driver stage working (2026-07-25).** The PWM-as-DAC /
+  driver stage feeding an 8Ω load (pwmaudio line of work). The beta-limited
+  2N3904 was the last gap; the **darlington (2N3904 → B882)** clears it — coil
+  sees full current. Final circuit + findings written up in `pwmaudio/wiring.md`
+  Stage 2b. Feeds the tilt-dither / voice-coil actuator.
 - **EOS DC switch — build deferred, still wanted as recovery hatch.** *Why it
   exists:* the **camera itself hangs when astro bombards it with commands**, and
   the switch is the power-cycle recovery. So it's a watchdog reset, not just
@@ -53,17 +57,18 @@ see its note.
   fix isn't enough. Open question when built: 5V vs 7.4V rail (confirm dummy
   battery input), Pico powered via a front-end buck (not VSYS-direct at 7.4V).
 - **PWM amp for camera-tilt dithering.** Driver topology for the tilt-dither
-  actuator — currently a Darlington; open question whether it should be a
-  high-side P-MOSFET like the EOS switch. Overlaps the 8R/voice-coil driver
-  work; decide the driver topology once.
+  actuator — now a **working darlington (2N3904 → B882)**. Open question whether
+  it should instead be a high-side P-MOSFET like the EOS switch; but with the
+  darlington passing full force, that's now an optimisation, not a blocker.
+  Overlaps the 8R/voice-coil driver work; decide the final topology once.
 
 - **Migrate pwmaudio's circuit-design content into `~/electronics`** (decided
   new-repo-now, migrate-later 2026-07-23). Move `wiring.md`, the driver design
   and experiments; leave/duplicate the Pi-specific deploy scripts where they
   run. Preserve history where it's worth carrying.
-- **Finish the driver stage**: replace the beta-limited 2N3904 with BC337 or a
-  logic-level MOSFET so the speaker/coil sees the full 0–4.8 V swing (the
-  actuator needs the current the 2N3904 can't pass).
+- ~~**Finish the driver stage**: replace the beta-limited 2N3904.~~ **Done
+  2026-07-25** — solved with a **darlington (2N3904 → B882)** rather than the
+  BC337 / logic-level MOSFET originally sketched. Coil now sees full current.
 - **Voice-coil-as-µm-actuator** for `astro-speaker-dither`: bench build when
   current drivers arrive; calibrate µm/mA **loaded** (mount stiffness changes
   the response). This strand owns the circuit; astro owns the measurement.
@@ -82,3 +87,8 @@ see its note.
 - **Ownership seam:** electronics owns *how a circuit is designed and built*;
   the driven project (e.g. `astro-speaker-dither`) owns *why* and what it
   measures.
+- **Driver force problem solved with a darlington (2N3904 → B882), 2026-07-25**,
+  not the BC337 / logic-level MOSFET originally listed. The 2N3904 drives the
+  B882 power stage; coil pulls full available current. "The speaker drive works."
+  Circuit lives in `pwmaudio/wiring.md` Stage 2b until the pwmaudio→electronics
+  migration. (Also recorded in `astro-speaker-dither` STATE.)
