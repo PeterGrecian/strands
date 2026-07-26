@@ -183,7 +183,7 @@ first reviewed.
 |---|---|---|---|
 | astro-storage | **2026-07-22** | **URGENT** | S3 growing, finalize starcam ≈1 GB/day — see "URGENT NOW" above; strand exists, forkterm pending |
 | calendaralarm | **2026-07-22** | high | ✅ LIVE — bridge built, systemd timer armed, real xMatters page fired; see `calendaralarm` STATE |
-| testbook | 2026-07-25 (in progress) | TBD | 🔄 first backlog visit LIVE (forkterm) — Götterdämmerung print listening-guide; stalled on LaTeX 8-up imposition. Fork to report is-it-alive / biggest-blocker / next-move + Pri; re-queue when it lands |
+| testbook | **2026-07-25** | **MEDIUM** | ✅ reviewed — content drafted, md→PDF pipeline provably WORKS (the "LaTeX blocker" was a myth — one nav-glyph filter). **PIVOTED** from print guide → an assisted sleep-listening app (the real forward direction). Print book = LOW "finish someday" side output; strand rated MEDIUM on the app ambition. See testbook STATE |
 | nightsound | 2026-03-19* | — | Android snoring capture; unvisited |
 | busclock | 2026-04-01* | — | K2 web clock-face prototype; future undecided (see T3) |
 | us-vs-the-machines | 2026-04-01* | — | Human-vs-AI predictions web; unvisited |
