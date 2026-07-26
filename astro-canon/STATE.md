@@ -136,6 +136,16 @@ non-zero (recovery logs "power-cycle unavailable" rather than hanging).
   - **DEPENDENCY:** the plug is on Wi-Fi and driven via homepi's matter-server;
     a homepi/Wi-Fi/matter-server outage takes the reset path down. The old
     GPIO-relay option (a) remains the more-direct fallback if this proves flaky.
+  - **TODO (astro-canon owns): make the reset path survive a homepi
+    reprovision.** homepi's matter-server is a hand-run `docker run` (April, no
+    ansible/compose); the BLE fix that makes commissioning work
+    (`--bluetooth-adapter 0`, `-v /run/dbus:/run/dbus:ro`, `--security-opt
+    apparmor=unconfined`, `--network=host`, `hci0` up) lives only in the running
+    container. A rebuild silently loses BLE → the reset path breaks. Add an
+    ansible role (or a checked-in run script + `hci0`-up step) capturing that
+    container. Astro-canon owns this because the reset path is *its* recovery
+    dependency, even though the container is home-automation/ansible territory.
+    ([[home-automation]] STATE keeps only a pointer.)
 
 ## Focus-experiment algorithm — `eos-focus-cycle` (for the next clear night)
 

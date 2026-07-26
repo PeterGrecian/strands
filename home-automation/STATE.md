@@ -42,12 +42,12 @@
   as cleanly/quickly as the 12V-only pull STATE validated (PSU bulk caps); may
   need `--secs` > 10. Tracked in astro-canon STATE (CAVEAT).
 
-- **Capture homepi's matter-server container in IaC** (new, 2026-07-26). The
-  matter-server is a hand-run `docker run` (April, no ansible/compose). The BLE
-  fix (`--bluetooth-adapter 0`, dbus mount, apparmor unconfined, `hci0` up) I
-  applied lives only in the running container — a homepi reprovision would lose
-  it. Add an ansible role (or at least a checked-in run script + `hci0`-up
-  step) so BLE Matter commissioning survives a rebuild.
+- **Capture homepi's matter-server container in IaC** — **owned by
+  [[astro-canon]]** (2026-07-26). The matter-server is a hand-run `docker run`
+  (April, no ansible/compose); the BLE fix lives only in the running container.
+  Astro-canon owns this because its reset path (eos-power → the plug →
+  matter-server) is the load-bearing dependency that a homepi reprovision would
+  break — see astro-canon STATE. home-automation keeps this pointer only.
 
 - **New `electronics` repo + strand** — DONE 2026-07-23. Created `~/electronics`
   (`PeterGrecian/electronics`, private) + the [[electronics]] strand, sitting
