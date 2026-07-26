@@ -111,14 +111,31 @@ sign*). On a capture returning NO FILE:
    fault never thrashes the relay. After a cycle: wait for re-enumeration →
    prime → restore exposure → re-shoot the frame.
 
-**`eos-power` (off/on/cycle/status)** — controls the 12V dummy-battery relay
-(the only reset that clears a Class-B wedge). **Relay hardware is a fleet Pi
-GPIO relay, but host/pin/polarity are TBD** — `_relay_set()` in `eos-power` is
-a clearly-marked stub that, until wired, logs "would set power X" and exits
-non-zero, so recovery degrades safely (logs "power-cycle unavailable" rather
-than hanging). **TODO: wire the relay, fill in RELAY_HOST/RELAY_PIN/
-RELAY_ACTIVE_HIGH + `_relay_set()`.** Test polarity by pulsing + watching the
-camera's lsusb Dev number drop.
+**`eos-power` (off/on/cycle/status)** — controls the dummy-battery feed (the
+only reset that clears a Class-B wedge). **WIRED 2026-07-26** to a **Matter
+smart plug** (strand option (b): switch mains to the DR-E10 adapter rather than
+a GPIO relay in the 12V line — coarser, whole-adapter, but no new hardware).
+`_relay_set()` now drives the plug over the HA python-matter-server WebSocket
+API (`ws://homepi.local:5580/ws`, `commission_with_code`/`device_command`, On/Off
+cluster). Config at the top of `eos-power`: `MATTER_WS`, `MATTER_NODE=4`,
+`PLUG_ON_POWERS_CAMERA=True`. off/on/cycle/status all verified against the plug
+(cycle: off → hold `--secs` → on, rc=0). Degrades safely: if matter-server is
+unreachable or the node isn't commissioned it prints the failure and exits
+non-zero (recovery logs "power-cycle unavailable" rather than hanging).
+
+  - **Plug:** Currys Sandstrom Wi-Fi Smart Plug (VendorID 5470 / ProductID
+    9217), commissioned as **node 4** on the Matter fabric. Commissioning +
+    BLE-on-homepi setup done in the [[home-automation]] strand (see its STATE).
+  - **CAVEAT — this is whole-adapter mains switching, not a 12V-only pull.**
+    STATE validated a ~10s pull of the *12V logic rail*; cutting mains to the
+    PSU should drop that rail too, but the PSU's bulk caps may hold it up
+    slightly longer. **Untested against a real wedge / real re-enumeration** —
+    the plug toggles and the tool works, but the actual Class-B-clear behaviour
+    (lsusb Dev number drop → 480M renegotiation) still needs confirming on the
+    next wedge. Watch: may need `--secs` > 10 if caps hold the rail.
+  - **DEPENDENCY:** the plug is on Wi-Fi and driven via homepi's matter-server;
+    a homepi/Wi-Fi/matter-server outage takes the reset path down. The old
+    GPIO-relay option (a) remains the more-direct fallback if this proves flaky.
 
 ## Focus-experiment algorithm — `eos-focus-cycle` (for the next clear night)
 

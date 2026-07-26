@@ -4,24 +4,50 @@
 
 ## What exists
 
-- (new strand — nothing recorded yet)
+- **Matter commissioning works headlessly via the matter-server WS API**
+  (no phone app, no HA browser UI). HA + `python-matter-server` both run as
+  docker containers on **homepi**; the matter-server exposes a WebSocket API on
+  `ws://homepi.local:5580/ws` (`get_nodes`, `set_wifi_credentials`,
+  `commission_with_code`, `device_command`). Commission a Wi-Fi Matter device
+  with: (1) `set_wifi_credentials {ssid, credentials}`, (2)
+  `commission_with_code {code: "MT:…", network_only: False}` while the device is
+  BLE-advertising (hold button → blink) within Bluetooth range of homepi.
+
+- **BLE on homepi — required setup (was NOT in place; now fixed).** For
+  `commission_with_code` to do BLE at all, the matter-server container needs:
+  `--security-opt apparmor=unconfined`, `-v /run/dbus:/run/dbus:ro`,
+  `--network=host`, **and the `--bluetooth-adapter 0` command argument** (this
+  last was the missing piece — without it the API returns "Bluetooth
+  commissioning is not available"). Also `hci0` must be UP (`sudo hciconfig
+  hci0 up`). The container was recreated by hand with these on 2026-07-26; data
+  bind `/opt/matter-server/data:/data` preserved the fabric.
+  **NOT captured in IaC** — this container is a hand-run `docker run` (no
+  ansible/compose); the BLE change lives only in the running container. See
+  pending item below.
+
+- **First plug commissioned (2026-07-26):** Currys Sandstrom Wi-Fi Smart Plug
+  (VendorID 5470 / ProductID 9217, SW V1.0.0.5), **node 4** on the fabric,
+  on Wi-Fi, On/Off cluster verified end-to-end. Wi-Fi creds saved to secrets
+  (`/wifi/lab-ssid`, `/wifi/lab-psk`) for reuse by future Matter devices.
 
 ## Pending / loose ends
 
-- **Remote power-cycle for the astro-canon EOS dummy battery** (promoted
-  2026-07-23). Give the tethered EOS 2000D a remotely switchable feed to its
-  DR-E10 dummy battery, so a firmware-wedged camera (-110 I/O in progress,
-  silently-rejected config writes) can be power-cycled without a human at
-  muppet's desk. The dummy battery holds the USB device alive across the
-  physical power switch, so dropping the feed for ~10 s is the *only* reset
-  that forces a fresh 480M USB renegotiation. Two candidate builds:
-  (a) Pico/ESP32 + MOSFET/relay in the ~9-12V DR-E10 line, exposing a trivial
-  HTTP/serial "off N seconds then on" endpoint the astro-canon eos-* tools hit;
-  (b) reuse the existing Zigbee/WiFi smart mains plug on the DR-E10 mains
-  adapter (coarser, whole-adapter, no new hardware). Want: a documented
-  off/on/cycle primitive the eos-* tools can call so a wedged camera
-  self-recovers instead of paging Peter. See astro-canon STATE "Reset ladder"
-  (Class B) for the failure it fixes.
+- **Remote power-cycle for the astro-canon EOS dummy battery** — **DONE
+  (build) 2026-07-26 via option (b).** The Matter plug (node 4) switches mains
+  to the DR-E10 adapter; `astro/bin/eos-power` `_relay_set()` now drives it over
+  the matter-server WS API. off/on/cycle/status all verified against the plug.
+  Coordinated with [[astro-canon]] (its STATE `eos-power` entry updated; MAILBOX
+  notified). **Remaining: confirm the reset actually clears a real Class-B wedge
+  on the next wedge** — whole-adapter mains switching may not drop the 12V rail
+  as cleanly/quickly as the 12V-only pull STATE validated (PSU bulk caps); may
+  need `--secs` > 10. Tracked in astro-canon STATE (CAVEAT).
+
+- **Capture homepi's matter-server container in IaC** (new, 2026-07-26). The
+  matter-server is a hand-run `docker run` (April, no ansible/compose). The BLE
+  fix (`--bluetooth-adapter 0`, dbus mount, apparmor unconfined, `hci0` up) I
+  applied lives only in the running container — a homepi reprovision would lose
+  it. Add an ansible role (or at least a checked-in run script + `hci0`-up
+  step) so BLE Matter commissioning survives a rebuild.
 
 - **New `electronics` repo + strand** — DONE 2026-07-23. Created `~/electronics`
   (`PeterGrecian/electronics`, private) + the [[electronics]] strand, sitting
