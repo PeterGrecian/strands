@@ -211,6 +211,9 @@ recorded here for routing to the mywebsite work.
 
 ## bin migration — cld/sessions divergence to reconcile (2026-07-25)
 
+**Sub-strand `aifabric-bin-migration` retired 2026-07-26** (mission complete,
+`bin-shadows` 0 divergent) → `strands/archive/aifabric-bin-migration`.
+
 Five strand/session tools graduated from `super/bin` to `aifabric/bin` on
 2026-07-25 (`strands`, `strand-ps`, `strand-mailbox`, `forkterm`,
 `cld-statusline` — canonical here, no super symlink; PATH puts aifabric/bin
