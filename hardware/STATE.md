@@ -50,9 +50,10 @@
   UNC on READ DMA EXT), 37,974 power-on hours (~4.3 yr). `overall-health: PASSED`
   is misleading — the attributes say end-of-life. Ran **hot at 46 °C** (sdc sat at
   34 °C same chassis); **a cooling fan was put on the drive → dropped to 38 °C**,
-  so thermal risk is handled for the bridge period. **A 6 TB disk arrives ~2026-07-27**;
-  plan is **ddrescue the whole of sdb onto it in one pass** (bad-sector-tolerant,
-  NOT rsync/cp which stall on the 274 pending sectors), verify, then retire sdb.
+  so thermal risk is handled for the bridge period. **6 TB Seagate bought
+  2026-07-26, arrives 2026-07-27** — full migration runbook + target state below
+  ("6 TB migration runbook"). Short version: ddrescue sdb (dying) onto it first,
+  then sdc; verify; reformat sdc→unified tepid archive + sdb→emergency copy.
   - **This disk was cog's old system disk.** Mounted at `/mnt/photodisk` (ext4,
     sdb1), 257 G used. **Correction to the 2026-07-16 note below:** starcam-backup
     lives HERE on photodisk (`/mnt/photodisk/backups/starcam-backup`), *not* on
@@ -77,6 +78,55 @@
   - **Also stop exercising the dying disk:** OpenSearch writes `osd-snapshots` +
     `opensearch-data` onto sdb (osd-snapshots touched 04:37 the morning of
     2026-07-25) — repoint those at bigdisk / the 6 TB. Not yet done.
+  - **Alert storm handled (2026-07-25):** tonight's starcam rsync pushed bigdisk
+    90→96%, tripping muppet `monitor`'s 95% disk-**warn** → xMatters MEDIUM every
+    15 min, plus a daily SMART page correctly reporting sdb's 3 faults. Raised the
+    drop-in `/etc/systemd/system/monitor.service.d/disk-threshold.conf` to
+    **warn/crit = 99/99** and restarted monitor → muppet went quiet. **This is a
+    TEMPORARY bridge — revert to 95/98 once the migration drops bigdisk usage.**
+    (NB: restarting monitor re-fires the SMART check immediately — each restart =
+    one SMART page; and open xMatters incidents re-notify until **Closed**, not
+    just Acknowledged — see [[xmatters-response-close]].) Edit is manual, not
+    ansible-managed (the role templates only the base unit).
+
+### 6 TB migration runbook — DISK ARRIVES 2026-07-27
+
+**Disk bought (2026-07-26):** Seagate Expansion **STKP6000400 6 TB** (3.5"
+external USB 3.0, £199.99 from scan.co.uk). NB it's a **3.5" desktop drive → has
+a MAINS BRICK**, not bus-powered despite the listing; give it its **own** power
+feed, not the shared USB feed that caused the 2026-07-15 fault.
+
+**Target state after migration** (collapses muppet's fragile shared-power USB
+disk sprawl down to one live drive + two cold copies; nothing to landfill):
+
+| Disk | Role | Power |
+|---|---|---|
+| **6 TB Seagate** (STKP6000400) | **Primary** live consolidated backup | always on, own mains |
+| **sdc** (unified ex bigdisk+bigdisk2) | **Tepid archive** — reformat as ONE volume (ext4, friendlier than XFS for power-cycling) | **network-switched, normally OFF, spin-up on demand** — switch is electronics-strand work (hoped: Pi Pico W high-side switch) |
+| **sdb** (ST3360320AS, dying) | **Emergency-only tertiary** copy — reformat, reload, shelf. NOT a reliable copy (274 pending sectors); label physically **"DYING — emergency only"**. Kept because a flaky 3rd copy beats none if the 6 TB fails. | shelved (cold) |
+| **ATX PSU** (was feeding the disk array) | freed → **rackinabox** | — |
+
+**Steps (order matters):**
+1. **Plug in 6 TB, identify the bare drive + SMR check** (~2 min):
+   `sudo smartctl -i /dev/sdX | grep -iE "Device Model|Model Family|Rotation Rate"`
+   and `cat /sys/block/sdX/queue/zoned`. 7200rpm → likely CMR; 5400rpm + zoned!=none → SMR.
+   SMR is FINE for this job (one sequential bulk write) — just note+label it.
+2. **ddrescue sdb FIRST** (it's the dying one) onto the 6 TB. **ddrescue, NOT
+   cp/rsync** — cp stalls on the 274 pending sectors; ddrescue logs them and
+   continues. Keep the ddrescue **mapfile** and check which sectors (if any)
+   couldn't be read. This sweeps up the two single-copy items (starcam 05-21 40G,
+   eclipticam day/ 21G) — *unless* skipping the abandoned moon-tracking `day/`.
+3. **Copy sdc** (bigdisk+bigdisk2, ~892 G used) onto the 6 TB — plain rsync/cp is
+   fine (healthy disk). Total onto 6 TB ≈ 1.15 TB → fits with ~4.8 TB spare.
+4. **VERIFY before reformatting anything** — checksums / file counts / test reads.
+   Never be single-copy at any moment. Only after verify:
+5. **Reformat sdc as ONE unified ext4 volume**, reload from the 6 TB → tepid
+   archive. **Safe-power rule:** power to sdc must only ever be cut *after*
+   sync → unmount → `hdparm -Y` spindown; mount only after spin-up. Wrap in a
+   script; the network switch (electronics strand) is a dumb actuator called by it.
+6. **Reformat sdb, reload, shelf + label** as emergency-only. (A `badblocks`-style
+   write pass first surfaces/remaps the pending sectors so you know what you're storing on.)
+7. **Free the ATX PSU** → rackinabox.
 
 
 - **vole — FLASHED ✅, Debian installing (2026-07-19).** The screen problem was
