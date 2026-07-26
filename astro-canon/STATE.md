@@ -103,13 +103,36 @@ not `User=peter`'s home — the ExecStart path is hardcoded.
 lesson that *transient busy states self-clear — don't power-cycle on the first
 sign*). On a capture returning NO FILE:
 1. **gentle release** (Release Full + None + viewfinder=0) + settle 15s, re-test
-   — clears the common transient.
-2. **grace window** — poll up to 90s for a self-clear (many do) before touching
-   power.
-3. **LAST RESORT: `eos-power cycle`** (12V pull) — only if still wedged after
-   the grace window, and capped by `--power-budget` (default 4/run) so a hard
-   fault never thrashes the relay. After a cycle: wait for re-enumeration →
-   prime → restore exposure → re-shoot the frame.
+   — clears the common transient (Mode A).
+2. **grace window** — poll up to **60s** for a self-clear (Mode A that's a bit
+   slow) before touching power. Wedges are bimodal (Mode A clears in ~15s;
+   Mode B never self-clears), so 60s is enough to tell them apart without
+   dead-waiting.
+3. **LAST RESORT: `eos-power cycle`** (smart-plug mains cut) — only if still
+   wedged after the grace window, capped by `--power-budget` (default 4/run) so
+   a hard fault never thrashes the relay. After a cycle: wait for
+   re-enumeration → prime → restore exposure → re-shoot the frame.
+
+**Escalation / notifications** (smart-plugs are NOT generally reliable, so a
+misfiring reset must never be silent):
+- **Reset misfires → Slack heads-up** (`super/bin/alert --info`, Slack-only, no
+  page), on BOTH failure paths: (a) the `eos-power cycle` command itself fails
+  (plug unreachable / homepi / matter-server down → reset never ran); (b) the
+  cycle returns success but the camera is **STILL WEDGED** after re-enumeration
+  (the plug may have reported success without actually cutting power). Peter
+  learns the plug is flaky even if the run later recovers or aborts.
+- **Recovery fully exhausted → xMatters `--critical` PAGE** at the circuit
+  breaker (`--max-consec-fail`=6 failed frames), once per night (`.paged`
+  marker). The night is being lost; needs a human.
+- So the ladder: transient self-heals silently → reset works silently → reset
+  misfires = Slack → all exhausted = page.
+
+**Circuit breaker + anti-thrash** (learned the hard way 2026-07-25, when a
+missing `websockets`/PATH bug crashed recovery and `Restart=always` thrashed
+63× for zero frames): after `--max-consec-fail` consecutive failures the tool
+exits CLEANLY (camera unrecoverable — don't grind the night); the service's
+`RestartSec=900` bounds worst-case restarts to ~4/hr; and all external calls
+(`eos-power`, `alert`) resolve by absolute path and NEVER raise.
 
 **`eos-power` (off/on/cycle/status)** — controls the dummy-battery feed (the
 only reset that clears a Class-B wedge). **WIRED 2026-07-26** to a **Matter
