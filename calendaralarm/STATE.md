@@ -168,6 +168,34 @@ buys nothing and leaves a growing pile of open incidents. Close tidies it away.
 (Acknowledge-then-Close is the *real* on-call lifecycle — worth practising since
 xMatters here is also a canary for Peter's work on-call, but not required.)
 
+## Android companion app — the real speaker-forced alarm (2026-07-26, Peter)
+
+**Built** `~/calendaralarm/android/` — the true fix for the Bluetooth-miss
+([[calendaralarm-android-app]]). Decision was: companion app (of the four
+options in the Bluetooth-routing section). It rings on Android's **ALARM stream**
+(speaker-forced, BT-immune) — it *becomes* a clock alarm, which xMatters can't be.
+
+- **Architecture:** WorkManager (~15 min) → `GET /calendaralarm/api/rules` (same
+  Basic Auth + WAF-dodging User-Agent as the poller) → RuleCache → exact
+  `AlarmManager.setAlarmClock` (Doze-proof) → full-screen `AlarmActivity` on
+  STREAM_ALARM with dismiss/snooze. Re-arms on boot + after each fire from cache
+  (3am alarm ≠ 3am connectivity). Skips UK bank holidays. Password in
+  EncryptedSharedPreferences. Kotlin/Compose, minSdk 26 / target 34.
+- **Same rules store** (DynamoDB) as webapp + poller — a second *consumer*, not a
+  second store. xMatters retained as escalation/canary (belt & braces).
+- **Built successfully on pip.** This required installing the Android SDK (was an
+  empty stub) — see [[pip-android-build-setup]] (JAVA_HOME gotcha: default points
+  at missing java-17; use java-21). APK at `app/build/outputs/apk/debug/`.
+- **Superseded `CronAlarmApp.zip`** (old all-TODO stub) — trashed.
+
+**PENDING — needs Peter's phone:** not yet installed/verified. Phone wasn't
+adb-reachable this session. Next: connect (USB or `adb connect <ip>:5555`; phone
+is pixel-6a `100.102.111.126` on the tailnet), `cd ~/calendaralarm/android &&
+./deploy.sh`, enter the password, then **verify the speaker-forcing** — BT
+headphones connected but off, add a rule ~2 min out, confirm it rings from the
+phone speaker over the lockscreen (not the headphones). That verification is the
+whole point and hasn't happened yet.
+
 ## 'calendar' sound tier — own phone sound + DND override (2026-07-25, Peter)
 
 The HIGH klaxon (`--critical`) was *too loud* for routine appointments. Added a
@@ -200,6 +228,41 @@ distinct from real-incident klaxons. xMatters plays one sound per priority, so
 recurring-only) — use a temporary daily rule (delete after) or a Google Calendar
 event (the GCal source now pages one-offs at `--calendar` automatically). The
 schedule-type model (one-off / weekly / rotation) remains unbuilt.
+
+## Bluetooth-routing miss — xMatters ≠ a real alarm (2026-07-25, Peter)
+
+**Found:** if audio is routed to a connected **Bluetooth device (headphones)**
+that nobody is listening to, an xMatters page rings *into the headphones* and is
+**missed**. The system clock/alarm app does **not** have this problem.
+
+**Root cause (Android audio routing, OS-level, not fixable in our code):**
+- The clock alarm uses the **`ALARM` stream (`STREAM_ALARM`)**, which Android
+  **forces to the phone's own speaker** even when Bluetooth is connected.
+- xMatters is a normal app; its ringtone plays on a **route-following stream**
+  (NOTIFICATION/RING/MEDIA) that goes wherever audio is currently routed — so a
+  connected-but-unused BT device swallows the alarm.
+
+**Significance:** this is the same founding tension as the "delivery must be a
+real alarm" lesson ([[delivery-must-be-a-real-alarm]]) and the design spec's
+parked question (a) "how to deliver a real phone alarm". xMatters gives
+acknowledgement-demand + DND-override + escalation, but **cannot** give the
+`ALARM`-stream speaker-forcing. So xMatters is the right *escalation* channel but
+not, by itself, a can't-miss *wake-up* alarm.
+
+**Options (least→most work):**
+1. Disconnect BT / disable BT audio at night — trivial, manual, forgettable
+   (and forgetting is exactly how the 3am airport run gets missed).
+2. Per-app audio-route forcing apps — flaky, manufacturer-dependent; not
+   trustworthy for a wake alarm.
+3. **Companion Android app that sets a real system alarm** (`AlarmManager`,
+   ALARM stream) reading the same `/calendaralarm/api/rules` — the only true
+   fix; it *becomes* a clock alarm. The webapp/DynamoDB backend already built is
+   exactly its backend. (Revives the `CronAlarmApp.zip` direction, thinner.)
+4. Tasker/Automate setting a system alarm from a pip Tailscale push — no-code
+   version of #3 (phone reachable at 100.102.111.126).
+
+**Decision: pending — see next session.** Leaning #3 as the real fix, with
+xMatters retained as the escalation/canary layer (belt and braces).
 
 ## Webapp built — password-protected CRUD + rules API (2026-07-23, Peter)
 
