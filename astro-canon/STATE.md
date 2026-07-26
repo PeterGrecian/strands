@@ -126,13 +126,19 @@ non-zero (recovery logs "power-cycle unavailable" rather than hanging).
   - **Plug:** Currys Sandstrom Wi-Fi Smart Plug (VendorID 5470 / ProductID
     9217), commissioned as **node 4** on the Matter fabric. Commissioning +
     BLE-on-homepi setup done in the [[home-automation]] strand (see its STATE).
-  - **CAVEAT — this is whole-adapter mains switching, not a 12V-only pull.**
-    STATE validated a ~10s pull of the *12V logic rail*; cutting mains to the
-    PSU should drop that rail too, but the PSU's bulk caps may hold it up
-    slightly longer. **Untested against a real wedge / real re-enumeration** —
-    the plug toggles and the tool works, but the actual Class-B-clear behaviour
-    (lsusb Dev number drop → 480M renegotiation) still needs confirming on the
-    next wedge. Watch: may need `--secs` > 10 if caps hold the rail.
+  - **POWER-CYCLE MECHANISM CONFIRMED LIVE (2026-07-26).** Ran `eos-power
+    cycle` on muppet with the camera healthy, watching lsusb: camera dropped
+    **OFF BUS within 3s** and re-enumerated with a **NEW Dev number (013→014)**
+    at **480M**. So mains switching DOES drop the 12V rail — the default **10s
+    is sufficient**, bulk caps did not hold it up; no `--secs` bump needed.
+    (Still want to catch a genuine Class-B wedge to confirm the cycle *clears
+    the wedge*, not just power-cycles a healthy cam — but the mechanism is
+    proven.)
+  - **DEPENDENCY on muppet: `websockets` python module.** eos-power imports it
+    to reach the matter-server; it was NOT installed (import failed → the tool
+    returned "unavailable"). Installed `pip install --break-system-packages
+    --user websockets` (16.1.1); verified importable in a clean/service-like
+    env, so the eos-focus.service recovery path can power-cycle.
   - **DEPENDENCY:** the plug is on Wi-Fi and driven via homepi's matter-server;
     a homepi/Wi-Fi/matter-server outage takes the reset path down. The old
     GPIO-relay option (a) remains the more-direct fallback if this proves flaky.
