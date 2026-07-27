@@ -45,7 +45,16 @@
   curved bands (not literal rows) for eclipticam's 102° field, where row-aligned
   trails only hold in the central strip. Pure sidereal binning (same pixel, same
   sidereal phase across nights — zero resampling, automatically CFA-safe) costs
-  bins × sensor (~170 GB) and is kept only as a validation patch. Full swept-sky
+  bins × sensor (~170 GB) and is kept only as a validation patch.
+  **Resampling accuracy (idea 2026-07-27):** naive interpolation on undersampled
+  data aliases — use **drizzle-style** accumulation (variable-pixel linear
+  reconstruction) onto a finer-than-sensor sky grid, per CFA plane; the drift is
+  a continuous dither, drizzle's ideal input. Mapping accuracy = the per-hour
+  pole/k1/k2 fit quality. Verify on an archived night: stacked-PSF width vs
+  single frame + anchor astrometric residuals. Resampling undoes motion
+  *between* frames, never *within* an exposure — hence exposure ≲ t_pix; but the
+  within-exposure trail kernel is exactly known (drift rate at each pixel), so
+  1–2 px trailing is a modellable field-varying PSF, not lost signal. Full swept-sky
   accumulators: ~400–700 MB **total forever** per instrument; per-night marginal
   cost ≈ 0.
 - **Raw mosaics + drift: the Earth demosaics.** Accumulate CFA planes, never
@@ -132,10 +141,18 @@ design assumed** — two structured products already exist:
     lowest-risk end-to-end proof of the conceptual spine — but note option (c)
     now has a concrete design to prove: the **remap-then-shift accumulator**
     (2026-07-27 architecture) could be prototyped on an archived week.
+- **Build the sky-budget calculator** (idea 2026-07-27): Gaia-DR3-based
+  N_stars(camera, exposure/accumulated depth) for the actual swept bands —
+  inputs aperture, pixel scale, sky brightness; outputs limiting magnitude,
+  N_stars, and a check against the C·T capacity law. Answers whether 100k is
+  reachable at v3w's aperture, the accumulation hours needed, and whether depth
+  or capacity binds first. Small, feeds the target confirmation below and the
+  Gaia tier the ID bridge needs anyway.
 - **Confirm the 100,000-star completeness target** (floated 2026-07-27; the
   capacity design was sized to it — ~500k cells, archive quantum 30–50 s). It
   10×'s the mission's completeness goal, so it wants an explicit yes before the
-  mission text changes.
+  mission text changes — best given with the sky-budget calculator's numbers in
+  hand.
 - **Write the `astro-v3s` strand mission** (strand exists, unscaffolded) — the
   v3 hardware facts (formats, AF pinning, HDR off, SAT_VAL recalibration, host
   upgrade) belong there; this strand only consumes the resulting pixel scales.
