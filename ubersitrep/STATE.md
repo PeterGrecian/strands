@@ -20,6 +20,35 @@ They overlap by design (all land in the same ~week); running in parallel is the
 plan, so a slip in one doesn't push the others. Revisit these dates each session
 — rough by intent.
 
+## Session 2026-07-27 — broad sweep across all strands + archive
+
+A **broad sweep** (the second ubersitrep job): a deliberate pass over the whole
+estate to re-date the ledger and re-map the shape. 39 active strands + 5
+archived. Key findings:
+
+- **The astro cluster has grown into a family** since the 07-22-dated blocks
+  below were written. New strands not in the old ledger: **`astro-v3s`**
+  (replace astrocam's v2 imx219 with a bought **Pi Camera v3 standard / imx708**
+  — this *is* the "rebuild as v3" branch of macro-plan #3, now a live strand, not
+  an open question) and **`astro-storage-discussion`** (the conceptual core:
+  *storage and star-ID are the same problem* — shrink starcam <1 GB/night while
+  serving deep-integration / transient / max-reduction + identification). Both
+  touched today. **`astro-canon` capture path is FIXED** (2026-07-24: the
+  `eosremoterelease=Immediate`→AF-wedge bug + two others — see its STATE and the
+  [[eos-capture-press-full-not-immediate]] memory); canon-as-temp-primary is now
+  unblocked. **`astro-speaker-dither` driver works** (2026-07-25 darlington fix
+  cleared the last electrical blocker; remaining questions are mechanical).
+- **`splay-grid` has unmerged work** — grid mode built + committed on the
+  `splay-grid-mode` worktree branch since 07-11, **NOT merged to splay main**.
+  A genuine loose end, flagged for a backlog visit.
+- **`aifabric-bin-migration` archived** — the two divergent tools (`cld`,
+  `sessions`) reconciled; `cld`→`aicli` is now canonical (cf.
+  [[aicli-supersedes-cld]]). Archive now holds 5: bin-migration, spool,
+  strand-ps, victim, xfer-audio-to-phone — all correctly retired.
+- **New idea inboxes** appeared (glacier-app/ideas, xmatters/ideas, home-work-comms,
+  home-automation) from recent forkterm work — not yet triaged into their STATEs.
+- Ledger below re-dated from STATE mtimes; astro rows folded to reflect the family.
+
 ## Session 2026-07-23 — triage + electronics spun out + two forks
 
 A working session, not just narrative:
@@ -181,8 +210,13 @@ first reviewed.
 
 | Subject | Last-reviewed | Pri | Status / note |
 |---|---|---|---|
-| astro-storage | **2026-07-22** | **URGENT** | S3 growing, finalize starcam ≈1 GB/day — see "URGENT NOW" above; strand exists, forkterm pending |
+| astro-canon | **2026-07-26** | high | ✅ capture path FIXED (Press Full, not Immediate — no more AF-wedge); canon-as-temp-primary unblocked |
+| astro-v3s | **2026-07-27** | high | live — the "rebuild astrocam as v3" branch of macro #3, now its own strand (bought imx708 v3-standard, focusing for sky) |
+| astro-storage-discussion | **2026-07-27** | high | live — storage+star-ID as one problem; shrink starcam <1 GB/night; Quest 6 time-axis |
+| astro-speaker-dither | **2026-07-26** | med | driver works (darlington fix); remaining questions mechanical (deflection/image-shift) |
+| astro-storage | **2026-07-22** | **URGENT** | S3 growing, finalize starcam ≈1 GB/day — see "URGENT NOW" above; STATE mtime 07-20 but discussion-strand carrying the live work |
 | calendaralarm | **2026-07-22** | high | ✅ LIVE — bridge built, systemd timer armed, real xMatters page fired; see `calendaralarm` STATE |
+| splay-grid | 2026-07-11* | med | ⚠️ grid mode built + committed on `splay-grid-mode` worktree branch, **NOT merged to splay main** — unmerged loose end |
 | testbook | **2026-07-25** | **MEDIUM** | ✅ reviewed — content drafted, md→PDF pipeline provably WORKS (the "LaTeX blocker" was a myth — one nav-glyph filter). **PIVOTED** from print guide → an assisted sleep-listening app (the real forward direction). Print book = LOW "finish someday" side output; strand rated MEDIUM on the app ambition. See testbook STATE |
 | nightsound | 2026-03-19* | — | Android snoring capture; unvisited |
 | busclock | 2026-04-01* | — | K2 web clock-face prototype; future undecided (see T3) |
@@ -289,8 +323,15 @@ and the rest of the portfolio list in super/GLOBAL.md.
   nesting must land in the DXF before a quote.
 - Flesh out the sitrep for the *other* workstreams (fleet, mywebsite, splay,
   home-automation) — first pass covers only the two headline efforts + T3.
-- Decide the fix-vs-replace branch for astrocam (#2), which gates the v3
-  question (#3).
+- **astrocam fix-vs-replace (#2) → resolved toward replace:** `astro-v3s` is a
+  live strand buying a v3-standard (imx708) to replace the v2 — so #3 ("rebuild
+  as v3") is effectively the chosen path, no longer an open question. The macro
+  #1–#3 block below is now partly historical; astro-v3s owns the detail.
+- **Untriaged idea inboxes** from recent forkterm work: `glacier-app/ideas`,
+  `xmatters/ideas`, `home-work-comms/ideas`, `home-automation/ideas` — each
+  strand should triage its own at next visit (not ubersitrep's job to drain).
+- **`splay-grid` unmerged branch** (`splay-grid-mode` worktree, since 07-11) —
+  decide merge-or-drop at its backlog visit.
 
 ## Decisions
 
