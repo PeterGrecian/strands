@@ -62,6 +62,21 @@ see its note.
   darlington passing full force, that's now an optimisation, not a blocker.
   Overlaps the 8R/voice-coil driver work; decide the final topology once.
 
+- **Disk power switch — designed 2026-07-27, ready to build.** Pico-W WiFi
+  power switch for a **3.5" USB3 HDD enclosure**: switches one **12V barrel
+  in→out** (the enclosure does its own 12V→5V + spin-up internally, so only one
+  rail to break). High-side **IRF4905** P-MOSFET + **2N3904** NPN level-shifter
+  (Peter's parts; no beta-limit — Q2 only sinks ~1.2 mA gate-pullup current).
+  Pico W socketed on-board, powered via an **MP1584 buck** off 12V-in (never
+  VSYS-direct at 12V). Laid out hole-by-hole on **board #3** (green
+  breadboard-PCB) from the new protoboard inventory. Full design + build order:
+  `~/electronics/designs/disk-power-switch.md`. Sibling of the EOS switch.
+  *Open before building:* confirm enclosure barrel polarity; set buck 5V out on
+  a meter before it touches VSYS; add Cgate only if turn-on dips the supply.
+- **Protoboard inventory catalogued 2026-07-27** —
+  `~/electronics/designs/protoboard-inventory.md` + photos: 2× strip-of-3, the
+  breadboard-PCB (claimed by the disk switch), and a Slice-of-Pi Pi-hat. "Use
+  up boards on hand" reference before buying more.
 - **Migrate pwmaudio's circuit-design content into `~/electronics`** (decided
   new-repo-now, migrate-later 2026-07-23). Move `wiring.md`, the driver design
   and experiments; leave/duplicate the Pi-specific deploy scripts where they
