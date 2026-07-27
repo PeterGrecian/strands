@@ -28,12 +28,28 @@ pipeline repo. Discussion lives here; code lands in `Berrylands/gardencam`.
 - Data in S3 (`starcam-berrylands-eu-west-1`, `frames/`); starcam raw currently
   unbounded on puppy — this strand defines the retention that bounds it.
 
-## Grounding facts (verified 2026-07-25)
+## Grounding facts (verified 2026-07-27 against `starcam_night_daemon.py`)
 
-- **starcam capture:** 1280×720 JPEG (q85), zenith via mirrors. Cadence 1200 s
-  (20 min) → ~30 frames/night (~10 MB). At 20-min cadence storage is a
-  non-problem; the budget only bites in the **seconds-cadence regime** deep
-  stacking needs (~7000 frames/night, ~2 GB → over budget).
+- **starcam night capture is raw, not JPEG:** raw Bayer **SGBRG10** (10-bit
+  linear), full OV5647 array 2592×1944 (mode 3, no binning), 2.9 s exposure at
+  ~3 s cadence, ~10 MB `.npy` per frame → puppy NFS. Pixel scale ~74″/px; an
+  equatorial star crosses a pixel in ~5 s, so exposures are sub-pixel.
+  Saturated frames (dawn/dusk) dropped at source. Chain is linear photons →
+  accumulator; the old "JPEG q85 quantisation" concern does not apply.
+  (The earlier 1280×720 JPEG q85 figure was **skycam's video path**, not
+  starcam — corrected 2026-07-27.)
+- **Planned hardware (Peter, 2026-07-27; see `astro-v3s` strand):** both
+  instruments go to Camera Module 3 (IMX708, 4608×2592, 10-bit raw, 1.4 µm
+  BI pixels, PDAF): **astrocam → v3 standard** (66°×41°, f/1.8, ~52″/px) and
+  **eclipticam → v3 wide** (102°×67°, f/2.2, ~80–93″/px), eclipticam mounted
+  portrait (long axis cross-drift). Upgrade checklist: probe raw format
+  (likely SRGGB10, not SGBRG10), pin autofocus to manual/infinity, HDR off,
+  re-calibrate SAT_VAL + cover thresholds, revisit exposure (IMX708 allows
+  ~112 s; sub-pixel constraint is the real ceiling).
+- **Budget pressure is ~100×, not ~2×:** ~10 MB × ~9,600 frames ≈ **95 GB of
+  raw per 8 h night** against the 1 GB/night ceiling → keep ratio ~1%.
+  Ship-and-free (fold into accumulators + source tables, free pixels after the
+  rolling window) is mandatory, not optional.
 - **Primitives already in the pipeline** (revive/fix, don't rebuild):
   - `gardencam.py::capture_stacked_image` — on-Pi stack, but **averages to uint8
     and saves JPEG**, re-quantising per stack → discards the sub-noise signal √N
