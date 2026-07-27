@@ -20,25 +20,39 @@
   alerting API at LOW. An xMatters+Gemini experiment. **Now DISABLED** (see
   below).
 
-## Key learning — xMatters CAN dedupe (2026-07-27)
+## Dedup — what was TESTED against the live API (2026-07-27)
 
-The disk-full storm created 33 *separate* HIGH events because nothing
-deduped. xMatters has native mechanisms — I was wrong to say it couldn't:
+The disk-full storm made 33 *separate* HIGH events because nothing deduped.
+I explored two xMatters-native mechanisms and **verified both against the live
+instance** (POST /events, read back eventIds). Findings — trust these over
+intuition, they cost real experiments:
 
-- **`requestId`** on the Events API is an idempotency key: two POSTs with the
-  same `requestId` collapse to one event (no second notification). It only ever
-  *suppresses*, never triggers/retriggers. `xmatters.py` sets none today, so
-  every POST is unique.
-- **Form-level Flood Control** (xMatters web UI, per-form) suppresses
-  substantially-identical events within a window. Our events come through with
-  `floodControl: false`.
+- **`requestId` does NOT dedup.** It must be a valid **UUID** (a raw
+  `dedup-<hex>` string is rejected 400 `validation.common.uuid.invalid` — which
+  would have made *every* alert POST fail if shipped blind). Even with a valid
+  deterministic `uuid5(namespace, source+normalized-title)`, two POSTs sharing
+  the same requestId ~5s apart created **two different events** (96727000,
+  96728000). So requestId is a correlation/trace id here, not an idempotency
+  key. Do not rely on it for suppression.
+- **Plan-level `floodControl` is API-settable but did nothing observable.**
+  `POST /plans {id, floodControl:true}` returns 200 and reads back true, but new
+  events still showed `floodControl:false` and the duplicate test events were
+  NOT suppressed. Real flood control in xMatters is bound to the inbound
+  **integration/form** (threshold + window + duplicate-defining properties), not
+  a plan boolean — and our path is Events-API-direct with a plan+form, which
+  doesn't appear to honour it. (I set the flag true while probing, then **reverted
+  it to false** — its original value. Left as-is.)
 
-**Recommended dedup fix** (not yet done): set a **stable** `requestId =
-hash(source+title)` with **no time bucket** in `xmatters.py`. A time bucket is
-a trap — wall-clock-aligned buckets re-page across boundaries (as little as 2
-min apart) and drip forever for a stuck condition. Stable hash + monitor.py's
-existing 15-min cooldown = one page per distinct problem. Neither approach
-auto-re-notifies if still broken; that needs an xMatters escalation timeout.
+**Conclusion: neither native mechanism deduped on our API path.** The reliable,
+in-our-control fix is **Lambda-side suppression** before calling
+`trigger_xmatters`: on `_fire_alert`, look up an open incident with the same
+normalized `source+title` within a window (DynamoDB query, or an SSM/marker),
+and skip xMatters if found. Deterministic, testable, lives in git. monitor.py
+already has a 15-min per-check cooldown, so the Lambda suppressor is a backstop
+for other producers + repeats that slip the cooldown. **Not yet implemented —
+this is the open decision.** For "still broken, remind me" cadence, drive it off
+the existing `expirationInMinutes` (events auto-terminate at 4h) or an explicit
+re-fire; xMatters escalation timeouts are the native alternative.
 
 ## Pending / loose ends
 
@@ -48,8 +62,9 @@ auto-re-notifies if still broken; that needs an xMatters escalation timeout.
   systemctl start monitor` after the swap. Its drop-in
   `/etc/systemd/system/monitor.service.d/disk-threshold.conf` pins disk
   warn/crit to 99/99 — reconsider once bigdisk is replaced.
-- **Dedup not yet implemented** — see Key Learning above. Decision (stable
-  `requestId` vs. enabling Flood Control on the form) still open.
+- **Dedup not yet implemented** — see the tested findings above. Native
+  xMatters mechanisms (requestId, plan floodControl) were *disproven* on our
+  path; the open decision is whether to add **Lambda-side suppression**.
 - **feeds state-save is broken**: SSM param `/alerting/feeds-state` exceeds the
   Standard-tier 4096-char limit, so PutParameter fails every run (feeds has no
   working "already sent" memory). Moot while feeds is disabled; fix (advanced
@@ -68,3 +83,9 @@ auto-re-notifies if still broken; that needs an xMatters escalation timeout.
 - Did **not** run a blanket `terraform apply` — full plan also wanted an
   unrelated `lambda_runaway` alarm tag change; targeted applies used throughout
   to avoid riding along on drift.
+- **Dedup approach reversed after live testing** — initially recommended a
+  stable `requestId`; testing proved requestId doesn't dedup and plan
+  floodControl doesn't either on our path (see tested findings). No dedup code
+  shipped. Lambda `xmatters.py` unchanged from committed baseline (a briefly-
+  deployed requestId version was reverted + redeployed clean). Plan floodControl
+  left at its original `false`.
