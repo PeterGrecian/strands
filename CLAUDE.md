@@ -24,6 +24,21 @@ session updates that strand's `STATE.md` and commits to this repo. The strand
 *directories* are curation files only — code changes go to the repo the change
 belongs to.
 
+## Listening — mailboxes & doorbells (every strand session)
+
+Inter-strand comms only work if sessions *listen*. The mechanism is proven;
+what fails in practice is sessions forgetting to arm/drain (verified 2026-07-26:
+six live sessions, zero waiters, mail piling up unread). So it's ritual:
+
+- **At session start**: arm the doorbell as a **background task**:
+  `ding --arm <strand-dir>/MAILBOX.md 0` — it blocks until mail arrives and its
+  completion wakes the session. Also `strand-mailbox drain` the spool.
+- **After every wake**: act on the mail, then **re-arm** — a waiter rings once.
+- **At checkpoints** (between work units, `dcp`): `strand-mailbox drain` again.
+- **Sending**: `strand-mailbox send <strand> <msg>` for async (persists in the
+  spool); `echo "..." | ding <pts>` to wake a peer now (resolves the receiver's
+  MAILBOX.md from the tty; find the pts with `strand-ps`).
+
 ## Relationship to super and aifabric
 
 - **super** = the daily kitchen: tooling (`cld`, `strands`, `strand-ps`), the

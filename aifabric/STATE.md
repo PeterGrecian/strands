@@ -11,6 +11,42 @@ forkterms, and the patterns/decisions docs are threads of one cloth. Model:
 **extract & migrate** (the pieces move out, `aifabric` is their live home).
 Publish under `PeterGrecian` as `aifabric`.
 
+## Comms un-deafened + listening ritual; aicli --archive (2026-07-26/27)
+
+Peter reported mailboxes/doorbells "stopped working". Diagnosis: **the
+mechanism was fine — nobody was listening.** Six live sessions, zero armed
+waiters, mail rotting (ubersitrep's 25 Jul spool message undrained;
+astro-canon MAILBOX mail unwatched). Root cause: arming/draining was a memory,
+not a ritual — waiters ring once, sessions restarted without re-arming, and
+`aicli` only *reaps*, never arms. Fixes, all verified live end-to-end:
+
+- **ding send-leg address bug** (real regression from the bin graduation):
+  bare `ding` resolves to `aifabric/bin/ding`, so the piped/default mailbox
+  `$here/MAILBOX.md` pointed at the bin dir, unwatched. Now the send leg
+  resolves the RECEIVER's mailbox from the pts (`/proc/<claude-on-tty>/cwd` →
+  `<cwd>/MAILBOX.md`), falling back to `$PWD/MAILBOX.md`.
+- **ding --reap couldn't see arm loops** — `export DING_OWNER` after exec
+  never shows in `/proc/*/environ`, so reap only ever found the inotifywait
+  child. The arm leg now re-execs itself with `DING_OWNER` in its exec env;
+  reap verified killing an orphaned loop + child, sparing live-owner waiters.
+- **Listening ritual written into `~/strands/CLAUDE.md`** (loads for every
+  strand session): arm `ding --arm <strand-dir>/MAILBOX.md 0` as a background
+  task at session start, re-arm after every wake, `strand-mailbox drain` at
+  start and checkpoints. Sessions live at last restart stay deaf until
+  relaunched.
+
+**`aicli -a|--archive <strand>`** added: retires a strand to
+`<strands>/archive/` — git mv + commit scoped to the move (plain `mv` in a
+non-git strands dir), refuses live strands / `archive` itself / collisions,
+warns on unread MAILBOX.md, hides `archive/` from the strand listing
+(`strands -a` shows them). Tested: error paths, sandbox git + non-git, and
+two real retirements — `xfer-audio-to-phone` (its inbox idea fulfilled +
+trashed) and `victim` (Peter's live-fire test strand).
+
+Cleft loop closed: ubersitrep's stuck triage request was already satisfied
+(idea promoted to the `cleft-plus` strand 2026-07-25); replied via the fixed
+mailbox.
+
 ## ding doorbell: waiter lifecycle fixed (2026-07-21)
 
 The `ding --arm` doorbell had a **stale-waiter bug**: a waiter whose session
