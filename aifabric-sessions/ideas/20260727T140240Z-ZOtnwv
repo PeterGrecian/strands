@@ -1,0 +1,17 @@
+Move the OpenSearch (OSD) cluster snapshot repo from the local NFS-shared fs
+path (muppet:/mnt/photodisk/osd-snapshots, mounted on puppy) to an S3-backed
+repository-s3 snapshot repo. Surfaced during the bigstore-xfer strand while
+retiring the /mnt/photodisk spinner.
+
+Why it's clean: an S3 repo is inherently shared over HTTPS, so it removes the
+whole NFS layer (nfs-server ansible role + /mnt/osd-snapshots mount + the
+muppet-as-NFS-server single point of failure). Cost is ~1-2c/mo for the current
+391M (11 daily snapshots, dedup near-flat) in S3 Standard — 11-nines durability,
+on-demand restore (NOT Deep Archive). Bucket: osd-snapshots-berrylands-eu-west-1
+(account 700630586062, eu-west-1). repository-s3 is bundled-but-not-installed in
+the 3.7.0 image so needs a custom image + keystore creds. Full runbook is in the
+bigstore-xfer STATE.md.
+
+Cross-strand note: the two big bodies of work are ASTRO and AIFABRIC. This is an
+astro-infra change but the OSD cluster (muppet/puppy/vole tiebreaker) is aifabric
+territory — hence filing the idea here.
