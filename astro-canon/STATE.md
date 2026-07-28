@@ -2,6 +2,66 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## ★★★ STARS CONFIRMED + wedge autonomy proven in production (2026-07-26 → 07-28)
+
+Two nights that closed the loop end-to-end.
+
+**Night 1 (2026-07-26) — ⅔ lost to a PROBE-BLIND wedge; found and fixed.**
+- Pass 1 perfect (24/24 frames), then wedged 23:18 UTC with a NEW flavour:
+  config writes fail with **"PTP Timeout" / port timeout (-10)**, NOT the known
+  0x2019/-110 busy signature. `wedged()`'s string blacklist didn't match → the
+  recovery ladder NEVER ENGAGED → the relay never fired (Dev# unchanged all
+  night) → breaker aborted every 15-min restart; paged 00:41 BST. 36 good
+  frames survive.
+- Morning: camera still wedged; **`eos-power cycle` CLEARED A GENUINE CLASS-B
+  WEDGE** (Dev 014→015 at 480M, config writes stick, capture fires) — the last
+  untested link in the autonomy chain, now proven on a real wedge.
+- **Fix (astro `aa93424`, deployed to muppet): `wedged()` is SUCCESS-BASED** —
+  ANY unclean config write (rc≠0 or any error text) counts as wedged; no
+  signature blacklist to fall behind. Plus **forced escalation**: on the 3rd
+  consecutive NO-FILE frame, `recover(force=True)` goes gentle-release →
+  straight to power cycle even when the probe passes (grace window skipped —
+  it polls the probe, which is blind by definition in this mode).
+- Upstream research: this wedge is documented and UNRESOLVED on this exact
+  body under all its names (gphoto2 #497 Rebel T7, #538 1500D, libgphoto2
+  #979). muppet's libgphoto2 2.5.31 is newer than every affected report — no
+  upstream fix exists; power-cycling is the only cure. Our Matter-plug
+  autonomy is ahead of anything upstream.
+- The 36 garden frames (aim was still low): salvage analysis confirmed **d9
+  sharpest on rigid ~10–15 m targets** (matches the daytime car calibration);
+  windblown foliage is useless as a focus metric in 30 s subs.
+
+**Night 2 (2026-07-27, re-aimed at open sky) — 221 good frames, STARS.**
+- Daytime aim-check: open sky, tree fiducial now bottom-LEFT (was b-right).
+- Ran 22:38→04:09 (dawn): **221 good / 18 failed over ~10 passes**. The
+  probe-blind wedge recurred ~every 90 min; forced recovery cleared it **5×**
+  (~3 frames + 6 min each). Budget (4/run) ran out 02:54 → breaker abort +
+  03:07 page → the 03:22 service restart (fresh budget) power-cycled,
+  recovered, and shot to dawn. Total wedge cost ≈ 18 frames.
+- **STARS CONFIRMED by drift**: the brightest source moves coherently
+  ~12 px/min (sidereal) across hours of frames — e.g. (2092,854) 22:35 →
+  (2348,660) 23:01 → (2658,366) 23:35 (half-res coords). First
+  star-confirmed frames from the capture pipeline.
+- **Fixed artifact at ~(1170,1585) half-res** — internal reflection/glow,
+  same pixel all night, ~60–90 px across, peak ~70 after boost. It poisons
+  any naive brightest-source metric; analysis tools must MASK it.
+- **Focus V-curve is real.** Best-per-d FWHM (half-res JPEG; metric floor
+  ~8 px from smoothing): d0–d4 = 26, 26, 20, 16, 11 → **SHELF 8–11 px across
+  d5–d9**. The JPEG metric saturates on the shelf. d9 shows the highest peak
+  concentration (hint only — different stars confound). Picking the winner
+  inside d5–d9 needs **full-res linear-CR2 PSF fitting**; and the shelf never
+  turns back up, so consider extending the grid PAST d9 next night.
+
+**Pending (from these nights):**
+- Full-res CR2 PSF analysis of the d5–d9 shelf frames (the designed
+  next-day pipeline step).
+- Raise `--power-budget` (relay proven cheap and effective; 4/run ran dry
+  mid-night) and/or suppress the page when a fresh-budget service restart is
+  imminent anyway.
+- Why does the wedge recur ~every 90 min? Correlate with runtime / d /
+  frame count — looks systematic, possibly long-exposure-count related.
+- Mask the fixed artifact in the analysis tools.
+
 ## ★★★ CAPTURE PATH FIXED + tonight's run armed (2026-07-24 session)
 
 Three real capture bugs found and fixed — these had been silently sabotaging
