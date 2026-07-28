@@ -27,7 +27,7 @@
   section. Planned v3 hardware recorded in CLAUDE.md grounding facts (detail
   belongs to the `astro-v3s` strand once its mission is written).
 
-## Accumulation architecture (discussion outcomes, 2026-07-27)
+## Accumulation architecture (discussion outcomes, 2026-07-27/28)
 
 - **Whole-night unshifted sums are information-bounded — the capacity law.**
   For a rigid camera trails never cross, they *merge*: a star owns a ~3 px
@@ -82,6 +82,37 @@
   OV5647 — it buys field, not depth; ~93″/px drift axis, t_pix ≈ 6.2 s).
   ~24 MB/frame → capture host must be Pi-4-class. Exposure ceiling becomes the
   sub-pixel condition (~5–6 s), halving shipped volume vs 2.9 s at no cost.
+- **The PSF shape field (2026-07-27).** PSFs are expected oval; their
+  ellipticity across the sensor is a third standing field alongside position
+  and brightness. Three ovality sources, each static in a *different frame* —
+  drift trailing (drift coords, exactly predictable; fitting trail orientations
+  independently measures the pole), lens aberrations (sensor coords, breathes
+  with temperature as low-order coherent modes), atmosphere (alt-az coords,
+  ~0.35%/K) — so the rotating sky disentangles them over time, same trick as
+  anchor densification. Magnitude calibration at our pixel scales: seeing and
+  dispersion are deeply sub-pixel; the *shape* signal is drift + lens, while
+  atmosphere enters mainly as temperature-dependent refraction *displacement*
+  (~1 px at 30° elevation, 3–6 px at 10°) — relevant to eclipticam's
+  low-elevation rows, barely to astrocam's zenith field. Capacity caveat:
+  trailing elongates along-drift (harmless to band capacity) but corner
+  astigmatism eats cross-drift channels — the ~1000-channel figure is
+  field-position-dependent, worst in the wide lens's corners.
+- **Hierarchical field derivation (2026-07-28, the construction principle).**
+  Fields (position, shape, temperature covariates) are derived down a
+  magnitude ladder: brightest stars first, progressively darker filling gaps.
+  Necessity, not preference — it prevents the runaway where ambiguous faint
+  matches bend the field into confidently wrong convergence. Guard rail:
+  matching is unambiguous while πr²ρ ≪ 1; density triples per magnitude
+  (mean separation shrinks √3/mag), so each tier's *validated* residuals set
+  the next tier's search radius — descend only as fast as the field improves.
+  Field order may grow only as anchor density grows (fit always
+  overdetermined); the ladder closes because the lens field is smooth.
+  Temporal persistence under different anchor configurations is the
+  independent per-rung verifier. **The rung where the ladder breaks is the
+  measured identification floor** — the principled edge of the completeness
+  tally, and (crossed with the sky-budget depth curve) the honest test of the
+  100k target. The catalogue and the field are the same object built by the
+  same descent: each rung identifies stars and absorbs them as anchors.
 - **Pipeline shape: detect at cadence, archive at the quantum, accumulate
   forever.** Sightings/detection runs at full 3–6 s cadence; the archive bins
   frames to the capacity quantum (~30–50 s ≈ 5 px of trailing — preserves the
@@ -147,7 +178,22 @@ design assumed** — two structured products already exist:
   N_stars, and a check against the C·T capacity law. Answers whether 100k is
   reachable at v3w's aperture, the accumulation hours needed, and whether depth
   or capacity binds first. Small, feeds the target confirmation below and the
-  Gaia tier the ID bridge needs anyway.
+  Gaia tier the ID bridge needs anyway. Carry a corner-degradation factor
+  (astigmatism eats cross-drift channels) rather than one global channel
+  count; final 100k verdict = where its depth curve crosses the hierarchical
+  ladder's measured identification floor.
+- **Add second moments to the detection schema** (2026-07-27): ellipticity +
+  size (3 numbers) per detection in sightings/source tables — every detection
+  becomes a sample of the PSF shape field (PSFEx-style), kept forever under
+  the retention rule at negligible cost.
+- **Temperature as a regressor in the standing fits** (2026-07-27): add
+  ambient temperature (fleet sensors) as a covariate to the per-hour
+  pole/k1/k2 fits — "static field, refined per night" becomes "smooth
+  function of temperature"; lens breathing and refraction separate by
+  coordinate-frame signature + temperature coefficient.
+- **Gaia extracts tiered by magnitude** (2026-07-28): load the catalogue in
+  the order the ladder descends — this defines what "a Gaia tier" means for
+  the ID bridge.
 - **Confirm the 100,000-star completeness target** (floated 2026-07-27; the
   capacity design was sized to it — ~500k cells, archive quantum 30–50 s). It
   10×'s the mission's completeness goal, so it wants an explicit yes before the
@@ -243,6 +289,12 @@ design assumed** — two structured products already exist:
   astrometric anchors only (centroids from unsaturated wings); the archive's
   science lives between the catalogue floor and the noise floor; residual bits
   go to the darkest pixels.
+- **2026-07-28 — Field derivation is hierarchical (LOCKED construction
+  principle).** Brightest stars first, progressively darker filling the gaps;
+  never fit a field mode that only faint (ambiguous-match) stars would
+  constrain; search radius per rung set by the previous rung's validated
+  residuals; persistence across anchor configurations verifies each rung. The
+  identification floor is *measured* as the rung where the ladder breaks.
 - **2026-07-27 — Storage tiering by replaceability + annual disk epochs.**
   Precious-and-small (catalogue, source tables, accumulators, fields) →
   replicated cloud. Bulk binned residuals (~30–50 s quantum) → one 6 TB disk
