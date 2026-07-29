@@ -208,14 +208,18 @@ Replaced the uninformative night/camera list with a dense **filesystem matrix**
   `/mnt/photodisk` (+ existing bigdisk/bigdisk2/ssd) → capacity bars now show
   muppet `/`, puppy `/`, bigstore, photodisk. Also added bigstore/bigdisk/
   bigdisk2/photodisk to the astrocam/eclipticam/starcam scan streams.
-- **⚠️ KNOWN GAP (rationalisation):** storage-report still emits 0 rows for
-  bigdisk's astrocam (distinct dev/ino from bigstore, so NOT the alias dedup —
-  cause untraced). So the multi-copy view (#, /astro/disks) is populated by the
-  one-shot scanner, not the canonical tool. **Do NOT run `storage-report`'s
-  pruning scan on muppet yet** — it would collapse the multi-copy rows. Making
-  storage-report fully multi-copy-aware is a rationalisation-pass task.
+- **GAP RESOLVED (was "bigdisk astrocam emits 0"):** it was SYMLINKS. Muppet's
+  `~/astrocam-frames` → `/mnt/bigdisk/astrocam-frames` (same dev/ino).
+  `dedup_aliases` correctly collapsed the two names but its tiebreak KEPT THE ~/
+  NAME → the row filed under the `mup` column, not `bd`. `scan_capacity` already
+  preferred `/mnt/` names; dedup did the opposite. Fix (astro `31f7421`): flip
+  dedup to prefer `/mnt/<disk>/...`. Now storage-report is correct AND
+  multi-copy-aware; **ran it for real on muppet** (267 inv + 5 cap, pruned 123
+  stale home rows) → **self-maintaining via cron; the one-shot
+  scan-fs-inventory.py is no longer needed for muppet's disks.** /astro/disks now
+  shows bd's real contents (av2 44, ev3w 32, ...); `mup` gone.
 - mywebsite commits this session: 27653b6, e90c685, 7ced289, 7b22f8b, d0fbc68,
-  12b2bff. astro: 338819d.
+  12b2bff. astro: 338819d, 31f7421.
 
 ### OWNERSHIP (2026-07-28)
 - OSD reroute (#2 below) — **being done elsewhere**, not this strand.
