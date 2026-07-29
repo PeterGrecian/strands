@@ -36,17 +36,54 @@
   super-to-aifabric strand's PATH-flip (`~/aifabric/bin` before `super/bin`) —
   mailboxed 2026-07-22.
 
-Everything else is still in IDEAS.md awaiting triage into here. Headline items:
-- pi-fleet reporter cadence 1→5 min + immediate-on-boot (fleet-wide; Lambda
-  offline threshold must move with it).
-- Add vole as a first-class fleet member (reporter must degrade cleanly on a
-  non-Pi host).
-- pi-fleet → fleet rename: tech debt, do only as a ride-along, never standalone.
-- General fleet-maintenance catch-up (drift sweep).
-- **Recurring maintenance schedule** (idea, 2026-07-22): stand up a regular
-  cadence for the drift sweep rather than ad-hoc — e.g. a scheduled `/loop` or
-  cron routine that runs the drift-check + reports. Decide interval + form with
-  Peter; ties into the drift-watch role already in the repo.
+- **bigstore 'bs' NFS export/mount: EDITED, awaiting rollout** (triaged
+  2026-07-29 with Peter). `bs` = `/mnt/bigstore` on **muppet** (5.5T, the
+  principal live astro store). Pure host_vars data — the `nfs-server`/
+  `nfs-client` roles already do everything; no role code changed. Decided:
+  - **Exporter**: muppet, export the astro subtree `/mnt/bigstore/astro-data`
+    (not the whole disk). Role default opts (rw,**sync**,all_squash→peter).
+  - **Mounters**: eclipticam + puppy (the end-of-night sync *writers*), and pip
+    (browse/admin). All at `/mnt/muppet/bigstore`. eclipticam and puppy were
+    NFS *servers* only — both now also get `enable_nfs_client: true`.
+  - **Options doctrine — resilience over speed** (Peter's steer: "had to reboot
+    everything after muppet maintenance, don't want to do that again; write
+    speed not critical"). Kept the role's **soft automount** default on all
+    mounts and **sync** (not async) export: a hard mount would wedge clients in
+    D-state when muppet drops for maintenance and force the reboot he's avoiding;
+    soft fails with EIO instead. Trade-off: the astro-storage sync must tolerate
+    an occasional soft EIO and retry next night (fine for a nightly bulk write).
+  - **Files edited**: `muppet.yml` (+1 export), `pip.yml` (+1 mount),
+    `eclipticam.yml` (+client role +mount), `puppy.yml` (+client role +mount).
+    All four YAML-validate and resolve correctly via `ansible-inventory`.
+  - **Rollout NOT done this session** (deliberately — muppet is
+    maintenance-sensitive). Before rollout: (a) `/mnt/bigstore/astro-data` must
+    already exist on muppet (role exports an existing dir only — the mirror
+    target `/mnt/bigstore/astro-data/` per bigstore-xfer STATE, so it should);
+    (b) confirm puppy (static .11) + eclipticam resolve `muppet.local` via mDNS;
+    (c) deploy `-l muppet` first (`--tags nfs`), then the three clients, in
+    waves, verifying live capture undisturbed. **Commit made this session.**
+  - **Seam**: the *dynamic* sync half (write the night onto this mount) lives in
+    the **astro-storage** strand's inbox — it lands only after this mount exists.
+
+Standing / not-yet-scheduled items (were in IDEAS.md, promoted 2026-07-29):
+- **pi-fleet reporter cadence 1→5 min + immediate-on-boot** (decided 2026-07-20,
+  whole-fleet). Set `OnUnitActiveSec=5min`/`OnBootSec=0` in the timer; confirm
+  whether ansible deploys the committed `pi-fleet-status.timer` or its own.
+  **Lockstep**: widen the Lambda offline threshold (`pi-fleet/lambda-handler.py`)
+  to ≈2–3× or hosts flap offline between reports. Roll out in waves.
+- **Add vole as a first-class fleet member**: reporter must degrade cleanly on a
+  non-Pi host (`HOSTNAME.replace('pi-','')` + `mmcblk0` SD assumptions break on
+  vole). Decide board appearance with pifleet. This is where the pi-→fleet
+  rename debt naturally surfaces — do it here if the reporter needs surgery.
+- **pi-fleet → fleet rename**: tech debt, ride-along only, never standalone
+  (naming is load-bearing in code/units/env/Lambda path; live-capture blast
+  radius, zero new capability).
+- **General fleet-maintenance catch-up** (drift sweep): sweep `~/ansible` for
+  config drift / half-applied roles. Known seeds: vim-default-editor pending on
+  starcam/deskpi/xoverpi; astrocam sudo broken (super memory).
+- **Recurring maintenance schedule** (idea, 2026-07-22): stand up a cadence for
+  the drift sweep (scheduled `/loop` or cron routine) rather than ad-hoc.
+  Decide interval + form with Peter; ties into the drift-watch role.
 
 ## Decisions
 
@@ -56,3 +93,9 @@ Everything else is still in IDEAS.md awaiting triage into here. Headline items:
 - **Cadence** (2026-07-20, with Peter): whole-fleet 5 min + `OnBootSec=0`, not
   a per-host vole override. Requires an ansible re-deploy and a lockstep Lambda
   threshold change.
+- **bs mounts favour maintenance-resilience over throughput** (2026-07-29, with
+  Peter): all bigstore NFS mounts stay **soft** and the export **sync**, not
+  hard/async. Rationale: muppet maintenance previously forced a fleet-wide
+  reboot; a hard mount hangs clients in D-state when the server drops, soft
+  fails EIO instead. Write speed is explicitly not a priority. Consumers (the
+  end-of-night sync) must retry-next-night on EIO.
