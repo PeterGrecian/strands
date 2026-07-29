@@ -221,7 +221,11 @@ Replaced the uninformative night/camera list with a dense **filesystem matrix**
 - mywebsite commits this session: 27653b6, e90c685, 7ced289, 7b22f8b, d0fbc68,
   12b2bff. astro: 338819d, 31f7421.
 
-### 1j. photodisk POWERED DOWN (2026-07-29) ✅
+### 1j. photodisk VAULTED (powered down + shelved) (2026-07-29) ✅
+**Status: IN THE VAULT** — physically stored as a cold backup. Notified
+**astro-storage** via strand-mailbox (its STATE still treated /mnt/photodisk as a
+live staging/ship target — that target is now gone; use bigstore).
+
 aifabric-sessions confirmed OSD data can be vaulted/trashed (S3 export = backup
 of record) and did the teardown: container detached from photodisk, path.repo
 removed, **puppy NFS-unmounted** (the hang risk cleared). Verified live, then
