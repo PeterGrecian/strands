@@ -36,34 +36,46 @@
   super-to-aifabric strand's PATH-flip (`~/aifabric/bin` before `super/bin`) —
   mailboxed 2026-07-22.
 
-- **bigstore 'bs' NFS export/mount: EDITED, awaiting rollout** (triaged
-  2026-07-29 with Peter). `bs` = `/mnt/bigstore` on **muppet** (5.5T, the
-  principal live astro store). Pure host_vars data — the `nfs-server`/
-  `nfs-client` roles already do everything; no role code changed. Decided:
-  - **Exporter**: muppet, export the astro subtree `/mnt/bigstore/astro-data`
-    (not the whole disk). Role default opts (rw,**sync**,all_squash→peter).
-  - **Mounters**: eclipticam + puppy (the end-of-night sync *writers*), and pip
-    (browse/admin). All at `/mnt/muppet/bigstore`. eclipticam and puppy were
-    NFS *servers* only — both now also get `enable_nfs_client: true`.
-  - **Options doctrine — resilience over speed** (Peter's steer: "had to reboot
-    everything after muppet maintenance, don't want to do that again; write
-    speed not critical"). Kept the role's **soft automount** default on all
-    mounts and **sync** (not async) export: a hard mount would wedge clients in
-    D-state when muppet drops for maintenance and force the reboot he's avoiding;
-    soft fails with EIO instead. Trade-off: the astro-storage sync must tolerate
-    an occasional soft EIO and retry next night (fine for a nightly bulk write).
-  - **Files edited**: `muppet.yml` (+1 export), `pip.yml` (+1 mount),
-    `eclipticam.yml` (+client role +mount), `puppy.yml` (+client role +mount).
-    All four YAML-validate and resolve correctly via `ansible-inventory`.
-  - **Rollout NOT done this session** (deliberately — muppet is
-    maintenance-sensitive). Before rollout: (a) `/mnt/bigstore/astro-data` must
-    already exist on muppet (role exports an existing dir only — the mirror
-    target `/mnt/bigstore/astro-data/` per bigstore-xfer STATE, so it should);
-    (b) confirm puppy (static .11) + eclipticam resolve `muppet.local` via mDNS;
-    (c) deploy `-l muppet` first (`--tags nfs`), then the three clients, in
-    waves, verifying live capture undisturbed. **Commit made this session.**
-  - **Seam**: the *dynamic* sync half (write the night onto this mount) lives in
-    the **astro-storage** strand's inbox — it lands only after this mount exists.
+- **bigstore 'bs' NFS export/mount: DONE + ROLLED OUT + VERIFIED** (2026-07-29
+  with Peter). `bs` = `/mnt/bigstore` on **muppet** (5.5T, the principal live
+  astro store). Export the astro subtree `/mnt/bigstore/astro-data`
+  (rw,**sync**,all_squash→peter); mounted at `/mnt/muppet/bigstore` on
+  **eclipticam + puppy** (the end-of-night sync writers) and **pip** (browse).
+  eclipticam + puppy were NFS *servers* only — both now also NFS *clients*.
+  - **Options doctrine — resilience over speed** (Peter's steer: muppet
+    maintenance must never force a fleet reboot again; write speed not
+    critical). **Soft automounts** + **sync** export, not hard/async: a hard
+    mount would wedge clients in D-state when muppet drops; soft fails EIO
+    instead. The astro-storage sync must tolerate the odd EIO and retry next
+    night.
+  - **Verified on all four hosts**: real NFS4 mounts confirmed via `findmnt`,
+    real writes land on the export (write+cleanup OK on all three clients),
+    muppet + eclipticam own exports still active, eclipticam **live capture
+    undisturbed** (astro-state/process + v3w-uploader + capture.timer all fine).
+  - **Three rollout findings, all handled:**
+    1. **puppy uses the IP `192.168.0.10:`, not `muppet.local`** — puppy's mDNS
+       resolves `muppet.local` to a flaky link-local IPv6 (the astro-storage
+       trap); matched its existing working osd-snapshots mount. eclipticam+pip
+       use the hostname (they resolve IPv4 cleanly).
+    2. **A fresh `x-systemd.automount` fstab line doesn't mount until its
+       `.automount` unit is started** — the role's `daemon-reload` regenerates
+       the unit but doesn't start it, so the first write hit the *local*
+       mountpoint dir (false-positive "WRITE OK"). Caught via `findmnt`, cleaned
+       the stray local file, `systemctl start`ed each automount. Now durable —
+       the fstab entries auto-start on reboot too.
+    3. **Fixed a real `nfs-server` role bug**: the generator-mask task symlinked
+       into `/etc/systemd/system-generators/`, which doesn't exist on a host
+       that never had a local generator override (failed on eclipticam; muppet
+       had it by luck). Added a task to ensure that dir first — mask is now
+       portable. Re-applied eclipticam cleanly.
+  - **Seam**: the *dynamic* sync half (write the night onto this mount) is in
+    the **astro-storage** strand's inbox — now unblocked, this mount exists.
+  - **Pre-existing drift surfaced, NOT yet fixed**: muppet's `exportfs -ra`
+    handler now reports `failed=1` because the retired
+    `/home/peter/starcam-backup` export line points at a dir deleted from disk.
+    Harmless (bigstore export landed fine; role tolerates missing dirs at
+    runtime) but every future `--tags nfs` run on muppet flags failed until the
+    stale line is dropped from `muppet.yml`. Candidate for the drift sweep.
 
 Standing / not-yet-scheduled items (were in IDEAS.md, promoted 2026-07-29):
 - **pi-fleet reporter cadence 1→5 min + immediate-on-boot** (decided 2026-07-20,
