@@ -25,17 +25,35 @@ migrations**, NOT the recurring sync — that's this strand's seam.
   direct. Captures to local SSD (`/mnt/ssd`, **91% full**), then end-of-night
   rsync SSD → bs, **verify, ship-and-free** (keep newest 3 nights local).
 
-**BUILT this session:**
-- **`super/bin/eclipticam-ship-night`** — the eclipticam back half. rsync SSD →
-  bs, `--checksum` dry-run verify (zero diffs), then `trash` (never rm) nights
-  outside the 3-night safety window. Soft-EIO tolerant (bs down ⇒ non-destructive
-  bail + retry next run). `--go`/`--keep`/`--help`/`--hints`. **Verified with a
-  real dry-run on eclipticam against the live bs mount** (16 nights detected,
-  newest 3 protected, `trash` resolves via `~/super/bin` fallback since super/bin
-  isn't on eclipticam's login PATH). Not yet run with `--go`.
-- **`eclipticam-ship-night.{service,timer}`** (staged in strand dir, not
+**BUILT + TESTED LIVE this session (works end-to-end):**
+- **`super/bin/eclipticam-ship-night`** — the eclipticam back half. **rsync over
+  SSH** (not the NFS mount) SSD → `peter@muppet:/mnt/bigstore/astro-data/…`,
+  `--checksum` verify (zero DATA diffs), then **`rm`** (not `trash`) nights
+  outside the 3-night safety window. Fail-safe (muppet down / rsync rc≠0 / verify
+  diff ⇒ non-destructive bail + retry). `--go`/`--keep`/`--host`/`--addr`/
+  `--help`/`--hints`.
+- **Two bugs found & fixed by live testing (both would have bitten in prod):**
+  1. `rsync -a` over the NFS mount hit `chgrp: Operation not permitted`
+     (`all_squash` export) → **code 23** → tool read it as "copy failed, never
+     free." **Fix: rsync-over-ssh** — files land owned by peter on muppet
+     natively; `-a` works; +`-z` compression, `--partial` resume. (Peter's call,
+     revised from an initial "keep the mount".)
+  2. Freeing via `super/bin/trash` filled eclipticam's **15G root fs to 100%** and
+     reclaimed **no SSD space** — `~/.trash` is a different filesystem from
+     `/mnt/ssd`, so `trash` cross-fs-COPIES. **Fix: `rm` the SSD dir**, reached
+     only after byte-verify on bs (the verified bs copy is the retained copy;
+     that's how "never rm the last copy" is honoured here).
+- **LIVE RESULT (2026-07-29):** shipped 9 nights (07-20..07-28) to bs, all
+  checksum-verified; freed the 6 oldest, kept newest 3. **SSD 53%→19% (~36G
+  reclaimed)**; root fs untouched. The chronically-91%-full SSD problem is solved
+  by this tool. The 28th (the specific test night) independently checksum-verified
+  clean SSD-vs-bs (0 differing files).
+- **Decoupling:** because the ship path is now ssh, **eclipticam no longer needs
+  the bs NFS mount at all** — only astrocam's direct-write half needs the ansible
+  mount now.
+- **`eclipticam-ship-night.{service,timer}`** (staged in strand dir, not yet
   installed) — daily ~09:00 Europe/London oneshot. Hand-install or fold into
-  ansible.
+  ansible to make the nightly cadence automatic.
 
 **bs vs squash/cold-archive (Part 3):** this sync is deliberately **agnostic** —
 it lands verified full-cadence nights on bs and stops. bs = principal live store;

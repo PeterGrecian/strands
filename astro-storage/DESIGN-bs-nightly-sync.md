@@ -108,6 +108,30 @@ live and we can watch real EIO frequency. Starts simple; a plain write-through
 (driven from a systemd timer there), per house direct-routing rule (bytes go
 SSD → bs over the mount, not relayed through pip).
 
+**Transport = rsync over SSH** (Peter, 2026-07-29 — revised from an initial
+"keep the NFS mount" call after live testing exposed the mount's problems). The
+tool pushes `rsync -az --partial` over ssh from eclipticam straight to
+`peter@muppet:/mnt/bigstore/astro-data/…` (stable IP 192.168.0.10 to dodge flaky
+mDNS), matching `ship-astro-data` and bigstore-xfer's `run-eclipticam-ssd.sh`.
+Why ssh won:
+- The bs export is **`all_squash`→peter**. Over the NFS mount, `rsync -a` hits
+  `chgrp: Operation not permitted` on **every file** → exit **code 23**, which the
+  tool read as "copy failed, never free" — ship-and-free silently broken. Over
+  ssh, files land owned by peter on muppet natively and `-a` just works.
+- Delta transfer + `-z` compression over the ~100Mbit powerline; verify
+  checksums computed on each end, not read back over NFS.
+- **eclipticam's ship path no longer depends on the bs NFS mount at all** — only
+  astrocam's direct-write half needs the ansible mount now (nice decoupling).
+
+**Freeing = `rm` of the SSD night dir, NOT `super/bin/trash`** (fix, 2026-07-29,
+found in testing). `~/.trash` is on eclipticam's **15G root fs**, a *different
+filesystem* from `/mnt/ssd`, so `trash` does a cross-fs **copy** — it fills root
+fs (hit 100% in the test) and frees **no SSD space**, defeating the entire point.
+The house "never rm data" rule is satisfied differently here: freeing happens
+**only after byte-verify on bs** (5.5T) succeeds and the night is outside the
+safety window — the verified bs copy IS the retained copy. So a plain `rm` of the
+verified SSD dir is correct and is the only thing that actually reclaims the SSD.
+
 Mechanism & cadence:
 - **Cadence**: systemd timer once/day, well after night ends — e.g.
   **`OnCalendar` ~09:00 Europe/London** (capture is night-only; by 09:00 the
