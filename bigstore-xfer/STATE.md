@@ -221,6 +221,41 @@ Replaced the uninformative night/camera list with a dense **filesystem matrix**
 - mywebsite commits this session: 27653b6, e90c685, 7ced289, 7b22f8b, d0fbc68,
   12b2bff. astro: 338819d, 31f7421.
 
+### 1j. photodisk POWERED DOWN (2026-07-29) ✅
+aifabric-sessions confirmed OSD data can be vaulted/trashed (S3 export = backup
+of record) and did the teardown: container detached from photodisk, path.repo
+removed, **puppy NFS-unmounted** (the hang risk cleared). Verified live, then
+clean power-down from this strand:
+1. `exportfs -u 192.168.0.0/24:/mnt/photodisk` (released knfsd)
+2. `sync` + `umount /mnt/photodisk` (clean, writes flushed)
+3. `hdparm -Y /dev/sdb` + `echo 1 > /sys/block/sdb/device/delete` → /dev/sdb
+   gone, USB drive spun down + detached. Data intact — frozen shelf backup,
+   all also on bigstore.
+
+**DURABLE FOLLOW-UPS — DONE 2026-07-29:**
+- ✅ muppet `/etc/fstab` photodisk line commented out (backup `/etc/fstab.bak-*`).
+- ✅ ansible export removed: `inventory/host_vars/muppet.yml` `/mnt/photodisk`
+  export commented (ansible `91bad48`, pushed). So neither reboot nor `ansible`
+  re-mounts/re-exports it.
+- **To bring it back:** power on USB → `echo '- - -' | sudo tee
+  /sys/class/scsi_host/hostN/scan` (rescan) → uncomment fstab line + `mount -a`
+  → uncomment the ansible export if NFS access wanted again.
+
+### 1i. photodisk power-down BLOCKED on OSD snapshot repo (2026-07-29 — RESOLVED, see 1j)
+Hot day → Peter wants photodisk powered down. **NOT SAFE YET.** Checked muppet
+live state: OSD **index** IS off photodisk (Move 1 done — named volume on root
+NVMe, verified), BUT the **snapshot repo is still on photodisk**:
+`/mnt/photodisk/osd-snapshots` (476M) still bind-mounted by the opensearch
+container AND HARD-NFS-mounted by puppy (`path.repo=/mnt/osd-snapshots`). Powering
+down now would hang puppy + break the cluster snapshot repo (index data safe
+though). Confirmed against aifabric-sessions STATE: their "item #3" (photodisk
+evacuation) is half-done; S3 export is already their backup-of-record so native
+snapshots can retire. **Sent aifabric-sessions a strand-mailbox** (2026-07-29)
+asking them to run item #3 step 2 (retire snapshot machinery via their
+coordinated-restart runbook). Peter's steer: keep a copy of the repo on the shelf
++ S3 otherwise. **Power-down waits on their reply** — do NOT touch the OSD cluster
+from this strand.
+
 ### OWNERSHIP (2026-07-28)
 - OSD reroute (#2 below) — **being done elsewhere**, not this strand.
 - S3 off-site copy — **deferred**.
