@@ -332,6 +332,11 @@ and the rest of the portfolio list in super/GLOBAL.md.
   strand should triage its own at next visit (not ubersitrep's job to drain).
 - **`splay-grid` unmerged branch** (`splay-grid-mode` worktree, since 07-11) —
   decide merge-or-drop at its backlog visit.
+- **bigstore "bs" → astro end-of-night, this-then-that** (2026-07-29): ansible
+  NFS-**exports+mounts** `bs` (static transport) → *then* astro-storage's
+  end-of-night **sync** writes onto that mount (dynamic). Ansible half first —
+  the sync depends on the mount existing. Ideas parked in both owning inboxes;
+  ubersitrep just holds the order.
 
 ## Decisions
 
