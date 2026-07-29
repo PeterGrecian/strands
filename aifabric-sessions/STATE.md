@@ -151,6 +151,38 @@ was the hidden reason puppy kept creeping toward the 95% flood watermark.
 **Still open (small):** the `snapshot-sessions` dead code + its units linger in
 the osd repo (inert, kept for reference); remove in a later cleanup if wanted.
 
+## Session 3 cont. — redact-from-sessions tool + live-file scrub (2026-07-29)
+
+Peter's framing: back up BOTH the index (fast working-system restore) AND the
+raw sessions (source of truth, tiny — none of it heavyweight); redaction matters
+less because the S3 bucket is "as secret as bin/secrets". Resolution:
+- **`aifabric/bin/redact-from-sessions`** (aifabric fb19e19) — the durable tool,
+  "run after a blunder". Scrubs a leaked value (positional, need not be in
+  `secrets`) and/or `--known` (all managed secrets) from live
+  `~/.claude/projects/**/*.jsonl` AND, with `--index`, the OpenSearch index.
+  Excludes the active session file (append-corruption hazard); trashes originals;
+  re-validates JSON per line; refuses <8-char values; prints counts only.
+- **One-off live-file scrub DONE**: 50/114 live transcripts contained a known
+  secret (nothing had ever scrubbed the *live* files — only the index+export on
+  2026-07-21). Scrubbed 49 (active session skipped), 0 JSON failures, originals
+  in `~/.trash/2026-07-29/redact-from-sessions/`. **Index also scrubbed**: 142
+  docs (later shown inflated) → now **0 exact-substring hits**, verified.
+- **GOTCHA found + fixed** ([[gotcha-match-phrase-vs-exact-redact]]): the index
+  path first counted with `match_phrase` (ANALYZED → over-matches tokenised
+  fragments) but redacted with exact `.replace()`. Left 20 "residual" hits that
+  were ALL false positives (0 exact substrings). Fixed: match_phrase is only a
+  candidate pre-filter; painless gates on exact `.contains()` with
+  `ctx.op='noop'`; dry-run exact-checks client-side. Report says "(exact-substring)".
+- Perf note: `--known` = 52 sequential queries (~2min). Fine — the blunder case
+  is usually ONE value (fast); `--known` is the rare belt-and-braces sweep.
+
+**Still TODO (Peter's plan, not yet built):** (a) **raw-session backup** — a
+nightly `tar` of `~/.claude/projects` → S3 (byte-faithful now the live files are
+clean; closes the un-ingested-transcript gap). (b) **Match the
+`petergrecian-sessions-archive` bucket IAM to the `secrets` bucket's lockdown
+bar** (Peter: yes) — the redaction-relaxation rests on it being "as secret as
+secrets", so make that literally true. Both agreed this session, deferred.
+
 ## Session 2 (2026-07-21) — OSD admin-password rotation (authorised, DONE)
 
 Handoff from home-work-comms keeper: rotate the OSD admin password off the
