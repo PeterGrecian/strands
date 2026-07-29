@@ -17,8 +17,34 @@ PWM-DAC code is in `~/Berrylands/pwmaudio` (shared with the deskpi speaker-tone
 work; see the `pwmaudio` memory). The driver/circuit build is slated to migrate
 into the [[electronics]] strand + `~/electronics` repo (created 2026-07-23).
 
+## ⚠️ deskpi DOWN — recover first (2026-07-29)
+
+The camera image-shift test needs a camera on **deskpi** (the rig's Pi). While
+enabling a **V2 camera (IMX219)** we hit a boot failure and **deskpi is
+currently down** — won't boot, green ACT LED does a little reading then stops.
+
+Cause: ran `rpi-update` to chase camera detection; it bumped to the
+**rpi-6.18.y (ARMv7/v8) kernel tree** — current firmware has **dropped ARMv6**,
+so it's unbootable on the A+ — and failed halfway (VC libs). Restored the core
+`/boot` blobs from backup before rebooting, but the restore was incomplete
+(didn't cover `/boot/overlays/` etc.) and it still won't boot.
+
+**Recover tomorrow via SD card in a reader on pip.** Full recovery + camera-
+detection debug plan (and the "no I²C ACK on i2c-0" finding — firmware age is
+NOT the blocker, Nov-2018 has IMX219) is in
+**`~/Berrylands/pwmaudio/experiments/deskpi-camera-recovery.md`**. The on-card
+firmware backup at `deskpi:~/boot-firmware-bak-20260729/` survives (root
+partition). GPIO18 actuator wiring + pigpiod config untouched.
+
+**Lesson: never `rpi-update` an ARMv6 Pi (A+/B+/Zero).** apt/OS Raspbian stays
+current for these boards; `rpi-update` bleeding-edge firmware does not track
+ARMv6.
+
 ## Pending / loose ends
 
+- **Recover deskpi (blocker — see above).** Then the camera image-shift test can
+  proceed. `start_x=1` + `gpu_mem=128` are the camera config; the open question
+  is why the IMX219 gives no I²C ACK on i2c-0 (software/config, not firmware).
 - **Mechanical: see actual travel now that force is adequate.** Optical-lever
   by eye showed nothing at ~200 mA (2026-07-09); retry with the darlington's
   full force, then the real detector — mount the rig to tilt a camera and look
