@@ -65,7 +65,137 @@ rsync exit 0). `_non-astro` 94G copied — needed a `sudo` top-up for 13 root-ow
 photos in images/2012-13 that the peter-run rsync couldn't read (all already on
 pip anyway). bigstore now 234G→ still 5% used, 5.2T free.
 
-### 2. OpenSearch reroute off photodisk (PLANNED — do NOT improvise)
+### 1b. Merge bigdisk + bigdisk2 → bigstore (IN PROGRESS 2026-07-27)
+Second disk. bigdisk is 96%/93% full (~43G free) — the space-pressured one; kept
+as tepid spare, but its data comes onto bigstore as the live copy. Driver
+`/mnt/bigstore/astro-data/run-bigdisk-merge.sh`, log `bigdisk-merge.log`,
+detached (sudo setsid). Merge map (decided with Peter):
+- `astrocam-frames/` (513G, **NEW camera**, 45 dated dirs 06-08…07-26) →
+  `astrocam-frames/` — dated dirs only, **drop the `2026/` rollup** (it's only
+  4.9M of summaries, not duplicate frames).
+- **ECLIPTICAM (corrected 2026-07-27 after Peter flagged the two 06-21 dirs look
+  identical):** the two bigdisk eclipticam trees are NOT raw-vs-products — they
+  are the SAME processed-night dataset in two completeness states (verified: not
+  symlink/hardlink, different inodes; per-night file counts show `eclipticam-
+  frames/night/` is a consistent SUPERSET, e.g. 06-21 1561 vs 1551, and holds all
+  62 `-web.mp4` variants; `night/` has none). bigstore's existing photodisk copy
+  is ALSO the thin unprefixed form (1551, no -web). So all three reconcile into
+  ONE tree `eclipticam-frames/night/`, copied **thin → rich** so newest wins:
+  (a) `bigdisk/night/` folded in, (b) `bigdisk/eclipticam-frames/night/` (rich)
+  overlaid, (c) `bigdisk2/eclipticam-frames/night/` (06-25…07-11) added.
+  **No separate eclipticam-products/ tree** (that was based on a wrong raw-vs-
+  processed read; corrected before the merge reached eclipticam — driver v2).
+- `starcam-frames/night/` (05-24…06-04, new dates) + `starcam-backup/`
+  (05-20…30, verified byte-identical to bigstore's photodisk copy — checksum
+  dry-run showed 0 diffs) → `starcam-frames/night/` (merge, skip identical).
+- `audio` + `photodisk-2013` + `glacier-work` → `_non-astro/from-bigdisk/`.
+Overlap policy: **verify-then-skip** via `rsync --checksum` (proven: bigdisk
+05-20 == bigstore 05-20, 4399 files, byte-identical).
+
+**DONE & VERIFIED 2026-07-27 22:34Z** — all 6 phases rc=0 (astrocam 15:47→20:35,
+eclipticam thin→rich→bigdisk2, starcam×2, audio). Verification:
+- astrocam 189,131 files / 45 dated dirs, byte total 513G — matches source except
+  today's live `2026-07-27` dir (topped up separately; residual diff = camera
+  still capturing, expected).
+- missing nights **06-12 (2504 files) and 06-15 (1496) now present** (rich copies).
+- bigdisk2 06-25…07-11 landed (spot-checked OK).
+- **eclipticam night range on bigstore now 06-09…07-26, 48 nights contiguous**
+  (photodisk + bigdisk + bigdisk2 + eclipticam-SSD all merged into one tree).
+- bigstore now **1.1T used, 4.4T free (20%)**.
+
+### 1c. Update the /astro/storage page + index for bigstore + photodisk (FOLLOW-UP)
+The page will **NOT** self-update. Mechanism (found 2026-07-27):
+- Page = `~/mywebsite/lambda/routes/astro.py::render_astro_storage`, fed from two
+  DynamoDB tables via `mywebsite.py::get_astro_storage_data`:
+  **`astro-host-capacity`** (disk bars) + **`astro-storage-inventory`** (per-night
+  rows: night,camera,host,path,storage_class,online).
+- Source of truth for inventory = **`~/astro/whereisallthedata.csv`** (schema
+  `night,camera,host,path,…,storage_class,notes`, ONE ROW PER (night×location)).
+  This CSV **is exactly the index summary Peter wants** ("2026-06-21 v3w →
+  bigstore, bigdisk2, s3") — it just lacks the new bigstore/photodisk rows.
+- Tools already exist in **`~/astro/bin/`**: `storage-report` (df→capacity table),
+  `inventory-from-csv` (CSV→inventory table), `astro-where` (query CLI).
+
+To surface bigstore + photodisk:
+1. Add muppet mounts `/mnt/bigstore` and `/mnt/photodisk` to `storage-report`'s
+   mount list; run it → capacity bars appear (currently tracks only puppy /,
+   eclipticam /mnt/ssd, muppet /mnt/bigdisk, /mnt/bigdisk2, ASTROBACKUP USB).
+2. Append bigstore (and photodisk-as-shelf) rows for every migrated night to
+   `whereisallthedata.csv`; run `inventory-from-csv` → per-night page updates.
+This is **`~/astro` repo work**, and should run **after** the copies finish so we
+inventory the settled state, not a moving target. NOT this session.
+
+### 1d. eclipticam SSD pull (DONE & VERIFIED 2026-07-27)
+eclipticam host = single Kingston SSD `/mnt/ssd` (109G, was 84% full), **one copy
+only, no RAID**. Held 07-12…07-26 (15 nights, 86G) — the newest eclipticam data,
+existing NOWHERE else (contiguous tail after bigstore's …06-24 and bigdisk2's
+06-25…07-11). Pulled muppet←eclipticam over ssh into `eclipticam-frames/night/`.
+**All 15 nights verified, file counts exact** (1070…1409/night). SSD now safe to
+free (~86G reclaim) — but hold until Peter says so (was single-copy); ideally
+after it's in the inventory + S3. NOTE: run the pull as **peter not sudo** (root
+on muppet has no key to eclipticam; peter does) — cost an hour of debugging.
+
+### 1e. puppy survey + skycam pull (2026-07-28)
+"puppy /383" is a stale page name — puppy's data lives on its **NVMe `/`**
+(468G, 89% full) under `/home/peter/`. It's the live capture host. Overlap vs
+bigstore:
+- `astrocam-frames` (06-08…06-27) — SUBSET of bigstore's 06-08…07-27 (bigstore
+  fuller, e.g. 06-20 4209 vs puppy 4203). Redundant, skip.
+- `starcam-frames/night` (05-24…06-04) — subset of bigstore's. Redundant, skip.
+- **`skycam-frames` (53G, 07-09…07-28, ~20 nights) — NEW camera, not on bigstore
+  at all.** skycam has no ship-and-free pipeline (per GLOBAL.md, raw unbounded on
+  puppy) → this pull IS the missing ship step. Copying to `skycam-frames/<date>/`
+  (bare date dirs, matching astrocam; skycam has no night/day split). Exclude the
+  1M `2026/` rollup. IN PROGRESS.
+
+### NETWORKING NOTE (answers Peter 2026-07-28): NO data over the internet.
+All bulk copies driven **on muppet over LAN IPs** (192.168.0.10/.11/.66). muppet
+is NOT on Tailscale (can't route it — first skycam attempt to puppy's 100.x
+Tailscale IP failed "Network unreachable", switched to LAN .11). Tailscale 100.x
+was used only for **survey reads from pip** (df/ls/du); even those go LAN-direct
+P2P (WireGuard), not via internet/DERP for same-LAN peers. Zero egress cost.
+
+### 1f. eclipticam SSD free — DEFERRED, PETER'S JOB (2026-07-28)
+**Do NOT delete anything on the SSD — Peter does deletion himself.** Findings for
+when he does: SSD is a LIVE capture disk (`eclipticam-v3w-uploader.service` drains
+/dev/shm→night tree; each night finalised ~05:00 the FOLLOWING morning). 90% full,
+11G free. Nights 07-12…07-26 are static + verified on bigstore (safe candidates).
+**07-27 was NEW (added after the 07-12…07-26 pull) — copying it to bigstore now**
+(the only action Peter approved). 07-28 not on disk yet (still in /dev/shm).
+
+### 1g. /astro/storage page rebuilt as FS-matrix (DONE 2026-07-29)
+Replaced the uninformative night/camera list with a dense **filesystem matrix**
+(`~/mywebsite/lambda/routes/astro.py::render_astro_storage`; deployed via
+`./deploy`). rows = day×camera, cols = filesystems. Design decisions:
+- night col = **day-of-month only** (month fixed by the /astro/storage/YYYY-MM
+  selector); full date on hover.
+- camera abbrevs (hardware-versioned): sv1 starcam, av2 astrocam, ev3w/ev1
+  eclipticam; av3s + eos (canon) pre-mapped for arrival.
+- ALL location columns always shown, order **mup ecl bs · bd bd2 pd pup ab s3**;
+  dim header = unused this month. Vertical zebra striping.
+- `#` col = how many filesystems hold the night; **orange row = single copy**.
+- per-camera format **footnotes** (e.g. "ev3w = mosaic · 4608×2592 · 60 s ·
+  ~5 GB/night"), auto-derived.
+- sweeps/derivatives hidden by default; `?all=1` + toggle reveals them.
+- **bigstore entries populated**: scanned `/mnt/bigstore/astro-data` on muppet
+  → 128 items (astrocam 46, starcam 13, eclipticam-v3w 49, skycam 20) upserted
+  to `astro-storage-inventory`. Scanner: `muppet:~/scan-bigstore-inventory.py`
+  (one-shot; the real fix is teaching the canonical reporter to scan bigstore).
+- **CV protection**: `mywebsite/lambda/cv.html` has Peter's unrelated in-progress
+  CV rewrite (uncommitted) — git-stashed around every deploy so it never ships.
+  Restore stash after any deploy.
+- Still TODO for full accuracy: the OTHER filesystems' rows (bd/bd2/pd/pup/ecl)
+  are stale/pre-migration, so most nights still read #=1. A proper multi-FS
+  scanner (or refreshed whereisallthedata.csv) fills them → real redundancy view.
+- mywebsite commits: 27653b6, e90c685, 7ced289.
+
+### OWNERSHIP (2026-07-28)
+- OSD reroute (#2 below) — **being done elsewhere**, not this strand.
+- S3 off-site copy — **deferred**.
+- Active worklist here: survey puppy /383 · update storage index
+  (whereisallthedata.csv) · free eclipticam SSD (verified-safe).
+
+### 2. OpenSearch reroute off photodisk (being done ELSEWHERE — not this strand)
 Two independent moves, both decided 2026-07-27:
 - **Index store → NVMe:** both muppet and puppy use `/var/lib/opensearch/data`.
 - **Snapshot repo → S3** (drop NFS entirely): register an `repository-s3`
