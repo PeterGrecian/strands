@@ -114,21 +114,42 @@ native-snapshot / repository-s3 / path.repo apparatus**.
   CLI v2 installed** (was absent); creds already present in `~/.aws` (that's how
   `secrets` works there) — no new creds spread.
 
-**STILL TODO — item #3 (photodisk evacuation, live-cluster surgery, own session):**
-The export is now the backup of record, so the native snapshots can retire. Steps,
-each needing the **coordinated-restart runbook** (rolling restarts wedge
-`.opendistro_security`):
-1. **muppet replica off photodisk → root NVMe** (muppet root: 238G SSD, ~109G free;
-   index 75 MB). Edit `docker-compose.muppet.yml:18` data mount → a root-disk path/
-   volume; **don't copy files — let it re-replicate from puppy's primary** (75 MB,
-   seconds). Force-recreate.
-2. **Retire snapshot machinery:** drop `snapshot-sessions.{service,timer}` on puppy;
-   remove `path.repo` from `opensearch.base.yml`; unmount/undo the photodisk NFS
-   share; remove the `/mnt/osd-snapshots` bind-mounts from both data-node compose
-   files. (fs snapshots on photodisk can be trashed once export is trusted.)
-3. Then photodisk is fully evacuated of OSD.
-Do NOT do this piecemeal live without the coordinated restart. Cluster is 3-node
-green now; don't leave it yellow.
+**ITEM #3 — photodisk evacuation: DONE (2026-07-29, osd 28e0f1e).** OSD is fully
+off the deprecated photodisk HDD; both copies of the archive now on modern NVMe
+SSDs; cluster GREEN 3 nodes. photodisk → vault as a cold archive (NOT deleted —
+Peter's call: it holds the 13 snapshot files + old data as offline backup).
+
+- **Move 1 (index → root SSD):** muppet's data is now a **named docker volume**
+  `cluster_opensearch-data` on its root NVMe (`/var/lib/docker` is on root), was
+  `/mnt/photodisk/opensearch-data`. Cutover = `compose down`/`up` with the new
+  (empty) volume; OpenSearch re-replicated ~50 MB from puppy automatically. NB the
+  primary ended up ON muppet's new SSD volume (not the replica as first predicted)
+  — harmless, both copies complete + green. puppy's copy stayed on its SSD root.
+- **Move 2 (snapshot teardown):** timer disabled on puppy; `sessions-backup` repo
+  **deregistered** (13 snaps left on-disk = the vault shelf copy); `path.repo`
+  removed from `opensearch.base.yml`; `/mnt/osd-snapshots` bind dropped from BOTH
+  data composes; **coordinated recreate muppet-then-puppy** (vole held master
+  quorum, `claude-sessions` green throughout — no `.opendistro_security` wedge);
+  puppy NFS unmounted + fstab commented (backup `/etc/fstab.bak-*`). Verified:
+  puppy 0 osd-snapshots refs, muppet 0 photodisk binds, registered repos `{}`.
+  Runbook confirmed: single-node-at-a-time recreate with vole quorum avoids the
+  wedge — didn't need a full-cluster stop.
+- **Handoff:** `bigstore-xfer` strand flagged the hang risk (puppy hard-NFS-mounted
+  photodisk) + relayed Peter's power-down intent; replied via strand-mailbox that
+  photodisk is OSD-free + clear to unmount/power-down. **The `_source` export to S3
+  is now the sole backup of record.** `bin/snapshot-sessions` + its systemd units
+  kept in-repo but INERT (not deleted).
+
+**Bonus fix — audit-log disk bloat (2026-07-29):** cluster briefly RED mid-move
+from OpenSearch's own telemetry indices — `security-auditlog-*` (~254k docs,
+logging every API call, ~34k/day, unbounded) + `top_queries-*`. Deleted them
+(cleared RED, freed disk → **puppy 91% → 62%**, ~112 GB) and **disabled audit
+logging**: live via `/_plugins/_security/api/audit/config` (`enabled:false`) +
+durable in `opensearch.base.yml` (`plugins.security.audit.type: debug`). This
+was the hidden reason puppy kept creeping toward the 95% flood watermark.
+
+**Still open (small):** the `snapshot-sessions` dead code + its units linger in
+the osd repo (inert, kept for reference); remove in a later cleanup if wanted.
 
 ## Session 2 (2026-07-21) — OSD admin-password rotation (authorised, DONE)
 
