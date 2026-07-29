@@ -75,6 +75,61 @@ shows yellow while `claude-sessions` itself is green. It self-heals once both
 nodes are cleanly up. Don't chase it live (that index is admin-write-protected;
 securityadmin re-init hangs). A clean full-cluster restart clears it.
 
+## Session 3 (2026-07-28/29) — Offsite S3 export = backup of record (DONE); photodisk evacuation staged
+
+**Trigger:** idea to move OSD live data off the deprecated **photodisk** (muppet's
+ST3360320AS spinning HDD) onto the modern root NVMe SSDs. Diagnosis confirmed:
+puppy's primary is already on its SSD root (fine); muppet's **replica sits on
+photodisk**, and the **snapshot repo** (`/mnt/photodisk/osd-snapshots`, NFS-shared
+to puppy as `path.repo`) is also on photodisk. So photodisk deprecation forces
+two moves.
+
+**Key reframe (Peter):** the session archive is *so valuable* that an offsite copy
+is justified — the strand's "no cloud copies of transcript content" was an
+assistant-authored cautious default (traced to the 2026-07-18 scaffold), never a
+reasoned requirement. Revised stance: **S3 treated ≈ as safe as LAN disk** (private,
+encrypted, our creds; we already trust AWS with SSM secrets), **but still scrub
+known secrets** as cheap belt-and-braces. And: **store `_source`, not the index** —
+the Lucene index is derived/rebuildable; the `_source` docs are canonical. So the
+offsite artefact is a redacted `_source` export, which also **retires the whole
+native-snapshot / repository-s3 / path.repo apparatus**.
+
+**BUILT + VERIFIED (osd 6149d0b, pushed; puppy pulled to 6149d0b clean):**
+- **`osd/bin/export-sessions`** — scroll all `{_id,_source}` → exact-match redact
+  every known secret **value** (from `secrets describe`, in-memory only, never
+  logged; `MIN_SECRET_LEN=8` guard, longest-first) → gzip JSONL → `aws s3 cp` to
+  private bucket. `--restore FILE` re-indexes by stored `_id` (idempotent).
+  `--no-upload`/`--no-redact` for local checks.
+- **Numbers:** 50,531 docs, 50 MB index → **~15 MB gz** (~3×). Redaction set = 54
+  secret values; **102 docs scrubbed**. **Audit CLEAN** — independent pass confirms
+  no known secret survives the export. **Round-trip exact: 50531 → 50531** doc-for-doc
+  into a throwaway index (then deleted).
+- **S3 bucket `s3://petergrecian-sessions-archive`** (eu-west-1, acct 700630586062):
+  block-public-access ALL on, **SSE-AES256** default, **versioning on**. Objects
+  under `exports/`. **Lifecycle:** current exports expire 90d, noncurrent versions
+  30d, incomplete MPU 7d → ~1.3 GB steady-state ≈ **$0.03/mo**.
+- **Daily timer on puppy** (`export-sessions.{service,timer}`, 05:00, Persistent,
+  linger) → **verified running under systemd on puppy** (`status=0/SUCCESS`),
+  produced a fresh 14.7 MiB SSE-AES256 object unattended. Puppy needed the **aws
+  CLI v2 installed** (was absent); creds already present in `~/.aws` (that's how
+  `secrets` works there) — no new creds spread.
+
+**STILL TODO — item #3 (photodisk evacuation, live-cluster surgery, own session):**
+The export is now the backup of record, so the native snapshots can retire. Steps,
+each needing the **coordinated-restart runbook** (rolling restarts wedge
+`.opendistro_security`):
+1. **muppet replica off photodisk → root NVMe** (muppet root: 238G SSD, ~109G free;
+   index 75 MB). Edit `docker-compose.muppet.yml:18` data mount → a root-disk path/
+   volume; **don't copy files — let it re-replicate from puppy's primary** (75 MB,
+   seconds). Force-recreate.
+2. **Retire snapshot machinery:** drop `snapshot-sessions.{service,timer}` on puppy;
+   remove `path.repo` from `opensearch.base.yml`; unmount/undo the photodisk NFS
+   share; remove the `/mnt/osd-snapshots` bind-mounts from both data-node compose
+   files. (fs snapshots on photodisk can be trashed once export is trusted.)
+3. Then photodisk is fully evacuated of OSD.
+Do NOT do this piecemeal live without the coordinated restart. Cluster is 3-node
+green now; don't leave it yellow.
+
 ## Session 2 (2026-07-21) — OSD admin-password rotation (authorised, DONE)
 
 Handoff from home-work-comms keeper: rotate the OSD admin password off the
