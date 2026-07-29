@@ -1,6 +1,63 @@
 # astro-storage — state
 
-*Updated 2026-07-18*
+*Updated 2026-07-29*
+
+## bs nightly sync — two-camera topology (2026-07-29)
+
+Full design: **`DESIGN-bs-nightly-sync.md`** (this dir). Refines the inbox idea
+`end-of-night-sync-to-bs` into a concrete asymmetric design, ground-truthed
+against both cameras on 2026-07-29.
+
+**bs** = muppet `/mnt/bigstore/astro-data` (5.5T, 1.2T/21%), NFS **sync** export,
+**soft** mounts at `/mnt/muppet/bigstore` (ansible strand owns the mount; live on
+eclipticam already). House tree already populated by the bigstore-xfer backlog
+pull (`<cam>-frames/night/<date>/`); the `run-*.sh` on bs are **one-shot backlog
+migrations**, NOT the recurring sync — that's this strand's seam.
+
+**The asymmetry (Peter's decisions):**
+- **astrocam → DIRECT to bs.** Already an NFS-direct writer but to the *wrong*
+  disk: capture.py writes to `~/astrocam-frames` = the old 839G bigdisk (**97%
+  full**). Fix = **repoint that mount bigdisk → bigstore**. No local staging
+  (6.8G SD). Mount-drop safety = local tmpfs spool + drain (shallow, 694M free;
+  fine for rare scheduled muppet maintenance). *Blocked on ansible adding
+  astrocam as a bs mounter* (see hand-off below).
+- **eclipticam → STAGE-then-COPY.** Powerline link ~100Mbit → can't write capture
+  direct. Captures to local SSD (`/mnt/ssd`, **91% full**), then end-of-night
+  rsync SSD → bs, **verify, ship-and-free** (keep newest 3 nights local).
+
+**BUILT this session:**
+- **`super/bin/eclipticam-ship-night`** — the eclipticam back half. rsync SSD →
+  bs, `--checksum` dry-run verify (zero diffs), then `trash` (never rm) nights
+  outside the 3-night safety window. Soft-EIO tolerant (bs down ⇒ non-destructive
+  bail + retry next run). `--go`/`--keep`/`--help`/`--hints`. **Verified with a
+  real dry-run on eclipticam against the live bs mount** (16 nights detected,
+  newest 3 protected, `trash` resolves via `~/super/bin` fallback since super/bin
+  isn't on eclipticam's login PATH). Not yet run with `--go`.
+- **`eclipticam-ship-night.{service,timer}`** (staged in strand dir, not
+  installed) — daily ~09:00 Europe/London oneshot. Hand-install or fold into
+  ansible.
+
+**bs vs squash/cold-archive (Part 3):** this sync is deliberately **agnostic** —
+it lands verified full-cadence nights on bs and stops. bs = principal live store;
+squash-in-place + cold-archive-night are downstream consumers of the bs tree.
+The precise relationship (permanent-hot-record + squash-in-place vs
+landing-zone-then-free) is **TBD — Peter deferred it to the data-reduction day**
+([[data-reduction-day]] / [[glacier-every-day]]).
+
+**HAND-OFF → ansible strand:** add **astrocam** as a bs NFS *mounter* (host_vars
+`astrocam.yml`): mount `muppet.local:/mnt/bigstore/astro-data/astrocam-frames` at
+`/home/peter/astrocam-frames` (soft), **replacing** its current bigdisk mount.
+Coordinate rollout so capture isn't writing to a dead path. Until then Part 1
+(astrocam repoint) is blocked; Part 2 (eclipticam) is unblocked and built.
+
+**Next actions:**
+1. Enable Part 2: `eclipticam-ship-night --go` on one old night, confirm land +
+   verify + trash, then install the timer. Biggest immediate win (91% SSD).
+2. Part 1 after ansible adds the astrocam bs mount: repoint fstab, restart
+   `astrocam-capture.service`, watch a frame land on bs; then add the tmpfs
+   spool/drain follow-up.
+
+## Data relocation tooling (2026-07-18)
 
 ## Data relocation tooling (2026-07-18)
 

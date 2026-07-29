@@ -51,3 +51,6 @@
 
 (glacier-app product ideas — thumbnail gaps, restore-as-demo — live in the
 ~/glacier-app repo, not here.)
+
+End-of-night sync to bigstore 'bs' (Peter, 2026-07-29): write the night's astro images to the bs disk at end of each night — the dynamic sync half of the bs plan. Depends on ansible having NFS-exported bs and mounted it on the writing host first (that half is in the ansible strand's inbox); this sync writes onto that mount. Open: which data classes go to bs (raw .fz / jpg / mp4 / derived); whether bs is the ship-and-free destination or a staging hop before cold-archive; how it relates to the squashing schedule ([[data-reduction-day]] / [[glacier-every-day]]) — permanent local hot record, or a landing zone that then squashes + cold-archives?
+

@@ -1,0 +1,14 @@
+[Unit]
+Description=eclipticam end-of-night sync to bigstore 'bs' + ship-and-free local SSD
+Documentation=file:%h/super/strands/astro-storage/DESIGN-bs-nightly-sync.md
+# bs is an NFS (soft) mount; if it's down the tool bails non-destructively.
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# --go: actually copy + verify + ship-and-free (keeps newest 3 nights local).
+# Drop --go to make this a dry-run unit while validating.
+ExecStart=%h/super/bin/eclipticam-ship-night --go
+Nice=10
+IOSchedulingClass=idle
