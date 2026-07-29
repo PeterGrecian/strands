@@ -189,6 +189,34 @@ Replaced the uninformative night/camera list with a dense **filesystem matrix**
   scanner (or refreshed whereisallthedata.csv) fills them → real redundancy view.
 - mywebsite commits: 27653b6, e90c685, 7ced289.
 
+### 1h. Storage tooling: /astro/disks page + capacity + inventory (2026-07-29)
+- **New page `/astro/disks`** (by-filesystem): per disk, one line per camera
+  `av2 0608–0727 (46) 525 GB`. `~/mywebsite/lambda/routes/astro.py::
+  render_astro_disks` + route in mywebsite.py. Commit `12b2bff`.
+- **Inventory populated for ALL filesystems** via one-shot `scan-fs-inventory.py`
+  (copied to muppet/puppy/eclipticam ~). Walks only astro trees
+  (`-frames`/`starcam-backup`/`night`), infers camera from the tree NAME (NOT
+  `/night`, which is a sublevel of every camera — that bug mislabeled puppy's
+  starcam as eclipticam; fixed + re-scanned). Skips personal-photo backups on
+  photodisk that also have YYYY-MM-DD dirs.
+- **Data checks (Peter asked):** puppy has NO eclipticam (only av2/skycam/sv1) —
+  the ev3w rows were the `/night` bug. muppet `~/*-frames` are mostly 0-byte
+  stubs → stale `mup` rows deleted (130 puppy+home rows purged, puppy re-scanned
+  clean).
+- **Capacity fixed in the canonical tool** `~/astro/bin/storage-report`
+  (commit `338819d`): `EXTRA_MOUNT_GLOBS` now includes `/`, `/mnt/bigstore`,
+  `/mnt/photodisk` (+ existing bigdisk/bigdisk2/ssd) → capacity bars now show
+  muppet `/`, puppy `/`, bigstore, photodisk. Also added bigstore/bigdisk/
+  bigdisk2/photodisk to the astrocam/eclipticam/starcam scan streams.
+- **⚠️ KNOWN GAP (rationalisation):** storage-report still emits 0 rows for
+  bigdisk's astrocam (distinct dev/ino from bigstore, so NOT the alias dedup —
+  cause untraced). So the multi-copy view (#, /astro/disks) is populated by the
+  one-shot scanner, not the canonical tool. **Do NOT run `storage-report`'s
+  pruning scan on muppet yet** — it would collapse the multi-copy rows. Making
+  storage-report fully multi-copy-aware is a rationalisation-pass task.
+- mywebsite commits this session: 27653b6, e90c685, 7ced289, 7b22f8b, d0fbc68,
+  12b2bff. astro: 338819d.
+
 ### OWNERSHIP (2026-07-28)
 - OSD reroute (#2 below) — **being done elsewhere**, not this strand.
 - S3 off-site copy — **deferred**.
