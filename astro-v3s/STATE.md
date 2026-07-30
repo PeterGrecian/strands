@@ -172,15 +172,22 @@ survives the migration — the copy should pick up the stamped versions.
   `sky_clear_max_stops` (4.0 — per-sensor clear/cloudy divider on the
   stops-above-pedestal scale, which shifted with the new pedestal; needs a few
   clear vs cloudy imx708 nights). *(pedestal DONE 2026-07-30 = 105.)*
-- **Focus dither RETUNED (2026-07-30, astro @ b14bd1d)**: 0.5–1.5/0.1 →
-  **0.9–2.0/0.05** (23 positions). Peter's read of the first-night trails: the
-  lower half (0.5–0.8) is all pre-focus blobs (tadpole heads) — wasted — so base
-  raised to 0.9. Top extended 1.5→2.0 to avoid clipping the far side (true
-  stellar infinity may sit above the daytime tree peak 1.0–1.4). 0.05 step =
-  dense sampling through the sharp zone. Takes effect tonight. **Still open**:
-  derive true stellar-infinity + a tightened final range from a measured
-  PSF-vs-LENSPOS curve over the dithered frames (Peter noted the probe frames
-  already show PSF).
+- **Focus SETTLED at ~1.4 (2026-07-30, astro @ 851ebd3)**. Peter read Night-1
+  star trails directly: LENSPOS **~1.4 is the sharp stellar focus** (tight
+  sidereal streak), the low end (0.5) is a fat defocus blob, focus improves
+  steadily UP the ramp. lens_position 1.0→1.4; dither now **1.3–1.6 step 0.02**
+  (16 positions, dense bracket around 1.4). Verified live: sawtooth steps
+  1.30,1.32…1.44 exactly. Takes effect tonight.
+  - Corrects two wrong earlier signals: the daytime-tree probe (said ~1.0 —
+    trees are finite-distance, focus lower than infinity) and a crude FWHM
+    script (said low end sharp — it grabbed faint moving sources). **Trails are
+    authoritative; my rough px measurements were not — don't trust them.**
+  - **PSF vs eclipticam**: eclipticam gets ~1px; astrocam's best trail is
+    tighter than the fat low-end but the raw-px gap is partly GEOMETRY —
+    astrocam is the STANDARD v3 (~4.74mm, ~66° FOV), ~1.7× finer plate scale
+    than eclipticam's WIDE v3w, so a star spans ~1.7× more px here. **Compare
+    PSF in arcsec (via plate scale), not raw px.** Whether a real optical gap
+    remains after that conversion is still open.
 
 ## Decisions
 
