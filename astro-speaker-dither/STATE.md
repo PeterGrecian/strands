@@ -19,32 +19,47 @@ into the [[electronics]] strand + `~/electronics` repo (created 2026-07-23).
 
 ## ⚠️ deskpi DOWN — recover first (2026-07-29)
 
-The camera image-shift test needs a camera on **deskpi** (the rig's Pi). While
-enabling a **V2 camera (IMX219)** we hit a boot failure and **deskpi is
-currently down** — won't boot, green ACT LED does a little reading then stops.
+## ✅ deskpi RECOVERED — camera fault is HARDWARE (2026-07-30)
 
-Cause: ran `rpi-update` to chase camera detection; it bumped to the
-**rpi-6.18.y (ARMv7/v8) kernel tree** — current firmware has **dropped ARMv6**,
-so it's unbootable on the A+ — and failed halfway (VC libs). Restored the core
-`/boot` blobs from backup before rebooting, but the restore was incomplete
-(didn't cover `/boot/overlays/` etc.) and it still won't boot.
+deskpi is booting again and the IMX219 problem is now pinned to hardware.
 
-**Recover tomorrow via SD card in a reader on pip.** Full recovery + camera-
-detection debug plan (and the "no I²C ACK on i2c-0" finding — firmware age is
-NOT the blocker, Nov-2018 has IMX219) is in
-**`~/Berrylands/pwmaudio/experiments/deskpi-camera-recovery.md`**. The on-card
-firmware backup at `deskpi:~/boot-firmware-bak-20260729/` survives (root
-partition). GPIO18 actuator wiring + pigpiod config untouched.
+**Recovered** by reflashing the SD card with fresh **Raspberry Pi OS Lite
+armhf (Trixie, 2026-04-21)** via `cloud-init-init` (recovery-plan Option 4).
+Written from **starcam**, image staged on **puppy NFS**, card fixed up on
+**pip**. deskpi boots cleanly on the ARMv6-valid kernel, now on the **eth0
+dongle** (`deskpi.local` / .71). The rpi-update boot disaster is fully behind
+us. GPIO18 amp wiring untouched.
 
-**Lesson: never `rpi-update` an ARMv6 Pi (A+/B+/Zero).** apt/OS Raspbian stays
-current for these boards; `rpi-update` bleeding-edge firmware does not track
-ARMv6.
+**Camera: confirmed hardware fault.** On Trixie (libcamera, not the Stretch
+`start_x` path), added `dtoverlay=imx219` to `/boot/firmware/config.txt` and
+rebooted. The imx219 driver now probes the correct bus/address and the sensor
+**does not ACK**:
+`imx219 10-0010: failed to read chip id 219 / -EREMOTEIO (-121)` on i2c bus 10,
+addr 0x10. This is the same "no I²C ACK" symptom as the Stretch investigation —
+now **reproduced across a full OS/firmware/kernel reflash + correct overlay**.
+Software is proven correct → the sensor isn't responding. Cause is **ribbon
+(seat/crack/oxidation) or a dead IMX219 module**.
+
+**Next (hands-on):** reseat both ribbon ends, then swap-test — a known-good
+camera on deskpi, and this IMX219 on another Pi — to condemn module vs. Pi CSI
+connector. Full detail + dmesg in
+**`~/Berrylands/pwmaudio/experiments/deskpi-camera-recovery.md`**.
+
+Also fixed: `peter`/`pi` added to the `video` group (fresh card left them out;
+`vcgencmd`/libcamera were throwing `/dev/vcio` / dmaHeap permission errors).
+
+**Lesson (kept): never `rpi-update` an ARMv6 Pi (A+/B+/Zero).** apt/OS Raspbian
+stays current for these boards; `rpi-update` bleeding-edge firmware does not
+track ARMv6.
 
 ## Pending / loose ends
 
-- **Recover deskpi (blocker — see above).** Then the camera image-shift test can
-  proceed. `start_x=1` + `gpu_mem=128` are the camera config; the open question
-  is why the IMX219 gives no I²C ACK on i2c-0 (software/config, not firmware).
+- **deskpi recovered; camera blocked on hardware (see above).** The image-shift
+  test needs a working camera on deskpi. Software is proven correct
+  (`dtoverlay=imx219`, driver probes i2c-10/0x10) — the IMX219 gives no I²C ACK
+  (`-EREMOTEIO`) even after a full reflash, so it's a ribbon or dead-module
+  fault. **Next: reseat + swap-test the camera hardware.** (`gpu_mem` currently
+  16; bump to 128 only once a camera actually ACKs.)
 - **Mechanical: see actual travel now that force is adequate.** Optical-lever
   by eye showed nothing at ~200 mA (2026-07-09); retry with the darlington's
   full force, then the real detector — mount the rig to tilt a camera and look
