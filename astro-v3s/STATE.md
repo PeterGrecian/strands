@@ -56,6 +56,14 @@ tested end-to-end; **not yet wired to autostart** (see hazard below).
 - **Cover**: SG90 servo on GPIO18, `~/astro/astrocam/cover.py {open|closed}`
   (min=open, mid=closed). Cycled fine repeatedly. gpiozero software-PWM warning
   is harmless (pigpiod inactive). Currently **open**.
+- **Enclosure — sealed plastic box, BY DESIGN (do not vent)**: the whole board
+  equalises to one temperature (no SoC hot-spot). ~54.5°C idle, ~70°C under
+  stacking load, `throttled=0x0` (never throttled) — well within the Pi 4's
+  80°C throttle / 85°C cap. The seal is deliberate: in winter the board's own
+  heat keeps the internals **above dew point**, preventing condensation on the
+  lens/sensor/board (dew ruins frames + risks the hardware). So the warm sealed
+  box is an ANTI-DEW feature, NOT a thermal fault — do not add ventilation.
+  (Contrast: puppy overheats/thermal-reboots in hot weather; astrocam does not.)
 
 ## Focus — PROBED, lp = 1.0
 
