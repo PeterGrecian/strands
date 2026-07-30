@@ -70,6 +70,34 @@
        portable. Re-applied eclipticam cleanly.
   - **Seam**: the *dynamic* sync half (write the night onto this mount) is in
     the **astro-storage** strand's inbox — now unblocked, this mount exists.
+  - **astrocam added as the 3rd bs writer — DONE + LIVE + VERIFIED**
+    (2026-07-30, with Peter, urgent). astrocam swapped to IMX708/v3 on 07-29
+    and had to come off the 97%-full bigdisk. Repointed `~/astrocam-frames`
+    from `192.168.0.10:/mnt/bigdisk/astrocam-frames` to
+    `muppet.local:/mnt/bigstore/astro-data/astrocam-frames` (fleet-default
+    soft automount), replacing the `configure-sd-card.sh` fstab line. New
+    `inventory/host_vars/astrocam.yml` is the durable record.
+    - **Corrected the mailbox's model of the write path**: the live NFS
+      writer is **`astrocam-v3-uploader.service`** (drains a tmpfs
+      `/var/lib/astrocam-buffer` to the NFS night tree), NOT
+      `astrocam-capture.service` (disabled/legacy). Night capture is
+      sun-gated by `astrocam-v3-gate.timer`. So there *is* local staging
+      (tmpfs) — the mailbox's "no staging, capture writes direct" was stale.
+    - **Rolled out in the daytime gate-idle window** (sun_alt=40, tmpfs
+      empty): stop uploader → umount bigdisk → rewrite fstab → daemon-reload
+      → start automount → restart uploader. Verified: `findmnt` = bigstore
+      nfs4 source, `df` = 5.5T/21%/4.3T free (off the 97% bigdisk), uploader
+      drains cleanly, gate resolves the mount, reboot-safe (automount from
+      `_netdev`). Migrated history (→07-27) visible on bigstore. fstab backed
+      up to `/etc/fstab.bak-20260730-095824`. Pinged astro-storage to confirm
+      tonight's v3 frames land + do the capture.py header fixes.
+    - **KEY CAVEAT — ansible can't manage astrocam**: the `pi` user's sudo is
+      broken on astrocam (prompts for a password; `ansible.cfg` sets
+      `become_ask_pass=False`), so any `--limit astrocam` run fails at the
+      first `become`. The `peter` user *does* have passwordless sudo, so this
+      swap was done by hand as peter. **Fixing pi-sudo on astrocam is now a
+      real drift-sweep item** (was a super-memory note; now confirmed + blocks
+      ansible ownership of the host).
   - **Pre-existing drift surfaced, NOT yet fixed**: muppet's `exportfs -ra`
     handler now reports `failed=1` because the retired
     `/home/peter/starcam-backup` export line points at a dir deleted from disk.
@@ -92,7 +120,9 @@ Standing / not-yet-scheduled items (were in IDEAS.md, promoted 2026-07-29):
   radius, zero new capability).
 - **General fleet-maintenance catch-up** (drift sweep): sweep `~/ansible` for
   config drift / half-applied roles. Known seeds: vim-default-editor pending on
-  starcam/deskpi/xoverpi; astrocam sudo broken (super memory).
+  starcam/deskpi/xoverpi; **astrocam `pi`-user sudo broken — confirmed
+  2026-07-30 (blocks ansible managing astrocam: `become` fails; `peter` sudo
+  works). Fix so `pi` gets passwordless sudo like the rest of the fleet.**
 - **Recurring maintenance schedule** (idea, 2026-07-22): stand up a cadence for
   the drift sweep (scheduled `/loop` or cron routine) rather than ad-hoc.
   Decide interval + form with Peter; ties into the drift-watch role.

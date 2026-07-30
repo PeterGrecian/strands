@@ -176,12 +176,43 @@ less because the S3 bucket is "as secret as bin/secrets". Resolution:
 - Perf note: `--known` = 52 sequential queries (~2min). Fine — the blunder case
   is usually ONE value (fast); `--known` is the rare belt-and-braces sweep.
 
-**Still TODO (Peter's plan, not yet built):** (a) **raw-session backup** — a
-nightly `tar` of `~/.claude/projects` → S3 (byte-faithful now the live files are
-clean; closes the un-ingested-transcript gap). (b) **Match the
-`petergrecian-sessions-archive` bucket IAM to the `secrets` bucket's lockdown
-bar** (Peter: yes) — the redaction-relaxation rests on it being "as secret as
-secrets", so make that literally true. Both agreed this session, deferred.
+## Session 3 cont. (2026-07-30) — raw-session backup + bucket lockdown + reboot fix (all DONE)
+
+Built the two deferred pieces + fixed a reboot gap found en route.
+
+- **`osd/bin/backup-raw-sessions`** (osd fa97e66) — the SOURCE-OF-TRUTH backup,
+  companion to export-sessions. Byte-faithful `tar.gz` of `~/.claude/projects` →
+  `s3://petergrecian-sessions-archive/raw/<host>/<UTC>.tar.gz`, per-host (like
+  ingest), `--keep 30` prune. No redaction (live files kept clean by
+  redact-from-sessions). Independent of ingest → closes the "reaped before
+  indexed" gap. **Daily timer 05:20 on pip + puppy + muppet**, all verified under
+  systemd. Sizes: pip 79 MB, muppet 2.9 MB, puppy 611 B (puppy runs ~no sessions).
+- **Bucket lockdown = DONE (parity + then some).** Reference bar: the `secrets`
+  GCS bucket (`petergrecian-secrets`) is project-private, no public members. Our
+  S3 bucket already had block-public-access + SSE-AES256 + versioning + no
+  policy/ACL grants (= equal-or-tighter). **Added an explicit-deny bucket policy**:
+  DenyInsecureTransport (non-TLS) + DenyNonAccountPrincipals (anything outside
+  acct 700630586062). Owner-over-TLS verified still works. So "as secret as
+  bin/secrets" is now literally true + declarative.
+- **REBOOT FIX (found live):** puppy rebooted mid-session; its `opensearch`
+  data-node container did NOT auto-start (only dashboards did — it already had a
+  restart policy). Cluster ran 2-node yellow until started by hand. Root cause:
+  puppy + muppet composes lacked a `restart:` policy (vole + dashboards had one).
+  **Added `restart: unless-stopped`** to both data-node composes (osd 7c08609),
+  coordinated-recreated puppy-then-muppet (green throughout). Reboots now
+  auto-recover the cluster. [[project-drift-watch]] — the "always-on index host"
+  assumption now actually holds.
+
+**Backups now = three layers, all cheap:** (1) live LAN replica (disk/node
+failure), (2) `export-sessions` redacted index → S3 (fast working-system
+restore), (3) `backup-raw-sessions` faithful raw tree → S3 (source of truth,
+ingest-independent). photodisk snapshot repo retired; the vault disk is a 4th
+cold copy.
+
+**Everything above DONE (2026-07-27→30):** OSD off photodisk onto NVMe SSDs;
+snapshots retired to S3; export + raw backups live + timered; redact tool built;
+live files + index scrubbed; bucket locked down; reboot auto-recovery fixed.
+Cluster GREEN 3 nodes.
 
 ## Session 2 (2026-07-21) — OSD admin-password rotation (authorised, DONE)
 
