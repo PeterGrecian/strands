@@ -172,11 +172,15 @@ survives the migration — the copy should pick up the stamped versions.
   `sky_clear_max_stops` (4.0 — per-sensor clear/cloudy divider on the
   stops-above-pedestal scale, which shifted with the new pedestal; needs a few
   clear vs cloudy imx708 nights). *(pedestal DONE 2026-07-30 = 105.)*
-- **Confirm true stellar-infinity focus** from Night-1 data — the dither swept
-  0.5–1.5, every frame tagged LENSPOS/LENSPREP. Pick the sharpest lens position
-  from the star trails (tadpole tight-ends), then narrow/centre the dither (or
-  pin it) on that value. Trees were finite-distance; true infinity may sit
-  slightly below 1.0.
+- **Focus dither RETUNED (2026-07-30, astro @ b14bd1d)**: 0.5–1.5/0.1 →
+  **0.9–2.0/0.05** (23 positions). Peter's read of the first-night trails: the
+  lower half (0.5–0.8) is all pre-focus blobs (tadpole heads) — wasted — so base
+  raised to 0.9. Top extended 1.5→2.0 to avoid clipping the far side (true
+  stellar infinity may sit above the daytime tree peak 1.0–1.4). 0.05 step =
+  dense sampling through the sharp zone. Takes effect tonight. **Still open**:
+  derive true stellar-infinity + a tightened final range from a measured
+  PSF-vs-LENSPOS curve over the dithered frames (Peter noted the probe frames
+  already show PSF).
 
 ## Decisions
 
