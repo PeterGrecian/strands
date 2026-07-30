@@ -129,9 +129,22 @@ The imx219→imx708 swap is a hard calibration-epoch boundary. Made it explicit
   unaffected). Verified live: imx708 frames carry POSINDEX=2.
 - Aligns with astro-storage's av2/av3s-by-date labelling; gives them a
   per-frame signal too.
-- **Backfill open**: last night's 373 v3 frames + all imx219 history predate
-  POSINDEX. Epoch still inferable from CAMERA header + date; explicit backfill
-  of the v3 frames is a quick optional follow-up if wanted.
+- **Backfill DONE (2026-07-30)**: last night's 373 v3 frames stamped POSINDEX=2
+  (verified 373/373, data intact, atomic writes). Guarded on CAMERA==imx708.
+  Ran ON muppet against `/mnt/bigdisk/...` directly — see migration gap below.
+  (imx219 history still unstamped — epoch clear from CAMERA header + date.)
+
+### ⚠️ bigdisk→bigstore cutover migration gap (2026-07-30)
+
+astro-storage repointed astrocam `~/astrocam-frames` from bigdisk
+(192.168.0.10=muppet:/mnt/bigdisk) → **bigstore**
+(muppet:/mnt/bigstore/astro-data/astrocam-frames) mid-session. But pre-cutover
+nights were **NOT migrated**: `2026-07-29` (373 frames + stacks) exists ONLY on
+`/mnt/bigdisk/astrocam-frames/2026-07-29`; bigstore has no such dir yet. So
+astrocam can't see last night via the new mount. **Data is SAFE on bigdisk**,
+just not moved. Flagged to astro-storage to migrate 07-29 (+ any other pre-07-29
+nights) to bigstore. NB the POSINDEX backfill was done on the bigdisk copy so it
+survives the migration — the copy should pick up the stamped versions.
 
 ## Pending / loose ends
 
