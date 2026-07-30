@@ -154,6 +154,22 @@ just not moved. Flagged to astro-storage to migrate 07-29 (+ any other pre-07-29
 nights) to bigstore. NB the POSINDEX backfill was done on the bigdisk copy so it
 survives the migration — the copy should pick up the stamped versions.
 
+## Temperature logging — dirty logger live (2026-07-30)
+
+astrocam is the only outdoor camera, so temp tracking done dirty (not the
+long-mooted pi-fleet feature). `astrocam-templog.timer` appends
+`utc,cpu_temp_c` to `~/astrocam-templog.csv` every 2 min (rotates at 1 MB —
+root is 89% full). Source in astro repo `astrocam/astrocam-templog.*` @ 3f3a99a;
+deployed copies are hand-placed (add to ansible with the other units).
+- CPU temp only — no board ambient sensor (sealed box, no I²C temp chip). Pair
+  with an external ambient reading (weather API for the location) for true
+  ΔT-above-ambient. imx708 die temp is in picamera2 metadata if per-frame
+  sensor temp is ever wanted (would touch the capture path — not done).
+- Purpose: validate the ΔT-above-ambient model (ambient now ~20°C → ~57°C
+  internal ≈ +37°C), catch summer throttle risk (35°C ambient + stacking could
+  near the Pi4 85°C cap), confirm winter dew margin (−5°C ambient → ~+32°C
+  internal, above dew). Tonight is the first full curve (capture on = warmer).
+
 ## Pending / loose ends
 
 - **Not in ansible**: `astrocam-v3-{night,uploader}.service`,
