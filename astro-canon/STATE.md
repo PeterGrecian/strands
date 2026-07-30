@@ -105,11 +105,18 @@ Two nights that closed the loop end-to-end.
   the focus-measured section above).
 - ~~Mask the fixed artifact in the analysis tools.~~ **DONE** — masked in
   `eos-star-psf` (disc at ~(1170,1585) half-res, R=95).
-- **Extend the d-grid past d9** — the shelf never turns back up, so best
-  focus may be beyond the current far end. Update `eos-focus-cycle`'s
-  d-schedule to sample ~d9–d13 next clear night. AND consider dropping
-  d0–d2 (always blurred) + the lightly-sampled odd d's (d4,d7 measure
-  poorly) to spend frames where the focus actually lives.
+- ~~Extend the d-grid past d9.~~ **DONE + ARMED** (astro `1e6ab39`) —
+  `eos-focus-cycle`'s DEFAULT_D_SCHEDULE is now the **peak-hunt d5–d15**
+  comb (drops always-blurred d0–d4, reaches 6 Near-2 steps past the old
+  far end, keeps d5 as low anchor; every setpoint 5–15 gets a ~3-min pair;
+  30 images/pass). Deployed to muppet and the **service was RESTARTED**
+  (it's a persistent process that had the old schedule in memory — a
+  redeploy alone wouldn't take until restart). Tonight's run will hunt the
+  peak. **Next morning: `eos-star-psf 2026-07-31 --dmin 5 --dmax 15` then
+  `eos-psf-view` — does the V-curve finally turn back up, and where?**
+  (Physical note: if d15 hits the near hard stop those frames just repeat
+  the stop — harmless, tells us the travel limit. Old d0–d9 comb still
+  reachable via `--schedule` if the peak proves to be below d5.)
 - Run `eos-star-psf` on **2026-07-27** too and check the d8 shelf
   reproduces across nights before fully trusting it (offered this session,
   Peter chose to bank the tools first).
