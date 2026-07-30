@@ -118,6 +118,21 @@ always-on. Committed `PeterGrecian/astro` @ 0018d7c.
 
 Cover left **open** by hand (no auto cover control in this path).
 
+## Camera-generation index (POSINDEX) — 2026-07-30
+
+The imx219→imx708 swap is a hard calibration-epoch boundary. Made it explicit
++ indexed (astro @ 7ee1489):
+- `camera.json position_index=2` + `position_registry` documenting each
+  generation (1=av2/imx219, 2=av3s/imx708: sensor, bayer, resolution, dates,
+  per-epoch calibration). **Increment on any future camera/lens/mount change.**
+- Streaming engine stamps `POSINDEX` in every FITS (optional field; eclipticam
+  unaffected). Verified live: imx708 frames carry POSINDEX=2.
+- Aligns with astro-storage's av2/av3s-by-date labelling; gives them a
+  per-frame signal too.
+- **Backfill open**: last night's 373 v3 frames + all imx219 history predate
+  POSINDEX. Epoch still inferable from CAMERA header + date; explicit backfill
+  of the v3 frames is a quick optional follow-up if wanted.
+
 ## Pending / loose ends
 
 - **Not in ansible**: `astrocam-v3-{night,uploader}.service`,
