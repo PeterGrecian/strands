@@ -2,6 +2,53 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## ★★★ FOCUS MEASURED — d8 sharpest on a flat d5–d9 shelf (2026-07-29/30)
+
+The pending "full-res CR2 PSF analysis" is **built and run** — the designed
+next-day pipeline is now two real tools (astro `1246766`), and the answer is in.
+
+**Tools (astro/bin, deployed to muppet ~/bin):**
+- **`eos-star-psf`** (runs on muppet — has rawpy) — measures focus on the
+  **LINEAR GREEN Bayer plane**: no demosaic (so no moiré / interpolation smear;
+  green alone is faithful on this fine sensor — Peter's call, no R/B WB scaling).
+  30 s subs **trail** the stars ~5–8 px, so a round FWHM would measure the drift,
+  not focus. Metric = the streak's **CROSS-width** (minor PCA axis) — trailing-
+  immune. Reuses `fit-distortion-trails`' extraction idiom (asinh stretch →
+  threshold → label → per-blob PCA). Masks the fixed reflection at ~(1170,1585)
+  and the bottom foreground band. Writes `psf.csv` + `psf.npz` (star stamps).
+- **`eos-psf-view`** (runs on pip — has matplotlib) — renders the heat maps:
+  per-star stamp grid, **by-focus-d stamp rows** (the money plot), cross-width-
+  vs-(x,y) field map, and the V-curve; opens in splay. **Split by design:** raw
+  decode near the data (muppet), plotting near the display (pip); muppet has no
+  matplotlib and doesn't need it.
+
+**Result (2026-07-28 night, 234 frames):**
+- **d8 sharpest at 2.54 px cross-width**, on a **flat d5–d9 shelf**
+  (d5 2.60, d6 3.67, d8 2.54, d9 3.70 px). **Confirms Peter's by-eye pick of
+  d8.** ~2.5 px best vs ~30 px first-light defocus = **12× tighter**.
+- **The V-curve zigzag (d4,d7 spikes to ~6 px) is a SAMPLING ARTIFACT, not
+  focus.** The d-schedule samples d3/d6 heavily (43 frames) but d4/d7 lightly
+  (20) → the sparse d's have 73–229 stars vs ~2000 for the well-sampled d's, and
+  their medians are polluted by foreground glow that leaked the filters. **Trust
+  only the well-sampled d's** (d5,d6,d8,d9). The by-d stamp grid shows this
+  starkly: d5/d6/d8/d9 rows = clean bright diagonal streaks; d3/d4/d7 = faint
+  dots + glow blobs.
+- **Shelf never turns back up before d9** → **best focus may lie PAST d9** —
+  extend the grid next night (deferred; not done this session).
+
+**Gotchas banked building this:**
+- **`measure_frame` was O(labels × pixels)** — a per-label `np.where(lbl==i)`
+  loop over 555k noise labels (threshold too low) hung >120 s per frame.
+  Fix: raise detection threshold (asinh sky-noise floor ~60 → default 150),
+  and vectorise via `np.bincount` area-filter + `ndimage.find_objects`
+  bounding-box slices (touch only real blobs). Now ~1 s/frame, ~3 s end-to-end.
+- **Buffered stdout over ssh hides progress** — `python3` redirected to a file
+  or piped over ssh buffers fully; a run looks hung when it's fine. Use `-u`,
+  and to *watch* a long run, poll for the output **artifact** (psf.npz) not the
+  log.
+- **rawpy decode is only ~0.7 s/frame on muppet** (idle) — never the bottleneck;
+  when a run drags, suspect the analysis (labels), not the decode.
+
 ## ★★★ STARS CONFIRMED + wedge autonomy proven in production (2026-07-26 → 07-28)
 
 Two nights that closed the loop end-to-end.
@@ -53,14 +100,24 @@ Two nights that closed the loop end-to-end.
   turns back up, so consider extending the grid PAST d9 next night.
 
 **Pending (from these nights):**
-- Full-res CR2 PSF analysis of the d5–d9 shelf frames (the designed
-  next-day pipeline step).
+- ~~Full-res CR2 PSF analysis of the d5–d9 shelf frames.~~ **DONE** —
+  `eos-star-psf`/`eos-psf-view`; d8 sharpest on a flat d5–d9 shelf (see
+  the focus-measured section above).
+- ~~Mask the fixed artifact in the analysis tools.~~ **DONE** — masked in
+  `eos-star-psf` (disc at ~(1170,1585) half-res, R=95).
+- **Extend the d-grid past d9** — the shelf never turns back up, so best
+  focus may be beyond the current far end. Update `eos-focus-cycle`'s
+  d-schedule to sample ~d9–d13 next clear night. AND consider dropping
+  d0–d2 (always blurred) + the lightly-sampled odd d's (d4,d7 measure
+  poorly) to spend frames where the focus actually lives.
+- Run `eos-star-psf` on **2026-07-27** too and check the d8 shelf
+  reproduces across nights before fully trusting it (offered this session,
+  Peter chose to bank the tools first).
 - Raise `--power-budget` (relay proven cheap and effective; 4/run ran dry
   mid-night) and/or suppress the page when a fresh-budget service restart is
   imminent anyway.
 - Why does the wedge recur ~every 90 min? Correlate with runtime / d /
   frame count — looks systematic, possibly long-exposure-count related.
-- Mask the fixed artifact in the analysis tools.
 
 ## ★★★ CAPTURE PATH FIXED + tonight's run armed (2026-07-24 session)
 
