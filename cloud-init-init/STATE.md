@@ -39,6 +39,13 @@ boots, is on the eth0 dongle (`deskpi.local` / .71), and is SSH-reachable.
    no `id_ed25519.pub` (headless Pis). Now the pubkey is derived via
    `ssh-keygen -y`. Verified end-to-end on the pip-written spare.
 
+**Repos are pre-cloned onto the card** (`super`, `dotfiles`, `ansible` into
+`/home/peter/`) — but at the *writing host's* snapshot, not necessarily latest
+`origin/main`. The card now in deskpi (written on starcam) carries super
+`05b0169` / dotfiles `3c5def1` / ansible `e8fbd5e`; the spare (pip) carries
+pip's snapshots. Consumers can `git pull` on first boot if they need current
+code. Messaged [[astro-speaker-dither]] about this.
+
 ## Pending / loose ends
 
 - **2.9G armhf image cached at `pip:/opt/raspios-imgs/`** — keep for future
