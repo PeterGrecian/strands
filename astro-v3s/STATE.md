@@ -7,6 +7,39 @@
 Replace the v2 (imx219) camera on **astrocam** with a newly-bought **Pi Camera
 v3 (standard)** — imx708 sensor — and get it focused and capturing for sky use.
 
+## First night + calibration fixes (2026-07-30)
+
+**Night 1 (2026-07-29 session) captured cleanly and unattended: 373 dark-sky
+frames**, gate started at dusk (~21:12 UTC, sun −10°) and stopped at dawn
+(~03:xx). Frame mean ~106 (real dark sky, not saturated). Focus dither swept
+0.5–1.5 all night — visible as **"tadpole" star trails** (tight in-focus end →
+fat defocused head; a free visual focus readout confirming breathing is modest).
+
+Peter's verdict: **videos excellent, brightness curves wrong, sky inverted.**
+Both defects were single stale imx219-era config values — fixed 2026-07-30:
+
+- **Pedestal 512 → 105.** Chart plots `log2(mean/pedestal)`; with imx708 dark
+  floor ~106 and pedestal still 512 the curve floored at −2.3 stops. Measured
+  105.5 floor from deep-night (00–03 UTC) frame means; set pedestal=105 (just
+  under, same convention as the old 512). Commit `astro` @ 82021b1.
+- **rotate_180 true → false** (the inversion Peter spotted — Polaris above the
+  pole not below). The imx708 streaming engine rotates 180 IN-CAPTURE, but
+  camera.json still had rotate_180=true so the **render stage**
+  (`astro.present.render` np.rot90, via `bin/nightly-cam`/`sum-sweep`) rotated
+  AGAIN → 360 → inverted. Verified against the code. Raw FITS were already
+  correct (single in-capture rotation) — hence videos looked fine; only the
+  rendered/published deliverables double-rotated. Now matches imx219's single
+  downstream rotation AND eclipticam-v3w (rotate_180 unset). Commit `astro` @
+  4aadfea.
+
+**Reprocessing Night 1 with the fixes**: run on **astrocam itself** (`bin/nightly-cam
+--camera astrocam --night 2026-07-29 --no-derot --publish`), because the
+processing topology is unclear — puppy's `~/astrocam-frames` is an empty local
+dir (no NFS mount to bigdisk), so puppy is NOT currently processing astrocam
+despite camera.json `processing.host: puppy`. astrocam reaches its own frames
+(its `~/astrocam-frames` = the bigdisk NFS mount) and has `nightly-cam`.
+`--no-derot` because pole_prior is stale.
+
 ## Where we are (2026-07-29 — camera swapped & commissioned to capture)
 
 **The v3 is physically installed and imaging.** Capture engine commissioned and
@@ -66,26 +99,56 @@ capturing automatically:
   CAMERA/BAYERPAT/EXPTIME=59.9 headers and per-frame LENSPOS focus dither.
 - **Committed & pushed**: `PeterGrecian/astro` @ 51a83c3 (rebased onto origin).
 
-Runs continuously with no sun-altitude gate (chosen 2026-07-29 for the star
-test tonight). Daylight frames just saturate harmlessly (guard = 95% of uint16
-ceiling); they carry no astronomy but cost disk — watch buffer/NFS if it stays
-sunny. Cover left **open** by hand (no auto cover control in this path).
+**Sun-altitude gate now in place** (eclipticam-style): `astrocam-v3-gate.timer`
+fires a per-minute oneshot (`astrocam_v3_gate.py`) that starts/stops
+`astrocam-v3-night.service` on the sun-altitude boundary — night below −10°
+(astrocam camera.json threshold = eclipticam-v3w), day above −8° (hysteresis).
+Night service boot-autostart **disabled** (gate owns it); uploader stays
+always-on. Committed `PeterGrecian/astro` @ 0018d7c.
+
+- **Gated on SUN ALTITUDE only, not brightness**: the imx708 pedestal is stale
+  (imx219 value) so `astro-state`'s brightness tier was calling +12° daylight
+  "night". Sun altitude is robust until the pedestal is remeasured. (astro-state
+  still runs and writes state.json, but the gate ignores its brightness verdict.)
+- **polkit `50-astrocam.rules`** lets peter toggle the services without sudo
+  (mirrors 50-eclipticam.rules). Gate uses `systemctl --no-block` so a 60s
+  in-flight exposure drain (up to TimeoutStopSec=90) doesn't outlive the tick.
+- Verified: gate correctly stops the service in daylight, both start & stop
+  paths work via polkit as peter.
+
+Cover left **open** by hand (no auto cover control in this path).
 
 ## Pending / loose ends
 
-- **Service units not in ansible**: `astrocam-v3-{night,uploader}.service` were
-  `install`ed by hand into `/etc/systemd/system/` (root-owned). eclipticam's
-  equivalents are ansible-managed — add astrocam's to the ansible repo so they
-  survive a reimage.
-- **No sun-altitude day/night gate or cover automation** (deferred). If wanted
-  later, mirror eclipticam's per-minute `capture.py` tick + cover-on-flip.
-  Right now it captures 24/7 and the cover is manual.
-- **RECALIBRATE from real imx708 sky** (all imx219/v2-lens/3280×2464 era, now
-  invalid): pole_prior_xy, plate_scale, pedestal, and the occlusion tile map.
-- **Confirm true stellar-infinity focus** on stars tonight — daytime trees are
-  finite distance; real infinity may want slightly below 1.0. The dither covers
-  0.5–1.5 so tonight's data will show it. Pick the sharpest LENSPOS from stars,
-  then narrow/centre the dither (or pin it) on that value.
+- **Not in ansible**: `astrocam-v3-{night,uploader}.service`,
+  `astrocam-v3-gate.{service,timer}`, and `/etc/polkit-1/rules.d/50-astrocam.rules`
+  were all `install`ed by hand (root-owned). Repo copies of the gate script +
+  polkit rule are committed under `astrocam/`, but the systemd unit files and
+  the installed polkit rule are NOT ansible-managed — add them to ansible so
+  they survive a reimage. eclipticam's equivalents are ansible-managed.
+- **No cover automation** (deferred). The gate handles day/night service
+  switching but does NOT move the cover (eclipticam moves the cover on the
+  flip). Cover is currently manual/open. Add cover open-on-night /
+  close-on-day if wanted.
+- **Processing topology unclear / puppy not mounting astrocam frames.**
+  camera.json says `processing.host: puppy`, but puppy's `~/astrocam-frames` is
+  an empty local dir — no NFS mount to bigdisk (192.168.0.10:/mnt/bigdisk/
+  astrocam-frames, which IS exported to the LAN). puppy rebooted after
+  overheating; the mount may have been manual/transient and lost, or puppy was
+  never the real processor. Night-1 reprocess was therefore run ON astrocam.
+  Decide the intended processor and make its frame access durable (fstab/mount
+  unit) so nightly processing isn't ad-hoc. **puppy overheats in hot weather**
+  (thermal reboots) — factor that into whether it should own processing.
+- **RECALIBRATE remaining stale fields from real imx708 sky** (imx219/v2-lens/
+  3280×2464 era): pole_prior_xy, plate_scale, occlusion tile map, and
+  `sky_clear_max_stops` (4.0 — per-sensor clear/cloudy divider on the
+  stops-above-pedestal scale, which shifted with the new pedestal; needs a few
+  clear vs cloudy imx708 nights). *(pedestal DONE 2026-07-30 = 105.)*
+- **Confirm true stellar-infinity focus** from Night-1 data — the dither swept
+  0.5–1.5, every frame tagged LENSPOS/LENSPREP. Pick the sharpest lens position
+  from the star trails (tadpole tight-ends), then narrow/centre the dither (or
+  pin it) on that value. Trees were finite-distance; true infinity may sit
+  slightly below 1.0.
 
 ## Decisions
 
