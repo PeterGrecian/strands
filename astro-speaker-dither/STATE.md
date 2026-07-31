@@ -17,55 +17,69 @@ PWM-DAC code is in `~/Berrylands/pwmaudio` (shared with the deskpi speaker-tone
 work; see the `pwmaudio` memory). The driver/circuit build is slated to migrate
 into the [[electronics]] strand + `~/electronics` repo (created 2026-07-23).
 
-## ⚠️ deskpi DOWN — recover first (2026-07-29)
+## ✅ deskpi RECOVERED + camera WORKING; image-shift test RUN (2026-07-30)
 
-## ✅ deskpi RECOVERED — camera fault is HARDWARE (2026-07-30)
+deskpi recovered (reflashed **Raspberry Pi OS Lite armhf Trixie** via
+`cloud-init-init`); now on the **eth0 dongle** (`deskpi.local` / **.71** on the
+`.0.x` LAN — note the pi-fleet `.4.154` entry is stale). GPIO18 amp wiring
+untouched. First full end-to-end image-shift test ran this session.
 
-deskpi is booting again and the IMX219 problem is now pinned to hardware.
+**Camera: NOT a hardware fault — it works.** The 2026-07-30-morning "hardware
+fault / no I²C ACK" call was **superseded the same day**: after a ribbon reseat
+the IMX219 ACKs and the `imx219 → unicam` media pipeline is ENABLED. We captured
+real, detailed images. The `-EREMOTEIO` was an **intermittent ribbon seating**
+issue, not a dead module.
 
-**Recovered** by reflashing the SD card with fresh **Raspberry Pi OS Lite
-armhf (Trixie, 2026-04-21)** via `cloud-init-init` (recovery-plan Option 4).
-Written from **starcam**, image staged on **puppy NFS**, card fixed up on
-**pip**. deskpi boots cleanly on the ARMv6-valid kernel, now on the **eth0
-dongle** (`deskpi.local` / .71). The rpi-update boot disaster is fully behind
-us. GPIO18 amp wiring untouched.
+**Capture gotcha (recorded):** `rpicam-apps`/libcamera/picamera2 are **barred on
+ARMv6** (`ERROR: rpicam-apps currently only supports the Raspberry Pi
+platforms`). Capture must go via **plain V4L2** on `/dev/video0`: set sensor
+mode on `/dev/v4l-subdev0` (`SRGGB8/640x480`), match the video node (`RGGB`),
+grab raw Bayer, debayer with ffmpeg. Max exposure/gain for the dark bench:
+`v4l2-ctl -d /dev/v4l-subdev0 --set-ctrl exposure=1759,analogue_gain=232`.
 
-**Camera: confirmed hardware fault.** On Trixie (libcamera, not the Stretch
-`start_x` path), added `dtoverlay=imx219` to `/boot/firmware/config.txt` and
-rebooted. The imx219 driver now probes the correct bus/address and the sensor
-**does not ACK**:
-`imx219 10-0010: failed to read chip id 219 / -EREMOTEIO (-121)` on i2c bus 10,
-addr 0x10. This is the same "no I²C ACK" symptom as the Stretch investigation —
-now **reproduced across a full OS/firmware/kernel reflash + correct overlay**.
-Software is proven correct → the sensor isn't responding. Cause is **ribbon
-(seat/crack/oxidation) or a dead IMX219 module**.
+## ⚡ Actuator too feeble — the real blocker now (2026-07-30)
 
-**Next (hands-on):** reseat both ribbon ends, then swap-test — a known-good
-camera on deskpi, and this IMX219 on another Pi — to condemn module vs. Pi CSI
-connector. Full detail + dmesg in
-**`~/Berrylands/pwmaudio/experiments/deskpi-camera-recovery.md`**.
+Tone test passed (440/880 Hz audible → GPIO18→darlington→coil chain confirmed).
+But the **image-shift test found no measurable camera motion** across three
+drives (static 0/100%, 2 Hz sine, 3 Hz slam) — all at the ~0.05 px cross-corr
+floor. A first 20 Hz-slam "18% motion-blur, 16σ" result **turned out to be a
+scene-drift artifact** (comparing frames minutes apart); a controlled
+interleaved static→slam→static re-run showed no difference. **Lesson: always
+interleave driven/undriven captures.**
 
-Also fixed: `peter`/`pi` added to the `video` group (fresh card left them out;
-`vcgencmd`/libcamera were throwing `/dev/vcio` / dmaHeap permission errors).
+**Root cause = actuator force, not the linkage.** Confirmed by eye at the bench:
+"the displacement is tiny — it's a truly feeble speaker." Two limiters: (1) a
+*held DC level* makes almost no force (speakers respond to *changing* current →
+dither wants sharp commanded *steps*); (2) even fast edges barely move this
+small driver. The B882 darlington is NOT the bottleneck — it sources full
+current (~0.6 A / ~2.9 W into 8 Ω would be near the rail); the transducer's
+BL·Xmax is. Full writeup: `~/Berrylands/pwmaudio/experiments/dither-deflection.md`.
 
-**Lesson (kept): never `rpi-update` an ARMv6 Pi (A+/B+/Zero).** apt/OS Raspbian
-stays current for these boards; `rpi-update` bleeding-edge firmware does not
-track ARMv6.
+## → NEXT: swap in the 15" speaker (fist-sized magnet)
+
+Peter has a **15" driver** to try. BL ≈ 10–20 N/A (vs ~0.5–1 for the small one)
+→ **~15–30× the force at the same current**, plus multi-mm Xmax and a big flat
+cone the camera can mount *directly on* — bypassing the µm→tilt coupling loss
+that killed the small-speaker test. The problem inverts: expect **too much**
+travel, so start at **low duty (~5–10%)** and dial down for px-scale dither.
+Then it's a **µm/mA calibration**, not a detection problem — the regime the
+strand actually wants. Harness ready to reuse (see below).
 
 ## Pending / loose ends
 
-- **deskpi recovered; camera blocked on hardware (see above).** The image-shift
-  test needs a working camera on deskpi. Software is proven correct
-  (`dtoverlay=imx219`, driver probes i2c-10/0x10) — the IMX219 gives no I²C ACK
-  (`-EREMOTEIO`) even after a full reflash, so it's a ribbon or dead-module
-  fault. **Next: reseat + swap-test the camera hardware.** (`gpu_mem` currently
-  16; bump to 128 only once a camera actually ACKs.)
-- **Mechanical: see actual travel now that force is adequate.** Optical-lever
-  by eye showed nothing at ~200 mA (2026-07-09); retry with the darlington's
-  full force, then the real detector — mount the rig to tilt a camera and look
-  for sub-pixel image shift.
+- **Wire the 15" driver + camera; re-run the image-shift test.** Reusable
+  harness on deskpi: `/tmp/shift_test.sh <duty> <tag> <n>` (drive GPIO18 + grab
+  N raws) and `/tmp/seq.py <cycles>` (tone→DC→rest pattern). Pull raws to a
+  numpy host, cross-correlate (FFT phase-corr) + interleaved sharpness. A
+  **calibration sweep** (step duty 2/5/10/20%, interleaved capture each, build
+  px-shift-vs-current) is spec'd and ready to build.
+- **Resonance sweep** — even the small driver gives max excursion at mechanical
+  resonance; drive the dither there, not at DC. (Also the cheapest test of the
+  force-vs-DC theory.)
 - Calibrate µm/mA **loaded** (mount stiffness changes the response) once travel
-  is confirmed.
+  is confirmed — now realistic with the 15".
+- Repos on deskpi: super/dotfiles/ansible + freshly cloned **Berrylands**
+  (pwmaudio tools) + **astro**. `pigpiod` enabled (survives reboot).
 - Decide first target camera/mode: astrocam between-frame stepping is the
   simplest (no smear, no phase sync); Polaris photometry on a v3s/pole cam
   is the real prize (needs the dither because it never drifts off its pixels).
@@ -84,3 +98,9 @@ track ARMv6.
 - Driver force problem solved with a **darlington (2N3904 → B882)** rather than
   the originally-sketched BC337 / logic-level MOSFET. Strand is now past
   placeholder — driver works, mechanical validation is next. (2026-07-25)
+- Image-shift test ran on deskpi (2026-07-30): camera + capture + detector all
+  work, but the small speaker is **too feeble** to move the camera measurably.
+  Decision: **stop tuning the small driver; switch to a 15" driver** (huge BL,
+  multi-mm Xmax, camera mountable on-cone) and shift the goal from *detection*
+  to *µm/mA calibration*. The B882 darlington stays — the transducer, not the
+  driver, was the limit. (2026-07-30)
