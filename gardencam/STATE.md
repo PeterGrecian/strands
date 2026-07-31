@@ -58,12 +58,47 @@ night). `rm` not trash (raw is disposable + same-fs trash wouldn't bound growth
 — the house rule's disposable exemption). Dry-run default (`--go` to act),
 `--help`/`--hints`.
 
-## Open questions / IDEAS
+## S3 for skycam — investigated 2026-07-31 (per-camera; springcam keeps S3)
+
+Decision framing (Peter, in CLAUDE.md): S3 is **per-camera**. Keep for springcam
+('garden' — its S3 stills feed `combined_timelapse_lambda`); drop for skycam
+('sky' — YouTube is the deliverable; per-hour S3 copies grow ∝ t², never read).
+
+**Blocker found (important):** dropping skycam's S3 upload is NOT a one-line
+toggle, because the **YouTube day-video build re-downloads the hourlies FROM S3**.
+`rerender_cloudcam_day.py` sources hourlies from `~/skycam-rerender/` (empty) and
+falls back to S3 download every run — verified in puppy's journal. So S3 is
+currently load-bearing for the deliverable, even though the mp4s are created +
+consumed on the same host (wasteful round-trip). See memory `skycam-s3-roundtrip`.
+
+**Plan (agreed direction, Peter): make ffmpeg-local self-sufficient.**
+1. Fix `rerender_cloudcam_day.py` to source hourlies from local `~/skycam-processed/`
+   first (S3 fallback only for old dates whose locals are gone). ← NEXT
+2. Verify a YouTube day-build works local-only (no S3 reads).
+3. THEN set `S3_UPLOAD=0` on `skycam-processor.service` (puppy).
+
+**Code DONE (committed-ready, NOT deployed):** `S3_UPLOAD` env toggle added to
+`skycam_processor.py` (default "1" — protects springcam/others; sets `self.s3=None`
+→ flows through every `if s3 is not None` guard, disabling uploads AND switching
+the per-hour idempotency gate from the S3 head-check to local-mp4-exists).
+`S3_UPLOAD=0` line staged in `skycam-processor.service` but must stay unset live
+until step 1+2 land. Do NOT deploy `S3_UPLOAD=0` before the rerender fix.
+
+**Existing 114GB cost recovery (Peter: "add S3 lifecycle expiry", window TBD):**
+- `skycam/videos/` = 2221 objs / **114GB** (the ∝ t² dead weight); `skycam/rerender/`
+  = 163 objs / 34.5GB (day videos; left alone). No lifecycle config exists yet.
+- Drafted rule scoped to `Prefix: skycam/videos/` (safe — springcam is under
+  `springcam/` + bucket-root `garden_*`/`thumb_garden*`/`averaged*`, untouched).
+  Draft at scratchpad `skycam-videos-lifecycle.json` (30-day expiry). **Window not
+  finalised** (Peter: "lets think"). NB expiry must exceed how far back a day is
+  ever re-rendered — currently same-day, but that's coupled to the round-trip
+  above; once step 1 makes rerender local-source, `skycam/videos/` stops being
+  read at all and the window can be short.
+
+## Other open
 - **Push the branch + open a PR** for `gardencam-skycam-cleanup-incoming` in the
-  Berrylands repo (committed, not pushed).
-- **Is S3 still needed?** Deliverable is YouTube; S3 (`gardencam-berrylands-...`)
-  may be redundant cost. See https://www.petergrecian.co.uk/gardencam/s3-stats.
-  (Now the top open item — the storage problem it competed with is solved.)
+  Berrylands repo (committed, not pushed). The S3-toggle code above will be a
+  second commit / branch.
 
 ## Seam with astro-storage
 astro-storage owns the astro streams (keep-forever, bigstore-primary). This strand
