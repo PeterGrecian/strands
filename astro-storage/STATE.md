@@ -2,6 +2,32 @@
 
 *Updated 2026-07-31*
 
+## astrocam v2→v3s page labelling — DONE + verified live (2026-07-31)
+
+astrocam swapped imx219/v2 → imx708/v3s on 2026-07-29 (astro-v3s strand's work).
+`/astro/storage` now labels the eras distinctly: nights **≥ 2026-07-29 = av3s**,
+earlier = av2. Mechanism: `storage-report` maps camera name by night date
+(`_SENSOR_SWAPS` / `_cam_for_night`); the page's `CAM_ABBR` already had
+`astrocam-v3s→av3s`.
+
+**Two bugs found + fixed by checking the actual DynamoDB (not trusting the commit):**
+1. The fix was applied only in `scan_host` (capture-path) but **not**
+   `scan_extra_streams` (the disk-root scan of /mnt/bigdisk + /mnt/bigstore).
+   Result: swapped nights got an av3s row AND lingering av2 rows (which also
+   blocked pruning). Fixed — split now applied in both paths (astro `8c40e8f`).
+2. muppet's astro checkout was 38 commits behind with an uncommitted
+   `storage-report` — but that uncommitted diff was **fully redundant** with
+   origin (bigstore-xfer multi-root work already committed there); the ONLY unique
+   content was my av3s split, which origin also had. Stashed the redundant change
+   (recoverable), fast-forwarded muppet to origin.
+
+Verified live: 3 astrocam-v3s rows (07-29 ×2, 07-30), **0 stale av2 rows ≥07-29**;
+re-scan pruned 5. Page is clean.
+
+**Note (astro `8c40e8f` unpushed on pip):** the scan_extra_streams fix is
+committed on pip + synced to muppet by file copy, not pushed. Push when convenient
+so other hosts' scans get it.
+
 ## INVARIANT: bigstore is primary — it holds every stream in full (Peter, 2026-07-31)
 
 **Rule:** `bs` (muppet `/mnt/bigstore/astro-data`, 5.5T) is the **primary** store
