@@ -30,6 +30,30 @@ live via `/proc/<pid>/environ` `WINDOWID` (all terminals share one xfce4-termina
 server pid, so wmctrl's pid can't map them), `.wid` written, and a per-window
 detached titlekeeper started (self-exits when the window closes).
 
+**Title reset on exit (2026-07-31).** The reassert loop kept the strand name on
+the window for the session's life, but the EXIT handler only killed the loop and
+restored *colours* — it never cleared the *title*, so a closed session left the
+strand name on the window forever (we set `_NET_WM_NAME` directly, so nothing
+else reverts it). Fixed: `restore_terminal_title_on_exit` writes xfce4-terminal's
+default `Terminal - user@host: PWD` back via the same `xdotool set_window --name`
+path, called from `restore_terminal_colours_on_exit` right after the loop is
+killed (so it fires on every exit path and can't be clobbered by a live tick).
+`TTY_PWD` is captured before aicli cd's into the strand, so the restored title
+reflects the launching shell's directory.
+
+**Doorbell arming moved to a SessionStart hook (2026-07-31).** Strands kept
+forgetting the `ding --arm` ritual, so mail piled up unread. It *can't* be done
+in aicli's code: a waiter armed by the launcher shell is a child of the launcher,
+not claude, so its completion re-invokes nothing — only a waiter CLAUDE spawns as
+a tracked background task wakes the session. So the fix injects the instruction
+instead. `aifabric/bin/aicli-session-start-hook` is a `SessionStart` hook that,
+when `CLD_STRAND_DIR` is set (i.e. a strand session), emits
+`hookSpecificOutput.additionalContext` telling the session to arm `ding --arm
+<mailbox> 0` as a background task and drain the spool. Self-gating: plain `claude`
+launches emit nothing. Wired into `~/.claude/settings.json` **and** the durable
+`dotfiles/.claude/settings-shared.json` (so `claude-settings-merge` keeps it
+across machines / the live file's runtime rewrites). Takes effect next launch.
+
 ## Pending / loose ends
 
 - The hand-started backfill titlekeepers for the currently-open sessions are
@@ -39,6 +63,12 @@ detached titlekeeper started (self-exits when the window closes).
 - aicli working tree also carried a pre-existing unrelated edit (`-a|--archive`
   → long-form-only `--archive`, freeing `-a` to match `strands -a`). Committed
   together with the window-management work this session.
+- The doorbell hook means every strand session now reliably has a background
+  waiter running, so `/exit` always shows the "Exit anyway / background / stay"
+  guard. For a strand, **Exit anyway** is correct — the waiter is meant to die
+  with the session and aicli's post-backend `ding_reap` sweeps any orphan. If the
+  prompt gets annoying, consider having aicli tear the waiter down just before
+  exit so `/exit` is clean (separate change, not done).
 
 ## Decisions
 
