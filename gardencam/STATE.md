@@ -58,42 +58,55 @@ night). `rm` not trash (raw is disposable + same-fs trash wouldn't bound growth
 — the house rule's disposable exemption). Dry-run default (`--go` to act),
 `--help`/`--hints`.
 
-## S3 for skycam — investigated 2026-07-31 (per-camera; springcam keeps S3)
+## S3 for skycam — investigated 2026-07-31 (NOT droppable yet; more coupled than thought)
 
-Decision framing (Peter, in CLAUDE.md): S3 is **per-camera**. Keep for springcam
-('garden' — its S3 stills feed `combined_timelapse_lambda`); drop for skycam
-('sky' — YouTube is the deliverable; per-hour S3 copies grow ∝ t², never read).
+Decision framing (Peter, in CLAUDE.md): S3 is **per-camera** — keep springcam, drop
+skycam. Turned out **skycam's S3 is far more load-bearing than the framing assumed**;
+the "just stop uploading" plan was tried, broke things, and was **rolled back**.
 
-**Blocker found (important):** dropping skycam's S3 upload is NOT a one-line
-toggle, because the **YouTube day-video build re-downloads the hourlies FROM S3**.
-`rerender_cloudcam_day.py` sources hourlies from `~/skycam-rerender/` (empty) and
-falls back to S3 download every run — verified in puppy's journal. So S3 is
-currently load-bearing for the deliverable, even though the mp4s are created +
-consumed on the same host (wasteful round-trip). See memory `skycam-s3-roundtrip`.
+**What `skycam/videos/` actually feeds (all confirmed live):**
+1. **YouTube day-build** — `rerender_cloudcam_day.py` re-downloaded the hourlies from
+   S3 every run. ✅ FIXED this session (see below) — no longer needs S3.
+2. **`gardencam-daily-concat` lambda** — deployed + wired to `s3:ObjectCreated` on
+   `skycam/videos/*.mp4` (verified in bucket notification config). Each hourly upload
+   fires it → daily concat → feeds `combined_timelapse_lambda` (sky-over-garden, a
+   **springcam-facing** deliverable; code present, may not be currently deployed).
+3. **Website `/skycam/videos` gallery** (`mywebsite/lambda`) reads the prefix.
 
-**Plan (agreed direction, Peter): make ffmpeg-local self-sufficient.**
-1. Fix `rerender_cloudcam_day.py` to source hourlies from local `~/skycam-processed/`
-   first (S3 fallback only for old dates whose locals are gone). ← NEXT
-2. Verify a YouTube day-build works local-only (no S3 reads).
-3. THEN set `S3_UPLOAD=0` on `skycam-processor.service` (puppy).
+So (2)+(3) still depend on the per-hour S3 upload. **Dropping skycam's S3 is a
+multi-part design change (AWS pipeline + website), not a processor toggle.**
 
-**Code DONE (committed-ready, NOT deployed):** `S3_UPLOAD` env toggle added to
-`skycam_processor.py` (default "1" — protects springcam/others; sets `self.s3=None`
-→ flows through every `if s3 is not None` guard, disabling uploads AND switching
-the per-hour idempotency gate from the S3 head-check to local-mp4-exists).
-`S3_UPLOAD=0` line staged in `skycam-processor.service` but must stay unset live
-until step 1+2 land. Do NOT deploy `S3_UPLOAD=0` before the rerender fix.
+**What actually shipped this session:**
+- ✅ **Rerender local-source fix** — `rerender_cloudcam_day.py` now sources hourlies
+  from local `~/skycam-processed/<date>/` first (cached-rerender-dir, then S3
+  fallback). Verified on puppy: built the 07-30 day mp4 (643MB) from local files,
+  zero S3 downloads for present hours. **Deployed on puppy + committed.** Pure
+  improvement, kept regardless of the S3 question.
+- ✅ **`S3_UPLOAD` toggle** added to `skycam_processor.py` (default "1" = on; sets
+  `self.s3=None`, flowing through every `if s3 is not None` guard — disables uploads
+  AND switches the per-hour idempotency gate from the S3 head-check to
+  local-mp4-exists). **Committed, default ON, NOT wired into the service.**
+- ⏪ **Tried `S3_UPLOAD=0` on puppy (~14:51–16:18 UTC), then ROLLED BACK** once the
+  lambda/website coupling surfaced. Service is back to `s3_upload=True`. The 2 hours
+  encoded during the window (07-31 hrs 13,14) were **backfilled to S3** by hand, so
+  no gap in daily-concat / gallery. Lesson: `skycam/videos/` is an integration point,
+  not a dead-end — check bucket-notification wiring + website before flipping.
 
-**Existing 114GB cost recovery (Peter: "add S3 lifecycle expiry", window TBD):**
-- `skycam/videos/` = 2221 objs / **114GB** (the ∝ t² dead weight); `skycam/rerender/`
-  = 163 objs / 34.5GB (day videos; left alone). No lifecycle config exists yet.
-- Drafted rule scoped to `Prefix: skycam/videos/` (safe — springcam is under
-  `springcam/` + bucket-root `garden_*`/`thumb_garden*`/`averaged*`, untouched).
-  Draft at scratchpad `skycam-videos-lifecycle.json` (30-day expiry). **Window not
-  finalised** (Peter: "lets think"). NB expiry must exceed how far back a day is
-  ever re-rendered — currently same-day, but that's coupled to the round-trip
-  above; once step 1 makes rerender local-source, `skycam/videos/` stops being
-  read at all and the window can be short.
+Both code changes are on branch **`gardencam-skycam-s3-toggle`** (2 commits). They're
+safe to merge as-is (nothing turns S3 off). puppy runs them as working-tree edits.
+
+**Existing 114GB — lifecycle NOT applied.** `skycam/videos/` = 2221 objs / **114GB**;
+`skycam/rerender/` = 163 objs / 34.5GB. A 7-day expiry was drafted + approved, but
+**not applied** — the daily-concat lambda + website gallery still read this prefix,
+so expiry can't happen until the drop-S3 design (below) removes those readers.
+Draft (7-day, scoped to `skycam/videos/`, springcam-safe) at scratchpad
+`skycam-videos-lifecycle.json`.
+
+**To actually drop skycam's S3 (future work), all readers must move off it:**
+- daily-concat / combined-timelapse: run locally on puppy (like the rerender now
+  does), or retire if the sky-over-garden composite isn't wanted.
+- website `/skycam/videos` gallery: point at YouTube, or retire.
+- THEN `S3_UPLOAD=0` + lifecycle-expire the 114GB is safe.
 
 ## Other open
 - **Push the branch + open a PR** for `gardencam-skycam-cleanup-incoming` in the
