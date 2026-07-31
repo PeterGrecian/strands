@@ -1,0 +1,1 @@
+Is S3 still needed for skycam? The deliverable is now YouTube; the S3 bucket gardencam-berrylands-eu-west-1 (skycam/videos/) may be redundant recurring cost. Review https://www.petergrecian.co.uk/gardencam/s3-stats and decide whether to stop the S3 upload leg of skycam_processor.py. (Peter, 2026-07-31)
