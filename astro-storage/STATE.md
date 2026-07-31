@@ -1,6 +1,41 @@
 # astro-storage — state
 
-*Updated 2026-07-29*
+*Updated 2026-07-31*
+
+## INVARIANT: bigstore is primary — it holds every stream in full (Peter, 2026-07-31)
+
+**Rule:** `bs` (muppet `/mnt/bigstore/astro-data`, 5.5T) is the **primary** store
+and must hold **every astro stream in full** — astrocam, eclipticam, starcam,
+skycam. **All other disks (bigdisk, bigdisk2, capture-host SSDs) are SECONDARY
+copies.** New capture targets bigstore. Reconciliation = **add-only `rsync -a`**
+into bs (never `--delete` — preserves bs-only nights like squashed/migrated ones),
+followed by a `--checksum` verify. Freeing a secondary is safe only once the night
+is verified on bs.
+- **photodisk is RETIRED to the vault** (bigstore-xfer, 2026-07-29): powered down,
+  shelved as cold backup, fully duplicated on bs; muppet fstab + ansible export
+  removed (durable). `/mnt/photodisk` is **no longer a staging/ship target** —
+  bigstore is the consolidated live store. (Any old STATE note using photodisk for
+  staging — e.g. squash-starcam-night — needs a bigstore-based target instead.)
+
+**Reconciliation done this session (2026-07-31):**
+- **astrocam — COMPLETE on bs.** 06-09..07-27 already present; **copied+verified
+  07-28 (13G, 4704 files) and 07-29 (4.4G, 1040 files, the v3s first night)**
+  bigdisk→bigstore (local disk-to-disk on muppet, 0 data-diffs each). 07-18/19 are
+  correctly bs-only (bigdisk freed). 06-08 is an empty stub.
+- **eclipticam — already COMPLETE on bs** (50 nights/237G). bigdisk (16n) +
+  bigdisk2 (17n) hold only redundant subsets — every secondary night is already on
+  bs (the tangled 3-tree overlap from STATE was pure duplication). bigdisk2's
+  year-nested `2026/06/DD/` tree is 51 stub files (metadata, not raw) — noise.
+- **starcam — already COMPLETE on bs** (13 nights/198G). bigdisk starcam-backup's
+  5 nights (05-20,22,23,26,30) all present on bs with matching counts. photodisk +
+  muppet ~/starcam-backup empty; puppy origin nights all within the bs range.
+- **skycam — NOT complete; needs auto-cleanup pipeline** (see below).
+
+**skycam gap → asked ubersitrep (2026-07-31):** skycam raw on puppy is **unbounded**
+(pressure GC retired 2026-07-01, no ship-and-free replacement). Peter wants
+auto-cleanup. Mailboxed ubersitrep to decide ownership (astro-storage is the
+natural fit — it owns per-stream ship-and-free). The pipeline: ship puppy raw →
+bigstore, then free puppy. 53G already on bs. **Awaiting ubersitrep's read.**
 
 ## bs nightly sync — two-camera topology (2026-07-29)
 
