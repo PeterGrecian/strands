@@ -2,6 +2,39 @@
 
 *Updated 2026-07-31*
 
+## POLICY: 3+-copy surplus is clearable (Peter, 2026-07-31) — record, don't act yet
+
+Companion to the bigstore-primary invariant. bigdisk will be **rationalised at
+some stage** (taken offline or made nearline). Ahead of that:
+
+**Rule:** for any (camera, night), count its copies **excluding eclipticam's SSD
+(`/mnt/ssd`) and USB thumb drives** — those never count toward the tally. A
+**cold/Glacier tar in S3 DOES count** (incl. the non-canonical `glacier-app-archive`
+bucket). If a night has **≥3 qualifying copies**, the **surplus is clearable** —
+freeing space for more valuable **2nd copies** of nights that currently have only
+1 (the goal is *every* night has a safe 2nd copy, not 3+ of some while others have 1).
+
+**Which copy to clear: least-valuable, case-by-case** (NOT a blind rule). Usually
+the bigdisk/bigdisk2 copy (the disk being rationalised), but judge per night —
+never clear the bigstore (primary) copy, and prefer keeping the canonical cold
+path (`astro-berrylands-eu-west-1`) over the non-canonical `glacier-app-archive`.
+Every cleared night must retain **≥2** qualifying copies.
+
+**DO NOT ACT YET** — record only. Execute when bigdisk is actually rationalised.
+Freeing = `trash` (recoverable) for on-disk copies, never rm; verify the retained
+copies first.
+
+**Snapshot (2026-07-31 inventory), qualifying-copy distribution:**
+- 1 copy: **20 nights** ← these are the priority (need a 2nd copy)
+- 2 copies: 90 nights (leave)
+- 3 copies: 23 nights · 4 copies: 2 nights ← **25 nights with clearable surplus**
+
+The 25 are mostly `{S3/Glacier tar, bigdisk|bigdisk2, bigstore}` trios (astrocam
+06-09/16/26; eclipticam-v3w 06-25..07-11; starcam 05-20..05-30). The 2 four-copy
+nights: eclipticam-v3w 07-04 (both S3 buckets + bigdisk2 + bigstore), starcam
+05-20 (S3 + astrobackup + bigdisk + bigstore). Re-derive live before acting — a
+one-off query over `astro-storage-inventory` gives the current list.
+
 ## astrocam v2→v3s page labelling — DONE + verified live (2026-07-31)
 
 astrocam swapped imx219/v2 → imx708/v3s on 2026-07-29 (astro-v3s strand's work).
