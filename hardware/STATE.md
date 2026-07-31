@@ -89,7 +89,49 @@
     just Acknowledged — see [[xmatters-response-close]].) Edit is manual, not
     ansible-managed (the role templates only the base unit).
 
-### 6 TB migration runbook — DISK ARRIVES 2026-07-27
+### 6 TB migration runbook — DISK ARRIVED 2026-07-27 (migration DEFERRED)
+
+**⏸ DEFERRED (2026-07-27):** disk arrived and was inspected, but migration is
+**on hold until the current disk-full emergency is over** — Peter has no free
+space and no bench time right now. Nothing was changed: the drive was mounted
+**read-only**, inspected, and unmounted cleanly. **Resume from step 1 below when
+the emergency clears.**
+
+**Inspection findings (2026-07-27), attached to muppet over USB:**
+- Presents as `sda`, **5.5 TiB**, factory-fresh: single **exFAT** data partition
+  (`Expansion`) + 200 M vfat EFI partition, only **41 MB used** (Seagate
+  bundleware: `Start_Here_*`, `Warranty.pdf`, `Seagate/`, `.VolumeIcon.*`) —
+  **nothing of ours on it.** To be reformatted **single ext4 partition**
+  (DECIDED 2026-07-27) — its role is **principal storage**, old disks become backups.
+- **⚠ USB bridge blocks SMART — CONFIRMED EXHAUSTIVELY 2026-07-31.** This is the
+  **Seagate Expansion enclosure** (USB id **0bc2:2038**). Live re-probe on muppet
+  (5.5TB = `/dev/sda`) proved **NO** `-d` flag recovers SMART: `sat`/`sat,12`/
+  `sat,16` → "unsupported field in scsi command"; `usbjmicron`/`usbsunplus`/
+  `usbcypress` all fail; only `-d scsi` answers and it reports "SMART support:
+  Unavailable". `-T permissive` also tested → all-blank fields, "SMART Disabled",
+  zero attributes (it only tolerates a failed command, can't make the bridge
+  accept ATA pass-through). So the shuck is *forced*, not merely preferred — no
+  software flag exists. (Also confirmed real capacity **6.00 TB** / 6,001,175,125,504 bytes.)
+  By contrast the **ASMedia ASM1051** bridge (174c:5106, now serving the 1 TB
+  ST31000528AS = `/dev/sdc`, health `PASSED`, 0 realloc/pending/CRC, 8369 POH)
+  passes `-d sat` fine. Device letters shuffle across replugs — identify by-id.
+  See memory `seagate-expansion-blocks-sat`. **DECISION SETTLED → SHUCK** the
+  drive out of the Seagate enclosure onto a spare/£6 generic ASM/JMicron bridge
+  *before* committing it as primary, to restore SMART and match the rest of the
+  fleet. (Peter's disks are all USB-on-cheap-bridge already, so this is the known-good
+  path, not a downgrade.) Reformat/migrate is bridge-independent, so bridge swap
+  can happen before or after — but confirm SMART on the *final* bridge before
+  declaring it "principal". Do NOT rely on the Seagate bridge long-term.
+  - **SHUCK TARGET DECIDED (2026-07-27): the ancient IcyBox enclosure passes SATA
+    SMART through** → put the 5.5TB in the IcyBox = full health visibility, **£0,
+    no new bridge to buy.** So the plan is: shuck out of the Seagate enclosure →
+    into the IcyBox → that's the principal. Later, **once photodisk (sdb) is
+    shelved**, its freed generic adapter can host the 5.5TB if the IcyBox is
+    wanted back; interchangeable. Net: never blind, nothing bought. (This settles
+    the "shuck vs Seagate-bridge" question — answer is shuck-into-IcyBox.)
+- Note the earlier runbook assumed a mains-brick 3.5" desktop drive; as delivered
+  it enumerates as a bus-powered-style Expansion. Still: give it its **own** power
+  feed, never the shared USB feed that caused the 2026-07-15 fault.
 
 **Disk bought (2026-07-26):** Seagate Expansion **STKP6000400 6 TB** (3.5"
 external USB 3.0, £199.99 from scan.co.uk). NB it's a **3.5" desktop drive → has
@@ -114,8 +156,10 @@ disk sprawl down to one live drive + two cold copies; nothing to landfill):
 2. **ddrescue sdb FIRST** (it's the dying one) onto the 6 TB. **ddrescue, NOT
    cp/rsync** — cp stalls on the 274 pending sectors; ddrescue logs them and
    continues. Keep the ddrescue **mapfile** and check which sectors (if any)
-   couldn't be read. This sweeps up the two single-copy items (starcam 05-21 40G,
-   eclipticam day/ 21G) — *unless* skipping the abandoned moon-tracking `day/`.
+   couldn't be read. This sweeps up starcam 05-21 (40G). **SKIP eclipticam
+   `day/` (21G)** — DECIDED 2026-07-26: abandoned moon-tracking frames (Peter
+   switched to Altair), not worth the read-wear on a dying disk. ddrescue
+   file-by-file / exclude that path, or just don't copy it back on reload.
 3. **Copy sdc** (bigdisk+bigdisk2, ~892 G used) onto the 6 TB — plain rsync/cp is
    fine (healthy disk). Total onto 6 TB ≈ 1.15 TB → fits with ~4.8 TB spare.
 4. **VERIFY before reformatting anything** — checksums / file counts / test reads.
