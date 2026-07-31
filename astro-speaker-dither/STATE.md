@@ -55,15 +55,73 @@ small driver. The B882 darlington is NOT the bottleneck — it sources full
 current (~0.6 A / ~2.9 W into 8 Ω would be near the rail); the transducer's
 BL·Xmax is. Full writeup: `~/Berrylands/pwmaudio/experiments/dither-deflection.md`.
 
-## → NEXT: swap in the 15" speaker (fist-sized magnet)
+## ✅ Faital Pro 4FE35 MOVES the camera — but stiction/detent (2026-07-31)
 
-Peter has a **15" driver** to try. BL ≈ 10–20 N/A (vs ~0.5–1 for the small one)
-→ **~15–30× the force at the same current**, plus multi-mm Xmax and a big flat
-cone the camera can mount *directly on* — bypassing the µm→tilt coupling loss
-that killed the small-speaker test. The problem inverts: expect **too much**
-travel, so start at **low duty (~5–10%)** and dial down for px-scale dither.
-Then it's a **µm/mA calibration**, not a detection problem — the regime the
-strand actually wants. Harness ready to reuse (see below).
+Swapped to a **Faital Pro 4FE35** (4" full-range, 8 Ω pro driver). Camera
+resting **in contact** with the cone. Coil measured **5.6 V RMS ≈ 0.70 A /
+~3.9 W** — full rail; darlington delivers full current. **The camera moves —
+big range (up to ~30 px at 100% duty).** Force is no longer the blocker.
+
+**But the response is a stiction/detent staircase, not proportional:**
+deadband 0–19% → **snaps to 2.0 px at ~22%** → flat plateau 22–50% → jumps on
+up (10/13/23/30 px). Control 0.008 px, drift 0.014 px — detector is excellent,
+steps are real. Cause: camera only *in contact*, not bonded — cone travel below
+threshold is lost to slack, then it breaks free into a new seated position.
+**Unusable for dither** (needs continuous monotonic sub-px steps). Full data:
+`~/Berrylands/pwmaudio/experiments/dither-deflection.md`.
+(Watch **D882** dissipation — ~1 W free-air; keep 100% bursts short. Fine dither
+is low-duty so it's fine.)
+
+## 🎯 Repositioned camera → ~3 mm travel, ~230 px range — TOO MUCH (2026-07-31)
+
+Repositioned the camera on the cone → coupling transmitted far better. New
+sweep: deadband to 3% → 7 px @ 6% → ~30 px @ 9–25% → **154 px @ 37% → ~230–245
+px (frame-edge saturation) @ 50–88%**. **Peter: the cone is moving ~3 mm.**
+That's ~230 px image shift across a 640-wide frame. Then **the camera literally
+fell off the cone** at the big excursions (relaxed start-vs-end = 232 px → never
+returned). Also added output filtering by ear: **10 µF vital + 100 µF better**
+(shunt C across the coil; coil supplies the L+R — fc ≈ 2.3 kHz / 680 Hz; kills
+the audible 10 kHz PWM carrier).
+
+**The problem has fully inverted: ~1000× too much travel, not too little.**
+Design target is 0.1 px ≈ 0.77 µm; we get ~3 mm ≈ thousands of dither steps at
+high duty. Force/range are a solved non-issue. The whole game is now (1) attach
+the camera *securely* (it fell off — resting-in-contact won't survive the
+travel), and (2) operate at the **bottom ~5% of duty**, where 1 count ≈ a
+fraction of a px. Sub-px dither lives at ~1–4 duty counts.
+
+## 🔬 PoC PROVEN — response is stick-slip; carrier was 8 kHz (2026-07-31)
+
+Full chain validated: current → ~3 mm cone travel → ~230 px image shift,
+resolved to ~0.008 px. But two findings define the next phase:
+
+- **Stick-slip, not proportional.** Camera resting *in contact* → deadband then
+  snap-to-detent. **Slow ramps do NOT cure it** (a friction contact has no
+  elastic element to creep through) — tested: 0 up to ~duty 30, then jumps to an
+  ~8 px plateau. At high duty the camera **flew off the cone**.
+- **Carrier was 8 kHz, not 20 kHz** — pigpio `set_PWM_frequency` snaps to a
+  ladder; 8 kHz is dead in the audible band. Fix: `pi.hardware_PWM(18,40000,
+  duty*1e6)` (true HW PWM) → inaudible + coil L / shunt cap kill it harder. The
+  10 µF shunt cap made it non-painful; +100 µF better.
+
+## → NEXT: the flexure stage (CRITICAL, hardest — do FIRST)
+
+Peter's difficulty-ranked roadmap (2026-07-31):
+1. **Flexure stage + camera-ribbon strain management — CRITICAL, do first.**
+   Sub-µm *smooth* motion needs a **flexure, not bearings** (bearings have
+   ~µm stiction = the stick-slip we measured). The **CSI ribbon is the hard
+   part** — its stiffness/creep/hysteresis fights a soft flexure and
+   reintroduces stick-slip through the cable. Strategy: exploit the ~1000×
+   excess travel to run a **stiffer flexure that swamps the ribbon**, then gear
+   down to sub-µm. Full design note (ribbon problem + 5 mitigations) now in
+   `~/astro/design/speaker-dither-rig.md` (Bench PoC section).
+2. Bond camera→cone rigidly — easy; unblocks a proportional re-test meanwhile.
+3. **Real DAC** (MCP4725 → linear current driver) — easy quality upgrade, kills
+   the carrier, far finer low-end resolution than 8-bit PWM. Phase 2; does NOT
+   fix stick-slip. NB linear D882 dissipates more → heatsink/current-source.
+
+Everything electronic + optical is proven (force, range, filtering, capture,
+detector). The remaining work is mechanical. Harness ready (see below).
 
 ## Pending / loose ends
 
