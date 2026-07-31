@@ -7,9 +7,31 @@
 Extract Peter's AI working method from `~/super` into a standalone repo
 **`aifabric`** (display name "AI Fabric") — his principal portfolio. Not a drawer
 of tools: a *fabric* — the manywrapper library and its instances, strands,
-forkterms, and the patterns/decisions docs are threads of one cloth. Model:
-**extract & migrate** (the pieces move out, `aifabric` is their live home).
-Publish under `PeterGrecian` as `aifabric`.
+forkterms, and the patterns/decisions docs are threads of one cloth. Model
+(settled 2026-07-31): **separation, PATH picks the winner** — `aifabric` is the
+pieces' live home; `~/aifabric/bin` sits ahead of `super/bin` on `$PATH` so the
+aifabric tools win by ordering alone. `super` and `aifabric` are *separate*, no
+symlink either way. Publish under `PeterGrecian` as `aifabric`.
+
+## Severed super→aifabric symlinks; archive is long-form only (2026-07-31)
+
+Two corrections that push the migration past its timid phase:
+
+- **Removed the 5 `super/bin/*` symlinks into `~/aifabric/bin`** (`cld`, `ding`,
+  `forkchat`, `idea`, `sessions`). The "convergence by symlink" model — super
+  links back to the settled copy — was too timid: it implied the aifabric tools
+  were general `super/bin` fare when they are *specialised to the aifabric
+  thrust*. They were also dead: `~/aifabric/bin` is ahead of `super/bin` on
+  `$PATH`, so the links were never traversed. Now **separation, PATH picks the
+  winner** — no symlink either way; git carries the move history. Verified every
+  tool still resolves (to aifabric/bin) after removal. Strand CLAUDE.md, the
+  [[aicli-supersedes-cld]] memory, and this STATE all updated to the new model.
+- **`aicli` archive is now long-form only** (`--archive <strand>`; dropped the
+  `-a` short flag). `-a` was cross-tool-ambiguous — archive-the-verb in `aicli`
+  vs `strands -a`/`--and-archived` (list-archived). `-d` (the mnemonic for
+  "delete") was already `--default`, so no clean short form existed; spelling
+  out a destructive op is the right speed-bump. `strands -a` keeps its meaning
+  unopposed.
 
 ## Comms un-deafened + listening ritual; aicli --archive (2026-07-26/27)
 

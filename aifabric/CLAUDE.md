@@ -10,12 +10,16 @@ coherent way of working with AI, and the portfolio should read as that fabric,
 not as a pile.
 
 It has outgrown `super` and earned its own home. Chosen model (revised
-2026-07-19, superseding "extract & migrate"): **convergence by symlink** —
-`super` is the daily kitchen (eating our own exquisite cuisine); `aifabric` is
-where a piece *settles* as its clean canonical copy; when it settles, `super`
-symlinks to it (first: `super/bin/idea → ~/aifabric/bin/idea`). One copy, two
-framings: what he shows IS what he runs, via the link. Published under
-`PeterGrecian` as the repo `aifabric`.
+2026-07-31, superseding both "extract & migrate" and the timid "convergence by
+symlink" step before it): **separation, PATH picks the winner.** `aifabric` and
+`super` are *separate*, with no symlink either way. The aifabric/bin tools live
+in `~/aifabric/bin`, which sits **ahead of** `super/bin` on `$PATH`, so typing
+`cld`/`idea`/`ding`/… resolves to the aifabric copy directly — no link needed.
+`super` does **not** reference aifabric: symlinking back into it wrongly implied
+the aifabric tools were general-purpose `super/bin` fare, when they are
+*specialised to the aifabric thrust*. The old `super/bin/*` links were historical
+cruft and are gone (git carries the move history); PATH ordering does the work.
+Published under `PeterGrecian` as the repo `aifabric`.
 
 This is not a publish task — it's a **product extraction** to portfolio standard:
 sever every dependency back into `super`/fleet, make each tool run **standalone**,
@@ -36,7 +40,8 @@ the portfolio *of* the method.
   runnable tools that *embody* the ideas (manywrapper as real multi-backend code,
   forkterms as a working mailbox), not essays about them.
 - **`super` must keep working after the amputation.** `cld` and friends still run
-  throughout. Not "done" until the daily workflow is verified intact.
+  throughout — now via PATH ordering (aifabric/bin first), not via `super`
+  linking back. Not "done" until the daily workflow is verified intact.
 - **Publish under `PeterGrecian`** (personal, his name, "collaborations" bio) —
   the identity he *wants* associated. Not `-NiCE`, not a bridge account.
 - **History decision per tool:** filter-repo/subtree-split to carry the evolution
@@ -47,8 +52,9 @@ the portfolio *of* the method.
 1. Read `STATE.md` (current state, decisions) and `IDEAS.md` (inbox).
 2. Triage new ideas with Peter: promote to STATE.md pending list, or drop.
    Delete triaged entries from IDEAS.md.
-3. Work. During extraction, tooling changes still commit to `super` until a tool
-   graduates cleanly into `aifabric`; curation lives here.
+3. Work. Graduated tools (`aicli`/`cld`, `idea`, `ding`, `forkchat`, `sessions`,
+   `strands`, …) now live in `~/aifabric/bin` and are edited there — commit those
+   changes to the `aifabric` repo, not `super`. Curation lives here in the strand.
 4. Session end (or `dcp`): update STATE.md — what moved, what's pending, what
    coupling was severed, whether `super`'s workflow still runs.
 
