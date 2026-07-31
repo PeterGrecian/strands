@@ -4,6 +4,56 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## `dispatch` tool spec'd — cut the delegation coordination tax (2026-07-31)
+
+Peter: *"I ask a strand to start a terminal with a strand to do a task; it does
+a lot of coordinating and it all costs irrelevant context to the original
+strand."* The insight: the expensive part of `forkterm into X "Y"` isn't the
+launch, it's the **choreography after** (briefing, arm/drain/re-arm, message
+shuttle) — all in the *parent's* context. Refines the **backlog ritual** below
+(the conductor→fork pattern): make the conductor pay for *decisions and results
+only*, not plumbing.
+
+Three lanes (2026-07-31, extended), split by task shape:
+- **scalar query** ("temp of astropi → value|NaN") → headless background
+  subagent, no window;
+- **correspondent task** (fix/investigate Y) → forkterm into an *existing*
+  strand + decision-relay protocol (`DECISION:`/`DONE:`/`BLOCKED:` mailbox
+  tags), wait run as a *parent-side background task* so it's out-of-turn;
+- **scratch poke** (explore topic T, no home strand) → *cold* forkterm into a
+  **throwaway dir** (not in `~/strands`, not in the ledger); the **fork runs
+  its own `sessions search`** to self-seed. Default death = discard; rare
+  `--graduate` lifts it into a real strand (scratch notes *become* the seed
+  STATE). **The ledger only ever sees graduated strands** — protects the
+  least-recently-reviewed rotation from poked-once-dead pollution.
+
+The scratch lane came from Peter's usage-reduction discussion: *don't grow the
+strand list; seed a temp strand from a sessions search.* It hits all four
+reduction levers at once — keep main session lean, reuse prior work
+(`sessions`-seeded), cheaper launch (cold, not warm-fork), and is the
+deliberate middle rung between a cold subagent and a permanent strand.
+
+Spec written: `aifabric/docs/decisions/dispatch.md` (all three lanes + design
+seams). **Not built** — graduates to an aifabric build session (`dispatch` in
+`aifabric/bin` beside `forkterm`; orchestration over existing mailbox/`ding`/
+`forkterm`/`sessions`/`strands new`, no new primitive). See
+[[forkterm-coordination-tax]].
+
+## Ownership call — skycam auto-cleanup → astro-storage (2026-07-31)
+
+astro-storage mailboxed for a ruling: skycam raw on puppy is **unbounded** (the
+pressure-GC was retired 2026-07-01 and skycam never got a ship-and-free
+replacement — it's the one astro stream that can't meet the new *bigstore holds
+every stream in full* invariant). 53G already on bs. **Decision: astro-storage
+owns building it. No new strand.** The this-then-that: per-stream ship-and-free
+*is* that strand's charter; skycam is the **last un-built stream** and the last
+open row of the bigstore-primary reconciliation it closed astrocam/eclipticam/
+starcam on *this same session* — so this finishes that table rather than opening
+a new theme. Suggested shape (steer, not mandate): reuse the **eclipticam
+STAGE-then-COPY** pattern, since puppy is a remote origin like eclipticam, not a
+direct-NFS writer like astrocam — a variation on code astro-storage already
+owns, not greenfield. Replied via mailbox; astro-storage proceeds.
+
 ## Rough schedule (Peter, 2026-07-23 — soft targets, revise freely)
 
 Parallel workstreams, not a queue — separate forkterm tracks progressing at
