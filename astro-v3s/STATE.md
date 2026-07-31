@@ -170,6 +170,41 @@ deployed copies are hand-placed (add to ansible with the other units).
   near the Pi4 85°C cap), confirm winter dew margin (−5°C ambient → ~+32°C
   internal, above dew). Tonight is the first full curve (capture on = warmer).
 
+## Automated processing — DIAGNOSED, partly fixed, needs astro-storage (2026-07-31)
+
+Last night (2026-07-30, cloudy) captured fine but was NOT processed. Chased it
+to the end — it is **not** a missing-pipeline problem, it's **bigstore-cutover
+fallout** in the existing stage-1/stage-3 chain:
+
+- Processing is a built dispatcher: `astro-process` (stage 3) watches per-camera
+  `state.json` (written by `astro-state`, stage 1); when the dawn
+  `pending_process` flag flips it runs `publish-night-cam`. Host ownership is
+  set by `/etc/default/astro-process` `CAMERAS`, NOT camera.json
+  `processing.host` (that field is doc-only). Rule: exactly ONE host per camera.
+- **Bug 1 (fixed)**: muppet's `~/astrocam-frames` symlink still pointed at the
+  OLD `/mnt/bigdisk/astrocam-frames` (pre-cutover). New frames capture to
+  bigstore. So muppet's astro-state read/wrote state.json on the stale empty
+  bigdisk path → dawn flag never seen by the dispatcher. **Repointed to
+  `/mnt/bigstore/astro-data/astrocam-frames`** (muppet's LOCAL bigstore disk,
+  /dev/sda1) — now sees last night. (First attempt wrongly used the NFS client
+  name `/mnt/muppet/bigstore`; corrected to the local path.)
+- **Bug 2 (OPEN)**: astrocam is DOUBLE-ASSIGNED — `CAMERAS="--camera astrocam"`
+  on BOTH muppet (astro-process active) AND puppy (astro-process inactive), for
+  both astro-state and astro-process. Violates one-host rule.
+- **Bug 3 (OPEN)**: even after the symlink fix + astro-state restart, muppet's
+  astro-state writes NO astrocam state.json (silent, no log, manual tick
+  produces nothing). Stage-1 still not producing the trigger. Needs deeper
+  look.
+- Decision (Peter): **muppet owns astrocam stage-1 + stage-3** (data local
+  there, gigabit, dispatcher already active); clear astrocam from puppy.
+- **Handed to astro-storage** (their cutover caused it) to agree host
+  assignment + path realignment rather than me re-wiring the dispatch chain
+  solo. puppy's 100 Mb/s link also rules it out for 9 GB/night unless a
+  capture-time 2nd copy lands locally (Peter's idea) — noted for later.
+- Queue idea (Peter): a real job-queue for muppet dawn contention
+  (eclipticam+astro-canon+astrocam) is worth doing but is NOT what's blocking
+  astrocam — the dispatcher already exists. Deferred as separate work.
+
 ## Pending / loose ends
 
 - **Not in ansible**: `astrocam-v3-{night,uploader}.service`,
