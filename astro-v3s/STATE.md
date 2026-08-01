@@ -126,6 +126,33 @@ always-on. Committed `PeterGrecian/astro` @ 0018d7c.
 
 Cover left **open** by hand (no auto cover control in this path).
 
+## Brightness pedestal — DONE (2026-08-01, incl. live website)
+
+The imx708 brightness-chart pedestal is settled and **verified on the live site**
+(www.petergrecian.co.uk/astro/astrocam):
+- **pedestal = 50** — gives **≥1 stop of winter footroom** (Peter's requirement).
+  Darkest observed clear summer sky = frame-mean 100.5 → reads log2(100.5/50)
+  ≈ 1.0 stop; winter can darken a further full stop before flooring. NB 50 is
+  BELOW the sensor black level (~62-64) — a deliberate low reference for
+  footroom, not a physical black level. Chart shape + clear/cloudy split
+  unchanged, shifted +1 stop. (History: imx219 512 → imx708 105 → 99 when the
+  clear floor turned out 100.5 → 50 for winter footroom.) astro @ e854c54.
+- **Live website uses it**: the page pulls `astrocam/brightness-combined.png`
+  from S3. Rebuilt via `combined-brightness --camera astrocam --publish` on
+  muppet (all 4 nights re-plotted at pedestal 50); verified the clear night
+  (2026-07-31) now bottoms at ~5.7 stops with the floor far below — no
+  flooring, footroom present. Tonight's auto-run keeps it current.
+- **Prereq fixed**: muppet's astro checkout was stale (pedestal 105); pulled to
+  e854c54. (Had the recurring identical-to-origin bin/storage-report local edit
+  blocking the pull — confirmed byte-identical, discarded, no loss.)
+- `sky_clear_max_stops` 4→5 to track the shift (interim; re-derive from imx708
+  clear/cloudy nights).
+- **Pre-existing plot bug flagged (NOT mine, NOT pedestal-related)**:
+  `bin/combined-brightness` draws the clear/cloudy line at `2 ** SKY_CLEAR_MAX_STOPS`
+  (= 2**5 = 32, off-scale) instead of at the stops value itself. The axis is
+  already in stops, so the `2**` is wrong. Cosmetic; the "+5" label is right,
+  the line position is not. Fix separately.
+
 ## Camera-generation index (POSINDEX) — 2026-07-30
 
 The imx219→imx708 swap is a hard calibration-epoch boundary. Made it explicit
