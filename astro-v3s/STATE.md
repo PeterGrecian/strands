@@ -170,7 +170,27 @@ deployed copies are hand-placed (add to ansible with the other units).
   near the Pi4 85°C cap), confirm winter dew margin (−5°C ambient → ~+32°C
   internal, above dew). Tonight is the first full curve (capture on = warmer).
 
-## Automated processing — DIAGNOSED, partly fixed, needs astro-storage (2026-07-31)
+## Automated processing — FIXED & WORKING (2026-08-01)
+
+**First fully-autonomous night: 2026-07-31 processed end-to-end with zero
+intervention.** Capture (381 frames) → auto-stack at dawn 03:48 UTC → published
+to S3 04:57 (brightness chart, max-stack, poster JPEGs, sweep videos). The
+max-stack confirms all fixes on a real deliverable: correct pole/orientation
+(rotate_180 fix), sharp thin trails (1.4 focus), right stretch (pedestal 105).
+verdict=clear, 144/381 stacked (partial cloud).
+
+**The fix that did it: the muppet symlink repoint** (bigdisk→bigstore, below).
+Once muppet's stage-1 read/wrote state.json on the disk where frames actually
+land, the dawn `pending_process` flag flipped and the dispatcher fired. The
+"astro-state silence" seen 2026-07-31 was just because it was daytime (no dawn
+transition to trigger on) — it came alive at the real dawn.
+
+**Still to tidy** (not blocking — processing works): astrocam is still
+double-assigned in `/etc/default/astro-{state,process}` on BOTH muppet and
+puppy (one-host rule). muppet is the active/working owner; clear astrocam from
+puppy's lists. Coordinate with astro-storage (mailed 2026-07-31, no reply yet).
+
+### History — the diagnosis (2026-07-31)
 
 Last night (2026-07-30, cloudy) captured fine but was NOT processed. Chased it
 to the end — it is **not** a missing-pipeline problem, it's **bigstore-cutover
