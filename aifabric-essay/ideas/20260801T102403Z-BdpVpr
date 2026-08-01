@@ -1,0 +1,23 @@
+Determinism is manufactured at storage, absent at generation — a wisdom-essay argument
+
+The record is deterministic; the process that made it is not. A session .jsonl
+is an exact, immutable, ordered log with stable UUIDs — replay (--resume)
+reconstructs the same history every time. But GENERATION is non-deterministic:
+sampling, and even at temperature 0 not bit-reproducible (FP non-associativity
+across GPU batching, MoE routing, server batching; the API makes no determinism
+guarantee). So a session is a deterministic ARTIFACT of a non-deterministic
+PROCESS.
+
+Why it matters for the essay: the non-naive method leans on the artifact's
+determinism, NOT the process's. Archive / --resume / digests / idempotent
+OpenSearch _ids all exist so you RE-READ the fixed record (cheap, stable)
+instead of RE-RUNNING the model to recover a past answer (non-deterministic,
+expensive, drifts to a WORSE copy). The naive move is to re-ask and trust you
+get "the same" answer — you won't, and you pay full generation cost for a
+degraded one. The shrewd move treats every valuable generation as a one-time
+non-deterministic event worth capturing PRECISELY BECAUSE it can't be
+reproduced.
+
+The inversion to headline: "you can't reproduce the thinking, so you must
+preserve it." Determinism is engineered at the storage layer to compensate for
+its absence at the generation layer.

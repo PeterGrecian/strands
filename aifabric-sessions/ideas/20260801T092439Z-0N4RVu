@@ -1,0 +1,49 @@
+Parallel session-summary index + digest read-path (raw kept as-is)
+
+Idea (Peter, 2026-08-01): "/compact" is generally a good cost saving, worth its
+processing cost — EXCEPT at the end of a never-continued session (pure waste
+there). OpenSearch ingestion is efficient enough that we do NOT want to compact
+the primary index, but a parallel summary layer could be worth it.
+
+Reasoning for keeping raw ingest untouched:
+- Current pipeline (osd/bin/ingest-sessions) = one OS doc per user/assistant
+  message, _id = sha1(host|sessionId|uuid) → idempotent (re-runs, overlapping
+  backfills, multi-host all dedup). Load-bearing.
+- Search is purely LEXICAL (BM25) today — kNN/semantic only planned. Summaries
+  paraphrase and drop the exact keywords (error strings, flag names,
+  -EREMOTEIO, USB IDs) that lexical search hits on → compacting the primary
+  index tanks recall.
+- `sessions show <id>` must stay a faithful in-order transcript → needs real
+  messages.
+
+The real cost compaction should attack is RETRIEVAL, not ingestion: reading a
+hit is expensive. `dispatch` scratch-fork runs `sessions search T` then wants
+context, and `sessions show` dumps a whole raw transcript into its window —
+that's the token cost. Compaction pointed at retrieval, not storage.
+
+Proposed shape:
+1. Keep raw per-message index exactly as is (recall + idempotency + faithful show).
+2. Add parallel index `claude-sessions-summary`: ONE doc per session, holding a
+   compaction. Idempotent on sha1(host|sessionId) + a `summary_version` field so
+   re-summarising with a better model is a clean overwrite, not a duplicate
+   (the raw index's per-uuid dedup does NOT work for a synthesis — needs its own
+   key).
+3. `sessions` grows a `--summary`/digest read path: SEARCH still runs over raw
+   text (recall), but DISPLAY pulls the one-para session digest instead of the
+   full transcript. Token win lands exactly where dispatch's scratch fork needs it.
+
+Nearly-free source: the /compact events ALREADY written into the .jsonl are
+compaction records. The ingester currently drops them (type filter is
+user/assistant only). Harvesting those into the summary index = no new model
+calls, just parse a record type we already skip. NEEDS CHECKING: are those
+records rich enough to be the digest, or only a fallback? (first build step:
+inspect a .jsonl that has a compaction record.)
+
+Framing: this is the graduation arrow again — raw transcript → session digest →
+(only if earned) strand STATE. The digest is the missing middle rung between
+"grep the whole transcript" and "read curated STATE". Also feeds dispatch's
+reuse-prior-work lever (see aifabric/docs/decisions/dispatch.md scratch lane).
+
+Caveat to weigh: skip summarising sessions that were never continued AND are
+trivially short — the /compact-is-waste-at-a-dead-end point applies to the
+summary layer too; don't spend model calls digesting throwaways.
