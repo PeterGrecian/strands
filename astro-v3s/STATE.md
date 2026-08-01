@@ -252,6 +252,87 @@ fallout** in the existing stage-1/stage-3 chain:
   (eclipticam+astro-canon+astrocam) is worth doing but is NOT what's blocking
   astrocam — the dispatcher already exists. Deferred as separate work.
 
+## PSF / undersampling investigation (2026-08-01)
+
+Deep-dived the imx708 PSF via the `splay` **bayer_heatmap** tool
+(`~/splay/apps/bayer_heatmap.py`) on clear-window frames of 2026-07-31. Reference
+frame: `.../2026-07-31/02/1785550053740.fits.fz` (02:07:33 UTC, LENSPOS 1.3).
+
+- **Focus width is flat across the operational dither** — a null result, and the
+  *right* kind. Native-red-plane cross-trail σ ≈ 2.2 px (≈4.4 px full-res-equiv,
+  FWHM ~5.2 px), essentially constant over the whole D=1.3–1.58 ramp
+  (corr(W,D)≈0). Breathing over ±0.15 dioptre is below the star-to-star scatter.
+  W = √(W_min² + [k(D−D₀)]²) is flat-then-quadratic near the vertex, so **k is
+  unmeasurable in-band; needs a dedicated WIDE-D sweep** to see the quadratic.
+  (First pass on the *half-res* green plane reported 5.5 px and looked flat too —
+  the decimation ×2 inflated it; the native-red re-measure is the real number.)
+- **The PSF is UNDERSAMPLED at focus.** A faint star (peak ~40 ADU above sky, at
+  x4343) put ~all its light on a single green photosite: green sum ~3400,
+  blue ~189, **red ~0**. This is *not* colour and *not* a defect — it's a
+  sub-pixel PSF aliasing onto the dense green quincunx. Proven real, not a hot
+  pixel: its centroid marched y 732→660 at **11 px/min** across 7 contiguous
+  frames (a hot pixel is fixed; a near-pole star <2 px/min — so it's a normal
+  field star, well off the pole).
+- **Camera is HEALTHY — all three channels work.** Whole-frame per-phase stats:
+  R median 85 / std 7.7 / max 716; bright stars show strong red (R 500–620 ADU
+  above sky on peak-~1000 stars). "Red missing" was a **faint-source** effect
+  (undersampled core on green, red wing below the red sky floor), not a channel
+  failure. Confirmed on two bright stars: x2114 (red star, R×0.91) and x3385
+  (neutral, R×1.57 B×1.54).
+- **bayer_heatmap BUG found & FIXED** (committed splay `28e1335`): `assume_white`
+  had no gain cap, so a near-empty channel (blue on a red star) gave WB **B×447**,
+  detonating a few blue noise photosites to 20000–50000 ADU — false "4 blue
+  pixels, not a star". Fix: skip balancing a channel whose bright mean <5% of G,
+  cap any gain at ×4. Verified: red star→B×1.00 (no explosion), neutral→~×1.5.
+- **Green is the channel to work in** — RGGB puts both greens on the cell
+  diagonal, so green is 2× the sampling of R/B (a dense quincunx). For
+  PSF/position/trail/pole geometry, use green; skip demosaic + WB games.
+- **Joined-up trail heatmaps** (one star, 7 frames placed at true (x,y) → one
+  continuous streak) made the dither visible directly: the **sawtooth snapback**
+  (LENSPOS 1.58→1.30 wrap) shows as a discontinuity in the trail, and the
+  breathing modulates brightness/colour along it "about the right amount".
+  **Beading** along the trail: header duty cycle is ~100% (EXPTIME 59.9s ≈
+  cadence 59.9s), so the beads are the per-frame focus-steps (bright tight vs dim
+  fat), not shutter dead time — any real inter-frame gap is sub-0.1s (below
+  DATE-OBS resolution). Measuring bead pitch vs 11px/frame would quantify it.
+
+## DIRECTION: sidereal-space static accumulator (2026-08-01)
+
+The framing that ties the sub-pixel work together, and the strand's next phase.
+
+**Goal:** a **year-round static accumulator** — integrate every frame into a
+fixed sky frame so stars stop being streaks and become *points that accumulate*
+night after night, pulling faint stars out from between the bright ones (a deep
+stack far below the single-frame limit). The fixed mount + Earth rotation means
+every star sweeps a circle about the pole; de-rotate each frame and co-add.
+
+**Coordinate space = a PROJECTION from camera coords onto the SPHERE** (Peter's
+framing) — NOT a flat (r,θ) or flat RA/Dec grid. The accumulator lives on the
+sphere, so sampling density follows the real geometry (lens projection, pole
+compression, plate-scale variation) and uses parameter space efficiently. The
+camera→sphere projection *is* the model; de-rotation is a rotation on the sphere.
+
+**Why the sub-pixel work is load-bearing:** camera→sphere is a *resampling*. Feed
+it undersampled/aliased data and the aliasing bakes into the accumulator
+permanently. So plate-solve (pole + plate scale + distortion) and the sampling
+must be right, sub-pixel — hence tonight's care about PSF, undersampling, exact
+focus, and cadence. "Getting this right is important."
+
+**Anisotropic sampling → shorter exposures (the key rationale):** a star is a
+STREAK per exposure (11px/60s here). Along the streak the 60s integration smears
+position/time into one exposure → **along-track resolution is compromised**;
+cross-track keeps full PSF resolution. The fix is a **higher sampling rate** —
+shorter exposures shrink the streak toward a point, recovering along-track
+resolution, so de-rotation places near-points (not smears) and the sphere is
+sampled finely + isotropically. This is the concrete argument for the
+shorter-exposure / more-frequent / smaller-dither direction. (Dither + breathing
++ beading all characterise the PSF being resampled.)
+
+**Status:** DIRECTION only — nothing built. Prereq: find the pole + plate scale
+(currently STALE from imx219 era). Trail-arc fit on a clear night gives the pole
+and doubles as the resampling geometry; then RA/Dec naming + the accumulator
+become possible.
+
 ## Pending / loose ends
 
 - **Not in ansible**: `astrocam-v3-{night,uploader}.service`,
