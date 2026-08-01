@@ -36,6 +36,23 @@ titles get clobbered per-turn; it's written to `<strand>/.wid` at launch beside
 `.tty`/`.title`. Both bare `aicli <strand>` (raises a live strand) and `aicli -r
 <strand>` work on Linux/XFCE.
 
+**First-class continue (`-C` / `--continue`).** Resumes the launch dir's most
+recent Claude session (passes `--continue` to the backend). Short flag is
+capitalised because `-c` is already `--create`. Claude-only — guarded against
+copilot (`die`), against `--create` (a new strand has no session), and against
+`--remote` (which spins up its own session). A *live* strand launched with `-C`
+opens a fresh continuing terminal instead of raising the existing window
+(`$CONTINUE -eq 0` added to the raise condition). Continue is keyed to the launch
+dir like everything else, so it resumes *that strand's* own history.
+
+**Backend switching is exposed, not just settable.** `-d`/`--default` already
+persisted the backend; now it's discoverable: the strand-listing header shows the
+current default under the `aicli` name (`strands:  (backend: claude — aicli -d to
+change)`), suppressed under `cld` (which always forces claude, so annotating there
+would mislead). Bare `aicli -d` prints the current default + the switch command
+instead of erroring. `--claude` / `--copilot` are per-launch shorthands for
+`--backend <name>`.
+
 **Doorbell arming via a SessionStart hook.** A waiter armed by aicli's launcher
 shell is a child of the launcher, not claude, so it can't wake the session —
 only a waiter claude spawns as a tracked background task does. So the ritual is
@@ -57,9 +74,6 @@ launches emit nothing). Wired into `~/.claude/settings.json` and the durable
 ## Open questions (spooled to ideas/, triage next session)
 
 - Deprecate `cld` in favour of `aicli` (portable name; `cld` doesn't work at work).
-- Should aicli make continue/resume first-class? (It already works via arg
-  passthrough; making it ergonomic pushes against the disposable-session model —
-  a philosophy call.)
 
 ## Decisions
 
@@ -69,3 +83,15 @@ launches emit nothing). Wired into `~/.claude/settings.json` and the durable
   loop dies with no recovery; a daemon that rebuilds desired state from each
   strand's on-disk `.wid`/`.title` survives individual session death. (General
   principle → aifabric-essay.)
+- **Continue/resume IS worth making first-class** (resolved the old open
+  question). It already worked via arg passthrough, but `-c` collides with
+  `--create` and the passthrough was undiscoverable; a real `-C` flag with proper
+  guards is ergonomic without undermining disposable sessions — resume is opt-in,
+  the default is still a fresh session.
+- **Capitalised `-C` for continue** because lowercase `-c` is `--create`. `-C`/`-c`
+  are confusable but the long forms (`--continue`/`--create`) disambiguate, and
+  keeping `continue` on the `c` letter is more memorable than an unrelated letter.
+- **Expose the backend default in the listing, don't just make it settable.** A
+  persisted default the user can't see is a footgun; showing it in the header (and
+  via bare `-d`) makes switching obvious. Suppressed under `cld` because `cld`
+  ignores the saved default.
