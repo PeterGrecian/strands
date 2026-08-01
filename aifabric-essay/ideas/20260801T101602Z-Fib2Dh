@@ -1,0 +1,15 @@
+Essay seed: STATE bloat — context bloat with no forcing function.
+
+STATE.md is meant to be a CURATED summary of where a strand is NOW ('curated prose, not a log' per the ritual). Bloat = it drifts into an append-only changelog: every session tacks on a dated 'here's what I did' block, superseded decisions sit next to current ones in present tense, resolved loose-ends never get deleted. It grows monotonically instead of being REWRITTEN.
+
+Why insidious: context bloat self-corrects (you hit a limit, auto-compaction fires — there's pressure). STATE.md has NO limit and NO pressure. Each addition is individually reasonable, so nothing ever triggers cleanup. It's the 'strand does work without changing itself' decoupling running in REVERSE: the strand keeps changing itself ADDITIVELY without ever re-summarising itself.
+
+The cost lands on FRESH sessions — the one path the strand model most relies on ('sessions disposable, STATE.md the memory'). A bloated STATE.md gives a fresh launch a WORSE starting point than a compacted transcript would: stale decisions in present tense, resolved problems re-flagged as open, signal buried in dated history. A bloated STATE.md poisons every future fresh start.
+
+Concrete self-indicting example from the aicli strand (2026-08-01): STATE.md hit 123 lines with four dated (2026-..) entries = a changelog. It was self-contradictory in the way bloat produces — the 2026-07-30 section described `reassert_title_loop` as THE fix in present tense, while a 2026-08-01 section 40 lines later said a supervisor SUPERSEDED it. A fresh reader meets the dead mechanism first. The agent (me) authored the latest bloat layer: appended a supervisor section and patched back-references instead of RE-CURATING the whole title story.
+
+The fix = the same discipline as compaction, applied to the FILE: periodically REWRITE STATE.md as if describing the strand to someone new TODAY — current mechanism in present tense, superseded ones collapsed to a clause or deleted, resolved loose-ends removed, decisions pruned to the live ones. Dated-changelog style is the anti-pattern; git already holds history, so STATE.md doesn't need to. Rule of thumb: 'rewrite-as-if-new, not append.'
+
+Ties to the dcp/continue/compact essay: compact saves ROOM (context), dcp saves STATE (durable). STATE bloat is what happens when dcp is treated as append-only — the durable-save equivalent of never compacting. Both need periodic re-curation, not accretion.
+
+Division of labour Peter set (2026-08-01): aifabric-essay is the strand for material NOT central to aicli-the-tool (method, reflection, principles); aicli STATE.md carries only the tool's current state. This seed is an instance of applying exactly that split.

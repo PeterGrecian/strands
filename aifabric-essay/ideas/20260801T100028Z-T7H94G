@@ -1,0 +1,22 @@
+Essay seed: the two 'save' operations — compact vs dcp — are orthogonal, and most people (Peter included) under-use compact.
+
+Three independent parameters govern how a strand session restarts: dcp, continue, compact.
+- dcp controls the STRAND'S SELF: durable git + STATE.md. Off = strand dir unchanged even if real code shipped to other repos.
+- continue vs fresh controls SESSION CONTINUITY: resume the transcript, or start fresh reading STATE.md.
+- compact controls FIDELITY of a continued session: full verbatim vs summarized context.
+
+Key non-obvious points for the essay:
+1. compact only bites WITHIN continue. Compacting then starting fresh wastes the compaction — a fresh start reads STATE.md and discards the summarized context. So the 2^3 space has only ~6 meaningful states; compact is a sub-parameter of continue.
+2. compact is NOT a substitute for dcp. A compacted-then-continued session is still dcp=0 — nothing durable written; a reboot loses the compacted context as surely as the full one. Compact saves ROOM; dcp saves STATE. Two different saves.
+3. 'A strand can do work without changing itself': the dcp=0 rows can still have shipped commits to OTHER repos. The strand's self-image (STATE.md) and its output are decoupled axes.
+
+The heuristic (the essay's payoff line):
+  Compact when the transcript's value has collapsed into a summary you'd be happy to resume from.
+  dcp + fresh when the work has collapsed into STATE.md.
+  Plain continue only while verbatim detail is still load-bearing.
+
+Why compact MORE than we do: under-compacting isn't dramatic — it's slow context bloat that quietly degrades a long session and forces eventual AUTO-compaction at a worse, unchosen moment. Proactive compaction at a seam YOU pick (e.g. after a noisy investigation resolves into a conclusion, before the build) beats reactive compaction at a random turn. Natural seams: long session still going + context filling; after noisy forensics that produced a conclusion but a huge low-value transcript (today's aicli-hang debugging → supervisor build was exactly this seam); any time transcript signal-to-noise has collapsed.
+
+Prefer plain continue (no compact) when verbatim detail is still live (exact error strings, precise timings, a diff you're mid-edit on), or mid-delicate-operation — finish the unit, then compact.
+
+Irony-as-anecdote for the essay: in the very session that produced this, I (the agent) pushed the wrong git dir twice — the exact 'not idempotent when you assumed it was' failure. Good concrete hook for the idempotence discussion.
