@@ -53,6 +53,13 @@ would mislead). Bare `aicli -d` prints the current default + the switch command
 instead of erroring. `--claude` / `--copilot` are per-launch shorthands for
 `--backend <name>`.
 
+**Listing order is alphabetical by default; `-t` for last-use.** Bare `aicli`
+lists strands sorted by name (explicit `sort -k1` so it holds regardless of
+locale). `-t`/`--time` restores the old ordering — last use (newest first), name
+as the stable tiebreak. Composes with `-l`/`-L`. Alphabetical is the default
+because a fixed position makes a strand findable by eye/muscle memory; last-use
+order shuffles it around. The filters (`-l`, `-L`, `-x`) are unaffected.
+
 **Doorbell arming via a SessionStart hook.** A waiter armed by aicli's launcher
 shell is a child of the launcher, not claude, so it can't wake the session —
 only a waiter claude spawns as a tracked background task does. So the ritual is
