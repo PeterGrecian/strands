@@ -11,9 +11,8 @@ at once, two things now work reliably on pip (X11/XFCE):
   `xdotool set_window --name "$WINDOWID"` (survives `MiscTitleMode=TITLE_HIDE`,
   which only blocks the escape-sequence route). But an *active* backend rewrites
   `_NET_WM_NAME` to its per-turn summary every turn, so a one-shot write reverts.
-  Fixed with `reassert_title_loop` — a background loop that re-applies the strand
-  name every 3s for the session's lifetime, killed cleanly on exit by the same
-  EXIT handler that restores colours (`TITLE_REASSERT_PID`).
+  Held by a **title supervisor** (see 2026-08-01 below), which superseded the
+  original per-session `reassert_title_loop`.
 
 - **Raise via the window manager.** `raise_strand` previously had only a
   Windows/PowerShell path, so `aicli -r <strand>` always failed on Linux. Added
@@ -54,12 +53,53 @@ launches emit nothing. Wired into `~/.claude/settings.json` **and** the durable
 `dotfiles/.claude/settings-shared.json` (so `claude-settings-merge` keeps it
 across machines / the live file's runtime rewrites). Takes effect next launch.
 
+**Title supervisor — self-healing, replaces the per-session loop (2026-08-01).**
+The original `reassert_title_loop` was a background child of *one* aicli shell:
+if it died (a system wedge — e.g. the autofs/puppy-mount hang that froze `stat`
+and `xdotool`-adjacent work earlier that day — or a stray signal), nothing
+restarted it and that window's title drifted to the backend's per-turn summary
+**permanently**. Observed live: several long-running sessions (ubersitrep,
+cleft-plus, astro-canon, astro-v3s, …) had lost their loops and their titles;
+only freshly-launched sessions still held. The current code wasn't itself
+broken (a fresh launch keeps its loop) — the flaw was that a dead loop never
+recovers.
+
+Replaced with a **single self-healing supervisor daemon** decoupled from any one
+session:
+- `run_title_supervisor` — every 3s walks `strand-ps --live-strands` and
+  re-stamps each strand's window (`.wid` → `.title`) via `xdotool`. One daemon
+  serves *all* live strands, so any individual session (or its aicli parent)
+  dying can't stop titles being maintained for the rest.
+- `ensure_title_supervisor` — called on every launch (replaced the old
+  `reassert_title_loop` call site). Spawns a `setsid`-detached singleton guarded
+  by `flock -n` on `~/.config/aicli/title-supervisor.lock`; a duplicate spawn's
+  flock fails and it exits instantly (no pileup). Also touches a `.wanted` flag.
+- `--title-supervisor` — hidden re-entry arg the detached daemon runs as (not in
+  `--help`).
+- **Retirement:** daemon self-exits after 2 empty sweeps (~6s of zero live
+  strands) so it never lingers past the last session.
+- **Two race fixes from a `/code-review high` pass:** (1) *stale/recycled `.wid`*
+  — a strand kept live by a no-`$WINDOWID` session (tmux/ssh/forkterm; the `.wid`
+  write is gated on `$WINDOWID`) leaves an old `.wid` whose X11 id may have
+  recycled to another app; the daemon now guards with `xprop WM_CLASS ~ terminal`
+  before stamping, so it never titles a foreign window. (2) *retire-vs-launch* —
+  a launch landing inside the ~6s retirement countdown would find the lock held,
+  not spawn, and be left with no supervisor once the daemon exited; the `.wanted`
+  flag (touched by every `ensure`, consumed each sweep) cancels retirement so a
+  session starting during the window is never orphaned.
+
+Verified end-to-end: singleton under concurrent launches, self-heal (clobbered
+title restored within one sweep), WM_CLASS guard skips a non-terminal window,
+`.wanted` flag cancels retirement, real throwaway-strand launch bootstraps then
+cleanly retires. All live strand windows re-titled; supervisor left running.
+(`gardencam` was skipped — launched by a pre-title aicli, no `.wid`; self-fixes
+on next launch.)
+
 ## Pending / loose ends
 
-- The hand-started backfill titlekeepers for the currently-open sessions are
-  ad-hoc (not durable across reboot, no clean stop). Fine as a bridge — every
-  *relaunched* session self-manages via aicli's built-in loop. No action needed
-  unless we want an `aicli --titlekeep-all` housekeeping command.
+- The old ad-hoc backfill titlekeepers are obsolete — the title supervisor
+  (2026-08-01) now maintains every live strand's title from one daemon, which is
+  exactly the `--titlekeep-all` behaviour that was mooted here. Nothing to do.
 - aicli working tree also carried a pre-existing unrelated edit (`-a|--archive`
   → long-form-only `--archive`, freeing `-a` to match `strands -a`). Committed
   together with the window-management work this session.
@@ -77,3 +117,7 @@ across machines / the live file's runtime rewrites). Takes effect next launch.
 - **Persistent reasserter, not one-shot.** Chosen over trying to disable the
   backend's per-turn title writes (no clean switch found; reasserter works
   regardless of backend).
+- **One shared supervisor, not a per-session loop (2026-08-01).** A per-session
+  loop dies with no recovery; a single daemon that reads each strand's `.wid`/
+  `.title` from disk and covers the whole live set survives individual session
+  death — the deeper fix over restarting a fragile per-session helper.
