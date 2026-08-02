@@ -1,15 +1,14 @@
 # Strand: strands
 
-**Keeps which strand does what — the model of the system, not the machinery.**
+**Keeps which strand does what, and how the strand system itself should work.**
 
-The meta-strand. It owns the *concepts* of the strand system: the strand
-pattern itself, what STATE/IDEAS/CLAUDE.md are for, the emerging distinctions
-(keeper vs development strands, STATE-stickiness, the metrics principle),
-session ritual, memory hygiene — the questions of *how sessions should be
-organised*, worked out as ideas before they harden into convention. The
-**practical** half — the tools and templates that implement all this (`aicli`,
-the `.template` scaffolds, `idea`/`ding`, the manywrapper) — lives in
-[[aifabric]]; this strand decides *what* they should do, aifabric *builds* it.
+The meta-strand — custodian of the strand *model*: the map of which strand does
+what, and the theory behind it (the strand pattern, what STATE/IDEAS/CLAUDE.md
+are for, the emerging distinctions — keeper vs development strands,
+STATE-stickiness, the metrics principle, blurb format, session ritual). It
+decides *what* the system should do; the **practical** half that *builds* it —
+`aicli`, the `.template` scaffolds, `idea`/`ding`, the manywrapper — lives in
+[[aifabric]] ("aifabric is practical stranding, strands is strand theory").
 Curation output lands in `strands/README.md`, the templates' shape, and
 `super/GLOBAL.md` conventions.
 
