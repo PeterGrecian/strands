@@ -1,7 +1,7 @@
 # Strand: ubersitrep
 
-**Answers "where is everything, and where is it going" — across all the strands
-at once.**
+**Keeps the whole-estate picture — where everything is and where it's going,
+across all the strands at once.**
 
 Owns no code of its own; it reads *across* all the other strands (aifabric, the
 astro-* family, the fleet, mywebsite, splay, …) and holds the **macro thrust** —
