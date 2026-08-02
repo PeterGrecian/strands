@@ -92,6 +92,21 @@ injected, not coded: `aifabric/bin/aicli-session-start-hook` fires on
 launches emit nothing). Wired into `~/.claude/settings.json` and the durable
 `dotfiles/.claude/settings-shared.json`.
 
+**Doorbell nag: a Stop hook re-arms the discipline, not the waiter.** The doorbell
+was unmanned most of the time because a waiter rings once and the model forgot to
+re-arm. Key constraint: a hook CANNOT arm a wake-capable waiter — only a waiter
+CLAUDE spawns as a tracked background task wakes the session; anything a hook
+spawns is untracked and wakes nothing. So the re-arm stays a model action, and
+the fix is to NAG reliably: `aicli-stop-hook` fires every turn end, self-gates on
+`CLD_STRAND_DIR`, and — only when `ding --check <mailbox>` finds no live waiter —
+injects a re-arm instruction via `hookSpecificOutput.additionalContext` (honored
+on Stop; the session continues and acts on it). When a waiter is already up it
+emits nothing (must stay silent, else it would block the session from ever
+stopping). New `ding --check` leg: exit 0 if a live-owner `--arm` waiter watches
+that mailbox, else 1. Wired into `settings.json` + durable
+`dotfiles/.claude/settings-shared.json`. (Live pickup may need `/hooks` or a
+restart once — the settings watcher only loads Stop on reload.)
+
 ## Pending / loose ends
 
 - **`/exit` guard prompt.** The doorbell hook means every strand session has a
