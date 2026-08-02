@@ -1,6 +1,39 @@
 # astro-storage — state
 
-*Updated 2026-07-31*
+*Updated 2026-08-02*
+
+## frames_root is config-truth; navigation is inventory-driven (2026-08-02)
+
+Chased down an idea ("home-dir `ln -s` to automounts cause delay; unreferenced —
+config not OS level") and it surfaced a stale-location bug + shipped two tools.
+
+- **`frames_root` = single source of truth in `camera.json`.** `astro/config.py`
+  `CameraConfig.frames_root` already existed as the intended seam; the values
+  just pointed at `~/…` home-dir symlinks (extra resolve + autofs delay, hid the
+  physical path). Repointed astrocam + eclipticam `frames_root` at the real
+  bigstore location, and converted the two uploaders
+  (`astrocam_v3_uploader.py`, `v3w_uploader.py`) — which bypassed config with
+  hardcoded `Path.home()/…` — to read `CameraConfig.frames_root`. pip's
+  `~/astrocam-frames` + `~/eclipticam-frames` symlinks removed (harmless there).
+- **Discovered the bigstore migration** (see memory
+  `astro-frames-bigstore-migration`): all four streams consolidated onto
+  muppet's **bigstore** (Seagate USB, `/mnt/bigstore/astro-data`, NFS-exported)
+  ~2026-07-30. Old `/mnt/bigdisk` frozen at 2026-07-29; pip NFS-mounts *that*,
+  so anything globbing it stops at the 29th. This is the "hardcoded roots go
+  stale" failure in the flesh.
+- **`cdf <cam> [when]`** (new): cd's the shell into an astro night dir.
+  `a`/`e`/`s` (skycam intentionally not in the inventory since 2026-07-05).
+  **Inventory-only**: resolves location from `astro-storage-inventory` DynamoDB
+  (`super/bin/cdf-path` does the query + host→pip mount translation; the `cdf`
+  shell fn in dotfiles does the cd). No hardcoded roots — follows the data as it
+  moves disks. A miss errors "run storage-report on the store host" (a gap in
+  the inventory is a thing to fix, not to guess around). Fixes the reported
+  `cdf a → 29th`; now correctly → 2026-07-31.
+
+**Per-host divergence noted (not yet resolved):** `frames_root` in `camera.json`
+is one string but muppet's own path (`/mnt/bigstore/astro-data/…`) differs from
+pip's view (`/mnt/muppet/bigstore/…`). Fine for read tooling via the inventory;
+watch it if capture/processing runs on multiple hosts.
 
 ## POLICY: 3+-copy surplus is clearable (Peter, 2026-07-31) — record, don't act yet
 
