@@ -1,7 +1,6 @@
 # Strand: strands
 
-**Works out what a strand *is* and how the system should work — the model, not
-the machinery.**
+**Keeps what each strand is for — the model of the system, not the machinery.**
 
 The meta-strand. It owns the *concepts* of the strand system: the strand
 pattern itself, what STATE/IDEAS/CLAUDE.md are for, the emerging distinctions
