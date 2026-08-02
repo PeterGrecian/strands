@@ -1,7 +1,7 @@
 # Strand: astro-subpixel
 
-**Keeps beating the pixel — sub-pixel astrometry, photometry and
-super-resolution on undersampled Pi-camera sensors.**
+**Beats the pixel — sub-pixel astrometry, photometry and super-resolution on
+undersampled Pi-camera sensors.**
 
 **Beating the pixel** on Pi cameras — sub-pixel
 astrometry, photometry, and super-resolution on undersampled sensors

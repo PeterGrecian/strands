@@ -1,6 +1,6 @@
 # Strand: splay-graticule
 
-**Keeps RA/Dec graticule and star-name overlays on astro frames — a DS9 `.reg`
+**Builds RA/Dec graticule and star-name overlays on astro frames — a DS9 `.reg`
 file splay rotates about the pole per frame.**
 
 RA/Dec **graticule and star-name overlays** on astro
