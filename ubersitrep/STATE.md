@@ -25,16 +25,15 @@ Rest of each CLAUDE.md body not yet swept for stale framing below the opener.
 - **speaker-dither + canon-power folded into `electronics`** (rig PoC + EOS
   power-switch); the astro why/µm-mA-calibration half went to astro-science.
 - **Archived**: astro-subpixel, astro-breathing, astro-storage-discussion,
-  astro-deliverables, astro-canon-power. **astro-speaker-dither pending** —
-  had a live session, archive once it ends (content already folded).
+  astro-deliverables, astro-canon-power, **astro-speaker-dither** (done
+  2026-08-02 once its live session exited; content already folded to electronics).
 - **Remaining astro strands: astro-v3s (→polecam), astro-canon, astro-storage,
-  astro-science** (+ speaker-dither pending-archive). 9 → 4-5, as planned.
+  astro-science** — **9 → 4, as planned.** Light re-org COMPLETE.
 
 **Still TODO (deferred, own session):**
 - **astro-v3s → astro-polecam DEVICE rename** — the heavy part (hostnames, S3
   buckets, camera.json, daemons, cdf/resolve-host/ssp, cron). Grep the estate
   for "astrocam" first. Strand-rename is trivial; the device rename is not.
-- Archive astro-speaker-dither when its live session ends.
 - **Daily astro sitrep agent** — scheduled reader of the 4 keeper metrics
   (each keeper's STATE needs a metrics block first). **Home decided 2026-08-02:
   a GENERAL tool in aifabric/bin (no new repo), astro sitrep = its first config;
@@ -462,7 +461,7 @@ first reviewed.
 | astro-v3s | **2026-08-02** | high | operational keeper (→ **astro-polecam** at device rename); sidereal theory moved to astro-science |
 | astro-science | **2026-08-02** | high | NEW — the science/development strand; consolidated subpixel+breathing+storage-discussion theory + sidereal + deliverables |
 | ~~astro-storage-discussion~~ | 2026-08-02 | — | **ARCHIVED** — theory → astro-science, engineering → astro-storage |
-| ~~astro-speaker-dither~~ | 2026-08-02 | — | folded into **electronics** (rig PoC); **pending archive** (live session at re-org time) |
+| ~~astro-speaker-dither~~ | 2026-08-02 | — | **ARCHIVED** — folded into **electronics** (rig PoC) + astro-science (why/calibration) |
 | astro-storage | **2026-07-22** | **URGENT** | S3 growing, finalize starcam ≈1 GB/day — see "URGENT NOW" above; STATE mtime 07-20 but discussion-strand carrying the live work |
 | calendaralarm | **2026-07-22** | high | ✅ LIVE — bridge built, systemd timer armed, real xMatters page fired; see `calendaralarm` STATE |
 | splay-grid | 2026-07-11* | med | ⚠️ grid mode built + committed on `splay-grid-mode` worktree branch, **NOT merged to splay main** — unmerged loose end |
