@@ -22,6 +22,26 @@ consumption *intensity*, not wall-clock. So the signal is recent burn rate, not
 session age. And **recent rate is the one that matters because the human forgets
 what they did 3 days ago** — the tool must supply the memory the person lacks.
 
+## Pace marker on the bars (2026-08-02)
+
+Peter's idea (dropped in cleft-plus + ubersitrep inboxes): *"the 5-day window
+and week have bars, but they are of different scales which we don't see."*
+Diagnosis: both bars use the same `bar()` and both plot **used %** of their
+*own* quota — so a full 5h bar and a full 7d bar are the **same screen length**
+but wildly different absolute token volumes, with nothing signalling it. Worse,
+the bar drew *used* but ignored *elapsed-through-window*, so 50% at hour 1 of 5
+looked identical to 50% at hour 4 of 5.
+
+Fix (done, `super/bin/cleft`): `bar()` takes an optional `pace` (0–1, elapsed
+fraction) and overlays a **`┃` marker** at that column. Read is now **fill vs
+marker** — left of it = under pace, right = burning fast — which is *identical
+across both windows* regardless of their different absolute quotas. Wired into
+all three call sites (live 5h `elapsed/5`, live 7d + manual via `show()`
+`elapsed/7`), plus a one-line legend. Verified in manual mode: 48% used at 24%
+through the week puts fill well right of `┃`, matching the "runs out early"
+verdict. This is the visual companion to cleft's required-rate arithmetic —
+the fuel-gauge framing, seen at a glance.
+
 ## What exists
 
 - `cleft` (`super/bin/cleft`) — point-in-time usage-rate calculator. Fetches
