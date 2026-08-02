@@ -53,6 +53,17 @@ would mislead). Bare `aicli -d` prints the current default + the switch command
 instead of erroring. `--claude` / `--copilot` are per-launch shorthands for
 `--backend <name>`.
 
+**Strand summaries: list line vs full mission (`--about`).** The listing summary
+(`strand_blurb`) is line 1 of a `<strand>/blurb` file if present (verbatim), else
+derived from the first prose paragraph of `<strand>/CLAUDE.md` (markup stripped,
+12-word cap). No strand currently ships a `blurb` file — all summaries come from
+CLAUDE.md, recomputed each listing (edit the mission's first sentence to change
+one). `aicli --about <strand>` (long-form only, `-a` stays reserved) prints the
+full mission: the same summary line, then the rest of the prose. This gives the
+`blurb` file a two-part format — line 1 = list summary, blank line, then detail
+paragraph(s) shown only by `--about` — so a one-liner can be followed by a
+paragraph without bloating the one-row-per-strand listing.
+
 **Listing order is alphabetical by default; `-t` for last-use.** Bare `aicli`
 lists strands sorted by name (explicit `sort -k1` so it holds regardless of
 locale). `-t`/`--time` restores the old ordering — last use (newest first), name
