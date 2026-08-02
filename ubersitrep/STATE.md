@@ -16,7 +16,31 @@ theory/practice split: aifabric *"Builds…"*, strands *"Works out…"*. Convent
 itself is strand *theory* → belongs in the `strands` strand (spool pending).
 Rest of each CLAUDE.md body not yet swept for stale framing below the opener.
 
-## Astro strand consolidation — PLANNED, not yet executed (2026-08-02)
+## Astro strand consolidation — LIGHT RE-ORG DONE 2026-08-02
+
+**Executed the light re-org this session** (device rename still deferred). Done:
+- **astro-science created** (`6272c58`) — the science/development strand;
+  consolidated the theory from subpixel + breathing + storage-discussion-theory
+  + the sidereal-accumulator direction (moved out of astro-v3s) + deliverables.
+- **speaker-dither + canon-power folded into `electronics`** (rig PoC + EOS
+  power-switch); the astro why/µm-mA-calibration half went to astro-science.
+- **Archived**: astro-subpixel, astro-breathing, astro-storage-discussion,
+  astro-deliverables, astro-canon-power. **astro-speaker-dither pending** —
+  had a live session, archive once it ends (content already folded).
+- **Remaining astro strands: astro-v3s (→polecam), astro-canon, astro-storage,
+  astro-science** (+ speaker-dither pending-archive). 9 → 4-5, as planned.
+
+**Still TODO (deferred, own session):**
+- **astro-v3s → astro-polecam DEVICE rename** — the heavy part (hostnames, S3
+  buckets, camera.json, daemons, cdf/resolve-host/ssp, cron). Grep the estate
+  for "astrocam" first. Strand-rename is trivial; the device rename is not.
+- Archive astro-speaker-dither when its live session ends.
+- **Daily astro sitrep agent** — scheduled reader of the 4 keeper metrics
+  (each keeper's STATE needs a metrics block first).
+
+### Original plan (below, for reference)
+
+## Astro strand consolidation — planning detail (2026-08-02)
 
 The astro cluster has sprawled to **nine strands** whose real split isn't
 per-camera-project but a **two-layer axis** Peter named this session:
@@ -429,9 +453,10 @@ first reviewed.
 | Subject | Last-reviewed | Pri | Status / note |
 |---|---|---|---|
 | astro-canon | **2026-07-26** | high | ✅ capture path FIXED (Press Full, not Immediate — no more AF-wedge); canon-as-temp-primary unblocked |
-| astro-v3s | **2026-07-27** | high | live — the "rebuild astrocam as v3" branch of macro #3, now its own strand (bought imx708 v3-standard, focusing for sky) |
-| astro-storage-discussion | **2026-07-27** | high | live — storage+star-ID as one problem; shrink starcam <1 GB/night; Quest 6 time-axis |
-| astro-speaker-dither | **2026-07-26** | med | driver works (darlington fix); remaining questions mechanical (deflection/image-shift) |
+| astro-v3s | **2026-08-02** | high | operational keeper (→ **astro-polecam** at device rename); sidereal theory moved to astro-science |
+| astro-science | **2026-08-02** | high | NEW — the science/development strand; consolidated subpixel+breathing+storage-discussion theory + sidereal + deliverables |
+| ~~astro-storage-discussion~~ | 2026-08-02 | — | **ARCHIVED** — theory → astro-science, engineering → astro-storage |
+| ~~astro-speaker-dither~~ | 2026-08-02 | — | folded into **electronics** (rig PoC); **pending archive** (live session at re-org time) |
 | astro-storage | **2026-07-22** | **URGENT** | S3 growing, finalize starcam ≈1 GB/day — see "URGENT NOW" above; STATE mtime 07-20 but discussion-strand carrying the live work |
 | calendaralarm | **2026-07-22** | high | ✅ LIVE — bridge built, systemd timer armed, real xMatters page fired; see `calendaralarm` STATE |
 | splay-grid | 2026-07-11* | med | ⚠️ grid mode built + committed on `splay-grid-mode` worktree branch, **NOT merged to splay main** — unmerged loose end |
