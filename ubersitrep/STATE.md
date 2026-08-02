@@ -4,6 +4,174 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## Strand blurb format — new convention, applied to 3 (2026-08-02)
+
+New CLAUDE.md opener shape: a **verb-first 1-liner** (state the *content/TWIMC*,
+not the category — no "Recurring workstream:"/"Strand theory:" label prefix; in
+a 1-liner every character is precious) **followed by a paragraph**. The 1-liner
+must earn its place: say the non-obvious thing the *name* doesn't (ubersitrep's
+old "the top-level situation report" merely restated "über-sitrep"). Applied to
+**ubersitrep, aifabric, strands** this session. The verb also carries the
+theory/practice split: aifabric *"Builds…"*, strands *"Works out…"*. Convention
+itself is strand *theory* → belongs in the `strands` strand (spool pending).
+Rest of each CLAUDE.md body not yet swept for stale framing below the opener.
+
+## Astro strand consolidation — PLANNED, not yet executed (2026-08-02)
+
+The astro cluster has sprawled to **nine strands** whose real split isn't
+per-camera-project but a **two-layer axis** Peter named this session:
+
+- **Operations / maintenance** — keep the machine running: per-camera setup,
+  focus/calibration, "did it capture last night", storage pressure, pipeline
+  health. Fast loop, measured in nights.
+- **Science / insight** — the *point*: year-scale, long-baseline **urban
+  astronomy**. What the accumulated data *yields* — the last step of the
+  pipeline everything else scaffolds. Slow loop, measured in months/years.
+
+Most current astro strands are one layer wearing a project-phase label. The
+tell: the **sidereal-mapped-sampling** discussion (theory: connects drift,
+dither, PSF undersampling, accumulation) had no home, so it landed in
+**astro-v3s** — an *operations* strand — by default. That misplacement is the
+symptom driving this re-org.
+
+### Keeper vs development — the strand-KIND behind this split (2026-08-02)
+
+The astro split isn't just topical; it lands on a **strand-kind** distinction.
+Homed by the theory/practice boundary (Peter 2026-08-02: *"aifabric is practical
+stranding, strands is strand theory"*):
+- **Theory → `strands` strand** (spooled `strands/ideas/…-vMnTSM`): keeper =
+  steady-state custodian, cadence visits, sparse STATE (stable spec not
+  worklog), **defines metrics**; development = task-to-done, moving-frontier
+  STATE every session, measured by progress.
+- **Practical build → `aifabric`** (spooled `aifabric/ideas/…-W3LFoR`): the
+  `.template` keeper/dev variants, a declared-kind field, the metrics-reading
+  sitrep agent.
+
+**The astro _application_ (what stays here):**
+- **polecam / eclipticam / canon / storage = keepers.** Each keeper's STATE
+  needs a **metrics block** (captured last night? frame count, focus quality,
+  GB/night, disk headroom) — the execution session adds one per keeper, and the
+  daily sitrep agent reads those *metrics, not prose*.
+- **astro-science (+ the subpixel/breathing/storage theory feeding it) =
+  development** — an open research frontier, STATE updated every session.
+- Scheduling follows the kind: **keepers → cadence** (the sitrep agent);
+  **astro-science → the least-recently-reviewed backlog rotation**.
+
+### Target shape (agreed 2026-08-02; execute in a dedicated session)
+
+**Keepers (operational / maintenance layer)** — keep the system running. Three
+camera keepers (`astro-<camera>`: setup, calibration state, last-night viewing
+reports) + one data keeper (`astro-storage`). Four in total:
+
+| Target strand | Camera | Absorbs |
+|---|---|---|
+| `astro-polecam` | v3 standard, **pole-pointing** (imx708) | **astro-v3s** (it *is* this camera's setup, mislabelled by phase) |
+| `astro-eclipticam` | v3w wide | astro-breathing's *capture experiment* (operational half) |
+| `astro-canon` | EOS 2000D | — (canon-power → electronics, not here) |
+
+**Rename: astrocam → polecam** (2026-08-02). "astrocam" is generic — they're
+*all* astro cameras — when this one is specifically the **pole-pointing**
+instrument (Polaris dead-centre; the radial-breathing ⊥ tangential-drift
+geometry the subpixel/science work relies on *is* its identity). "polecam"
+beats zenith/north-cam: it points at the celestial **pole**, not the zenith
+(that was starcam) nor a ground compass direction. **This is a real device
+rename**, not just a strand label — it ripples into CLAUDE.md, `cdf`/
+`resolve-host`/ssp aliases, camera.json, S3 keys, host/daemon names. Do the
+rename deliberately in the execution session; the strand is the easy part.
+
+**starcam (zenith) — RETIRED** (2026-08-02): camera decommissioned. No
+`astro-starcam` keeper. astro-storage only **winds down its historical data**
+(the `starcam-berrylands-eu-west-1` bucket, 1.34 GB, already stalled since
+2026-06-04 — that stall now reads as the decommission, not a break) — there's no
+live starcam stream to ship. Note this closes one of storage-discussion's
+original subjects.
+
+**skycam is deliberately NOT here.** It's the all-sky/cloud/weather camera —
+*adjacent* to astro but not a drift-scan science instrument feeding the
+long-baseline pipeline. No `astro-skycam` keeper; skycam stays its own thing.
+(Its storage/ship-and-free is still an astro-storage concern — the unbounded-raw
+row — but the camera itself isn't an astro-science instrument.)
+
+**`astro-storage` is the fourth keeper** — not a separate tier. Keeping the
+system running *includes* the data plumbing, so storage sits alongside the
+camera keepers as day-to-day maintenance (not a sub-topic of science). It's a
+**major data-juggling workstream** (bigstore-primary invariant, per-stream
+ship-and-free, S3 cold-bucket t² control, skycam's unbounded raw, winding down
+retired starcam). astro-storage-discussion's *engineering* half consolidates
+here; its *theory* half goes to astro-science.
+
+**So the four keepers = polecam, eclipticam, canon, storage** (3 cameras + the
+data plumbing that serves them). The daily astro sitrep reads all four.
+
+**Out to `electronics`** (not astro at all — actuator drive / DC power, which is
+that strand's existing charter, cf. the EOS DC-switch design note already there):
+- **astro-speaker-dither** → electronics (GPIO→speaker PWM-DAC drive; remaining
+  questions are darlington/mechanical, i.e. electronics). Its *dither-as-sampling*
+  rationale is theory → referenced from `astro-science`, but the rig build is
+  electronics.
+- **astro-canon-power** → electronics (EOS high-side P-MOSFET DC switch — already
+  half-there: `~/electronics/designs/eos-dc-switch.md`).
+
+**Science — one strand, `astro-science`** (name chosen for the *destination*, not
+the pipeline machinery — keeps gravity on "what does a year of urban drift-scan
+reveal", not "make tonight's stack run"). Absorbs the **theory halves** of
+astro-subpixel, astro-breathing, astro-storage-discussion, and the sidereal
+discussion currently stuck in astro-v3s: undersampling/PSF, sub-pixel info
+theory, the three dither mechanisms, sidereal-mapped sampling, the accumulation
+**capacity law** + TDI, and the local-catalogue / star-ID quest.
+
+**astro-deliverables (the website/publish glue) folds into astro-science** as
+its **output/shopfront end** — not a keeper. Minor-but-load-bearing glue
+(Lambda site, galleries, moon daily delivery, YouTube builds), but it's *where
+the long-baseline insight becomes visible*, so it belongs to the science
+strand's output rather than the maintenance layer. Keeps the keeper tier purely
+about keeping **capture + data** flowing; the *publish* end is science's, since
+publishing IS the last step of the science pipeline. (Publish mechanics that are
+pure plumbing can still be maintained; but the strand home is astro-science.)
+
+**Why a strand, not a `~/astro/design/*.md` doc:** design docs are a
+write-mostly graveyard — nothing *lists* them, they're not launchable, not
+auto-loaded at session start, and invisible to the review-ledger rotation.
+`zenith-quests.md` is read *only because* storage-discussion actively points at
+it. A strand gets a LIVE mark, `aicli -s`, auto-loaded STATE, and a ledger row.
+
+**Net:** the astro cluster shrinks hard into a clean two-layer shape, from **9
+current** astro strands (breathing, canon, canon-power, deliverables,
+speaker-dither, storage, storage-discussion, subpixel, v3s) to **5**:
+- **4 keepers** (maintenance): astro-polecam (← v3s), astro-eclipticam,
+  astro-canon, astro-storage (← storage-discussion's *engineering* half).
+- **1 science** strand: astro-science (← subpixel + breathing-theory +
+  storage-discussion-theory + sidereal + **deliverables** as its publish end).
+
+Retired/out: starcam retired, skycam out, speaker-dither + canon-power →
+`electronics`. Each answers a clear question, and theory-scatter across three
+strands collapses into one visible home.
+
+### Daily astro sitrep — scheduled agent, NOT an uber-strand (2026-08-02)
+
+Considered an `astro-keepers` uber-strand to aggregate the four keepers
+(polecam/eclipticam/canon/storage) for daily sitreps. **Rejected** — it'd be a
+mini-ubersitrep scoped to astro (a second narration layer over this strand,
+which already reads *across* the others), and it'd be inert until launched. A
+daily sitrep is a **cadence** problem, not a strand: a **scheduled agent**
+(`/schedule` cloud routine, or `/loop`) runs each morning, reads the four
+keeper STATEs + last-night capture status, posts a short "astro overnight"
+report — and *fires itself*, which a strand never does. The cross-camera
+narrative stays **here** in ubersitrep at the astro-cluster grain. Prove the
+rhythm before building more (same discipline as the manual review ledger). To
+build: after the keepers exist, scaffold the scheduled agent reading the four
+keeper STATEs (the 3 camera keepers + astro-storage).
+
+### Not done yet — scope for the execution session
+- **Plan only this session.** Nothing moved. The sidereal-sampling compaction
+  (below/via the astro-v3s session) writes to a **temp target**, since
+  `astro-science` doesn't exist yet — or the execution session creates
+  `astro-science` first and compaction targets it directly.
+- Folding subpixel/breathing/storage-discussion theory → astro-science, and
+  renaming astro-v3s → astro-astrocam, are the moving parts. Do them
+  deliberately (git mv, STATE surgery), not piecemeal.
+- Update this ledger + the astro rows when executed.
+
 ## `dispatch` tool spec'd — cut the delegation coordination tax (2026-07-31)
 
 Peter: *"I ask a strand to start a terminal with a strand to do a task; it does
@@ -390,6 +558,28 @@ and the rest of the portfolio list in super/GLOBAL.md.
 
 ## Decisions
 
+- **Strands come in two kinds — keeper vs development** (2026-08-02, Peter):
+  estate-wide taxonomy. **Keeper** = steady-state custodian of a running thing:
+  cadence visits, specialized, **modifies STATE sparingly** (STATE = stable
+  spec, not worklog), **defines metrics**. **Development** = progresses a task
+  toward done: moving-frontier STATE every session, measured by progress,
+  reviewed by the backlog rotation. **Homed by the theory/practice boundary**
+  (*"aifabric is practical stranding, strands is strand theory"*): the *concept*
+  is owned by the **`strands` strand**; the *build* (template variants,
+  declared-kind field, sitrep agent) is **`aifabric`**. Both spooled 2026-08-02.
+  Astro is the first live instance (keepers = polecam/eclipticam/canon/storage;
+  dev = astro-science). See the planning block up top.
+- **Astro strands re-org onto a two-layer axis** (2026-08-02, planned): ops
+  keepers `astro-<camera>` (**astro-polecam** ← v3s, eclipticam, canon) +
+  standalone **astro-storage** (major data-juggling, its own strand) + one
+  science strand **`astro-science`** (year-scale long-baseline urban-astronomy
+  insight; absorbs the theory halves of subpixel/breathing/storage-discussion +
+  the sidereal-sampling discussion). **astrocam → polecam** (real device rename,
+  it's the pole-pointing camera). **starcam retired**, skycam stays out,
+  speaker-dither + canon-power → `electronics`. **Plan only — execute in a
+  dedicated session.** Theory lives in a *strand* not a `~/astro/design` doc
+  because design docs are invisible to the ledger and never auto-loaded. See the
+  planning block up top.
 - **ubersitrep is the macro-sitrep strand** (2026-07-22): top-level situation
   report reading across all workstreams; owns the connecting narrative, not
   code. Sub-strands stay the source of truth for their own detail.

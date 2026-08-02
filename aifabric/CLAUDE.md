@@ -1,13 +1,16 @@
 # Strand: aifabric
 
-Extract Peter's AI working method out of `~/super` into its own standalone repo,
-**`aifabric`** (display name **"AI Fabric"**) — his **principal portfolio**. Not
-a drawer of tools: a *fabric*. The pieces — the manywrapper library and its
-instances (`aicli`, `resolve-host`), strands, forkterms, the patterns/decisions
-docs — are **threads of one cloth**, woven so they reinforce each other. That
-density is the thesis: what Peter has is not a collection of scripts but a
-coherent way of working with AI, and the portfolio should read as that fabric,
-not as a pile.
+**Builds the tools, libraries and templates that make stranding actually run —
+and presents them as one portfolio cloth.**
+
+`aifabric` (display name **"AI Fabric"**) is the *practice* half of the strand
+system (the *theory* half is the [[strands]] strand). It owns the working parts:
+the manywrapper library and its instances (`aicli`, `resolve-host`), the
+`.template` scaffolds, forkterms, `idea`/`ding`/`spool`, the patterns/decisions
+docs. These are **threads of one cloth**, woven so they reinforce each other —
+that density is the thesis, and why it's also Peter's **principal portfolio**:
+not a drawer of scripts but a coherent way of working with AI, read as a fabric,
+not a pile.
 
 It has outgrown `super` and earned its own home. Chosen model (revised
 2026-07-31, superseding both "extract & migrate" and the timid "convergence by

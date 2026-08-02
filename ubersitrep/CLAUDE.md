@@ -1,11 +1,14 @@
 # Strand: ubersitrep
 
-The **über-sitrep** — the top-level situation report across all of Peter's
-major workstreams. Not a code-owning strand: it reads *across* the others
-(aifabric, the astro-* family, the fleet, mywebsite, splay, …) and holds the
-**macro thrust** — where each big effort stands, what it's converging toward,
-and what the next moves are. When you want the one-page answer to "where is
-everything, and where is it going", it lives here.
+**Answers "where is everything, and where is it going" — across all the strands
+at once.**
+
+Owns no code of its own; it reads *across* all the other strands (aifabric, the
+astro-* family, the fleet, mywebsite, splay, …) and holds the **macro thrust** —
+where each big effort stands, what it's converging toward, what the next moves
+are, and the *this-then-that* logic connecting them. A fresh session (or Peter,
+weeks later) gets oriented here fast, then drops into the sub-strand that owns
+the detail. It's the narrative layer above the work, not the work.
 
 **Purpose (Peter, 2026-07-22):** state the **"this then that" logic** and
 **capture broad sweeps**. Two jobs:

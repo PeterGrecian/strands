@@ -1,10 +1,18 @@
 # Strand: strands
 
-The meta-strand: curating the strand system itself and, more broadly, how
-Peter's Claude sessions are organised for efficiency. Home of ideas about
-the workflow — `cld`, the strand pattern, session ritual, memory hygiene,
-housekeeping — as opposed to ideas about any one project. Works on
-**`~/super`** (bin/cld, strands/, GLOBAL.md, memory/).
+**Works out what a strand *is* and how the system should work — the model, not
+the machinery.**
+
+The meta-strand. It owns the *concepts* of the strand system: the strand
+pattern itself, what STATE/IDEAS/CLAUDE.md are for, the emerging distinctions
+(keeper vs development strands, STATE-stickiness, the metrics principle),
+session ritual, memory hygiene — the questions of *how sessions should be
+organised*, worked out as ideas before they harden into convention. The
+**practical** half — the tools and templates that implement all this (`aicli`,
+the `.template` scaffolds, `idea`/`ding`, the manywrapper) — lives in
+[[aifabric]]; this strand decides *what* they should do, aifabric *builds* it.
+Curation output lands in `strands/README.md`, the templates' shape, and
+`super/GLOBAL.md` conventions.
 
 ## Session ritual
 

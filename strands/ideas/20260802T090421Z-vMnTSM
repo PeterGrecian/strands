@@ -1,0 +1,33 @@
+Two KINDS of strand — keeper vs development (from ubersitrep 2026-08-02).
+THEORY of the strand system → belongs to this (strands) strand. The PRACTICAL
+build (templates, tooling) → aifabric. (Boundary, Peter 2026-08-02: "aifabric
+is practical stranding, strands is strand theory.")
+
+THE THEORY (this strand owns):
+- KEEPER strand = steady-state custodian of a running thing: repetitive,
+  frequently visited on a CADENCE (not to finish something), specialized
+  (narrow/deep — one camera, the data plumbing). Modifies STATE SPARINGLY —
+  STATE is the *stable spec of a healthy system*, not a worklog; it changes
+  when the system's shape changes (a new calibration constant, a config
+  decision), not every visit. Each keeper DEFINES METRICS for how well it's
+  performing (captured last night? frame count, focus quality, GB/night, disk
+  headroom) — a keeper without metrics is just a dormant strand. Reviewed by
+  cadence + a metrics-reading scheduled agent.
+- DEVELOPMENT strand = progresses a TASK toward done: goal-directed, STATE is
+  the moving frontier updated every session (the dcp worklog: moved/next/
+  blocked), measured by PROGRESS. Reviewed by the least-recently-reviewed
+  backlog rotation.
+- The conceptual consequences to work out HERE: is "kind" a spectrum or binary?
+  can a strand switch kind (dev → keeper once the thing it built is running)?
+  does every keeper truly need metrics, or only ones feeding a sitrep? how does
+  kind interact with the review ledger vs a cadence schedule?
+
+THE PRACTICAL BUILD (hand to aifabric — practical stranding):
+- .template keeper vs dev variant (keeper scaffold carries a METRICS block; dev
+  scaffold carries the moving-frontier STATE shape).
+- a declared-kind field so tools (the sitrep agent, the ledger) treat keepers
+  and dev strands differently.
+- README/method-doc documenting the two kinds + review discipline each gets.
+
+First live instance: the astro re-org — polecam/eclipticam/canon/storage are
+keepers; astro-science is development. See ubersitrep STATE for that application.
