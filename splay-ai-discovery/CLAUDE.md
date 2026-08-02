@@ -1,6 +1,9 @@
 # Strand: splay-ai-discovery
 
-Recurring workstream: **making splay a first-class tool for AI-driven
+**Keeps splay a first-class tool for AI-driven sessions — the viewer an agent
+reaches for to show Peter frames, or to inspect images itself.**
+
+**Making splay a first-class tool for AI-driven
 sessions** — the viewer an agent reaches for (and drives) when it needs Peter
 to *see* frames, and when it needs to inspect images itself. splay is the
 visual-techniques lab's viewer (`~/splay`, on `$PATH` as `super/bin/splay`);

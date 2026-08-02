@@ -1,6 +1,9 @@
 # Strand: astro-subpixel
 
-Recurring workstream: **beating the pixel** on Pi cameras — sub-pixel
+**Keeps beating the pixel — sub-pixel astrometry, photometry and
+super-resolution on undersampled Pi-camera sensors.**
+
+**Beating the pixel** on Pi cameras — sub-pixel
 astrometry, photometry, and super-resolution on undersampled sensors
 (v3w PSF ≈ 1 px). The threads: streak astrometry (drift as a time axis),
 commanded dither (speaker rig, VCM focus-breathing, drift itself),

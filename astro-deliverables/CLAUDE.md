@@ -1,6 +1,9 @@
 # Strand: astro-deliverables
 
-Recurring workstream: the public-facing deliverables of the astro project —
+**Keeps the astro project's public face — the `/astro` web pages and the
+pipeline outputs that feed them.**
+
+The public-facing deliverables of the astro project —
 the `/astro` pages on www.petergrecian.co.uk and the pipeline outputs that
 feed them. Spans **`~/astro`** (capture, processing, publish pipeline) and
 **`~/mywebsite`** (the Lambda + API Gateway site that serves them). Related

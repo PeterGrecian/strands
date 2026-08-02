@@ -1,6 +1,9 @@
 # Strand: astro-canon-power
 
-Recurring workstream: a **Pico W power-cycle rig** to remotely reset the
+**Keeps the Canon EOS 2000D power-cyclable — a Pico W rig that cuts and restores
+its DC supply to reset it remotely when it hangs.**
+
+A **Pico W power-cycle rig** to remotely reset the
 **Canon EOS 2000D** astro camera when it hangs. The camera is tethered
 over USB to **muppet** via gphoto2 (see the sibling **astro-canon**
 strand, which owns it as an instrument); this strand owns only the

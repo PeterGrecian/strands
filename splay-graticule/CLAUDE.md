@@ -1,6 +1,9 @@
 # Strand: splay-graticule
 
-Recurring workstream: RA/Dec **graticule and star-name overlays** on astro
+**Keeps RA/Dec graticule and star-name overlays on astro frames — a DS9 `.reg`
+file splay rotates about the pole per frame.**
+
+RA/Dec **graticule and star-name overlays** on astro
 camera frames, viewed in splay. The overlay is a DS9 `.reg` file that splay
 rotates about the celestial pole per frame time, so one fit serves a whole
 camera epoch. Spans **`~/splay`** (the viewer + `.reg` rendering, scope

@@ -1,6 +1,9 @@
 # Strand: astro-canon
 
-Recurring workstream: the **Canon EOS 2000D** as a remotely-operated
+**Keeps the Canon EOS 2000D running as a remote astro instrument — the
+big-sensor, real-optics complement to the Pi cameras.**
+
+The **Canon EOS 2000D** as a remotely-operated
 astro instrument, tethered over USB to **muppet** via gphoto2. The
 big-sensor, real-optics complement to the Pi cameras (astrocam,
 eclipticam): 24 MP APS-C, EF-S 18-55 zoom, remote focus drive.
