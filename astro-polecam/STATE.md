@@ -1,4 +1,4 @@
-# astro-v3s — state
+# astro-polecam — state
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 

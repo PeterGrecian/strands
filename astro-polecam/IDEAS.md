@@ -1,4 +1,4 @@
-# astro-v3s — ideas inbox
+# astro-polecam — ideas inbox
 
 Append ideas here any time, from any machine (it's in git). They get
 triaged at the start of the next strand session — promoted into STATE.md

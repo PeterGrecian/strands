@@ -1,0 +1,3 @@
+Keeps the pole-pointing camera capturing — the v3-standard (imx708) on astrocam: setup, focus, calibration and processing topology.
+
+The camera keeper for the pole-pointing instrument: a Pi Camera v3 standard (imx708) that replaced the v2 imx219, looking at the celestial pole (Polaris dead-centre — the radial-breathing ⊥ tangential-drift geometry the science relies on is this camera's identity). Owns day-to-day operation: focus (~1.4), pedestal (105), rotation, the night gate/daemon, the open processing-topology question. Science it feeds → astro-science; storage → astro-storage. Renamed from astro-v3s 2026-08-02; the astrocam→polecam DEVICE rename is a separate heavier task.

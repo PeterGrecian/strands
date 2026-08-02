@@ -27,13 +27,15 @@ Rest of each CLAUDE.md body not yet swept for stale framing below the opener.
 - **Archived**: astro-subpixel, astro-breathing, astro-storage-discussion,
   astro-deliverables, astro-canon-power, **astro-speaker-dither** (done
   2026-08-02 once its live session exited; content already folded to electronics).
-- **Remaining astro strands: astro-v3s (→polecam), astro-canon, astro-storage,
-  astro-science** — **9 → 4, as planned.** Light re-org COMPLETE.
+- **Remaining astro strands: astro-polecam (← astro-v3s, renamed 2026-08-02),
+  astro-canon, astro-storage, astro-science** — **9 → 4, as planned.** Light
+  re-org COMPLETE.
 
 **Still TODO (deferred, own session):**
-- **astro-v3s → astro-polecam DEVICE rename** — the heavy part (hostnames, S3
-  buckets, camera.json, daemons, cdf/resolve-host/ssp, cron). Grep the estate
-  for "astrocam" first. Strand-rename is trivial; the device rename is not.
+- **astrocam → polecam DEVICE rename** — the heavy part (hostnames, S3 buckets,
+  camera.json, daemons, cdf/resolve-host/ssp, cron). Grep the estate for
+  "astrocam" first. **Strand already renamed astro-v3s → astro-polecam
+  2026-08-02 (trivial, done); the DEVICE rename is the remaining hard part.**
 - **Daily astro sitrep agent** — scheduled reader of the 4 keeper metrics
   (each keeper's STATE needs a metrics block first). **Home decided 2026-08-02:
   a GENERAL tool in aifabric/bin (no new repo), astro sitrep = its first config;
@@ -43,7 +45,8 @@ Rest of each CLAUDE.md body not yet swept for stale framing below the opener.
   `<strand>/blurb` file, line 1 shown verbatim in the `aicli` listing). Keepers
   verb-first ("Keeps …"), development object-first (no verb — the first ~40 chars
   are what the listing shows). super reclassified dev. Every strand now ships a
-  `blurb` file (35 generated 2026-08-02; astro-v3s pending its polecam mission).
+  `blurb` file (36 as of 2026-08-02, incl. astro-polecam once renamed + given a
+  mission).
 
 ### Original plan (below, for reference)
 
@@ -460,7 +463,7 @@ first reviewed.
 | Subject | Last-reviewed | Pri | Status / note |
 |---|---|---|---|
 | astro-canon | **2026-07-26** | high | ✅ capture path FIXED (Press Full, not Immediate — no more AF-wedge); canon-as-temp-primary unblocked |
-| astro-v3s | **2026-08-02** | high | operational keeper (→ **astro-polecam** at device rename); sidereal theory moved to astro-science |
+| astro-polecam | **2026-08-02** | high | camera keeper (renamed ← astro-v3s); sidereal theory → astro-science; **device** still `astrocam` (rename pending) |
 | astro-science | **2026-08-02** | high | NEW — the science/development strand; consolidated subpixel+breathing+storage-discussion theory + sidereal + deliverables |
 | ~~astro-storage-discussion~~ | 2026-08-02 | — | **ARCHIVED** — theory → astro-science, engineering → astro-storage |
 | ~~astro-speaker-dither~~ | 2026-08-02 | — | **ARCHIVED** — folded into **electronics** (rig PoC) + astro-science (why/calibration) |
