@@ -104,6 +104,39 @@ resolved to ~0.008 px. But two findings define the next phase:
   duty*1e6)` (true HW PWM) → inaudible + coil L / shunt cap kill it harder. The
   10 µF shunt cap made it non-painful; +100 µF better.
 
+## 🧪 Little-speaker coupling experiments — all NULL (2026-08-01)
+
+Two attempts to get proportional sub-px motion out of the **little** speaker
+(GPIO18 → darlington → little coil), both NULL; the Faital sat underneath only
+as a passive rest platform (unpowered):
+
+- **Magnet-tipped little speaker resting on the Faital.** Glued magnets to
+  little speaker + camera for an "elastic" coupling. Fine sweep (0–48 counts),
+  3 runs averaged: flat at 0.07–0.12 px (≈ the ~0.05 px floor), fit
+  0.0034 px/count → 255 ≈ 0.9 px, non-monotonic. The one real effect was a
+  **duty-24 slam** that on the first sweeps **latched** the resting stack 5–90 px
+  (intra-group MAD 70) — the old detent failure.
+- **Diaphragm cut free from the surround ("compliance surgery").** Scalpel-cut
+  most of the diaphragm from the surround so the cone floats on the spider →
+  higher compliance/throw. 3 runs averaged: **instability GONE** (every level
+  stable at intra MAD ~2.4 incl. duty 24, clean return to zero) but **still no
+  motion** — flat 0.08–0.24 px, fit 0.0002 px/count (255 ≈ 0.05 px = nothing).
+
+**Verdict: the little speaker fundamentally lacks the force; compliance was
+never its bottleneck.** Closes the little-speaker line (resting / magnet / cut
+all NULL). This is consistent with — and does not change — the 07-31 finding
+that the **Faital driven directly** already gives ~230 px range: the path with
+both force and good coupling is the Faital, not the little speaker.
+
+**Infra notes this session:** the Faital draws ~0.7 A / 3.9 W off the Pi 5V rail
+and **browns out the SoC** (`Undervoltage` dmesg spam → 0-byte camera grabs; an
+undervolt even wedged the IMX219 pipeline, `modprobe -r imx219` segfaulted and
+dropped `/dev/v4l-subdev0`, **recovered only by reboot**). **Decision: Faital on
+a separate 5V+ supply** (shared GND only) before the direct-Faital sweep.
+Harness hardened to verify each frame == 307200 B and re-grab on short read
+(`deskpi:/tmp/fine_sweep2.sh`) so brownouts can't silently hole the data.
+Full data: `~/Berrylands/pwmaudio/experiments/dither-deflection.md`.
+
 ## → NEXT: the flexure stage (CRITICAL, hardest — do FIRST)
 
 Peter's difficulty-ranked roadmap (2026-07-31):
