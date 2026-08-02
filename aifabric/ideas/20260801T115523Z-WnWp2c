@@ -1,0 +1,1 @@
+we could go through sessions to get a metric of how sucessful strands are at their tasks and how often they fail to do their prime job.  particularly applies to keepers.  we could refine STATE with this and git history analysis.  we could tune dcp so it is reluctant to change state of successfull keepers, and does so only if the session was particularly sucessful

@@ -2,6 +2,34 @@
 
 *Curated state of the aifabric extraction. Prose, not a log. Updated at session end / on dcp.*
 
+## Inbox backlog — awaiting triage (recorded 2026-08-02, NOT yet triaged)
+
+Seven ideas accumulated in `ideas/` unprocessed; recorded here so they survive,
+committed but **not triaged** (deliberate — a real triage session, not a dcp).
+Promote-by-default when triaged; dropping is the considered act.
+
+1. **YYSeib** — "when I /exit does the waiter close cleanly?" — *already
+   answered this session*: self-cleans within ~30s (owner-death poll), `ding
+   --reap` closes the gap. **Drop on next triage.**
+2. **xtg6x6** — terminal titles still not set + terminal *raising* badly needed;
+   "forkterm didn't" raise → a bug. Real defect, needs work. See
+   [[backend-clobbers-net-wm-name]].
+3. **55B4Ob** — `dcp` is vital (it updates STATE) but obscure/ambiguous; may
+   need refining. Meta on the workflow itself.
+4. **WnWp2c** — mine `sessions` + git history for a success/failure metric per
+   strand (esp. keepers); tune `dcp` to be reluctant to rewrite a successful
+   keeper's STATE. Pairs with QlC5sN.
+5. **egDH0p** — want a tool-improvement strand + a general-ideas strand;
+   also `idea` autocompletion per strand (check: may already exist —
+   `aicli-completion.bash`).
+6. **QlC5sN** — regularly score agent performance /5 to learn what works;
+   pairs with WnWp2c (human-supplied signal vs mined signal).
+7. **TYH8Ou** — `.template` needs a `blurb` stub so scaffolded strands ship a
+   real (placeholder) blurb instead of falling back to the CLAUDE.md-opener
+   path (12-word cap, mid-clause cut). Well-specified; watch
+   [[template-corruption-via-symlink]]. Blurb rules in
+   `ubersitrep/docs/blurbs_howto.md`.
+
 ## What this is
 
 Extract Peter's AI working method from `~/super` into a standalone repo
