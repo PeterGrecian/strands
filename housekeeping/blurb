@@ -1,0 +1,3 @@
+Keeps the housekeeping workflow honest — the ~/.claude/housekeeping.log session-start check and the routines behind it.
+
+*(Provisional — derived from the strand name; refine at first real session.)* The housekeeping discipline: the session-start `housekeeping.log` read, and whatever automated tidy-up/maintenance routines feed it. Spans and deliverables to be defined.
