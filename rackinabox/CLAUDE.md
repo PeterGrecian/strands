@@ -1,6 +1,6 @@
 # Strand: rackinabox
 
-**Builds a silent laser-cut home-server enclosure — flat finger-jointed panels,
+**A silent laser-cut home-server enclosure — flat finger-jointed panels,
 DXF-generated, headed for SendCutSend fabrication.**
 
 The `~/rackinabox` deliverable: a silent home-server rack, design locked as a

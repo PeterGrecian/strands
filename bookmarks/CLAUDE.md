@@ -1,6 +1,6 @@
 # Strand: bookmarks
 
-**Reorganises Peter's browser bookmarks — a short-lived tidy-up strand.**
+**Peter's browser bookmarks, reorganised — a short-lived tidy-up strand.**
 
 Reorganise Peter's browser bookmarks — likely a short-lived strand (a few
 sessions), retired when the reorganisation is done and stable.

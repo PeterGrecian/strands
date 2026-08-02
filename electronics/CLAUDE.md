@@ -1,6 +1,6 @@
 # Strand: electronics
 
-**Makes the circuits that interface things — driver circuits, level shifters,
+**The circuits that interface things — driver circuits, level shifters,
 PWM-as-DAC, the bench layer between software and actuators.**
 
 ## Mission

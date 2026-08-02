@@ -1,7 +1,7 @@
 # Strand: aifabric-sessions
 
-**Builds the session archive + RAG — every Claude Code transcript ingested into
-local OpenSearch and made searchable, for Peter and for agents.**
+**The session archive + RAG — every Claude Code transcript in local OpenSearch,
+searchable for Peter and for agents.**
 
 Every Claude Code session transcript,
 ingested into local OpenSearch (the `~/osd` stack) and made searchable —

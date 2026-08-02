@@ -1,7 +1,7 @@
 # Strand: splay-grid
 
-**Builds grid (contact-sheet) mode for splay — a full-viewport thumbnail grid
-and the browsing/navigation around it.**
+**Grid (contact-sheet) mode for splay — a full-viewport thumbnail grid and the
+browsing/navigation around it.**
 
 ## Mission
 

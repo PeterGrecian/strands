@@ -36,7 +36,13 @@ Rest of each CLAUDE.md body not yet swept for stale framing below the opener.
   for "astrocam" first. Strand-rename is trivial; the device rename is not.
 - Archive astro-speaker-dither when its live session ends.
 - **Daily astro sitrep agent** — scheduled reader of the 4 keeper metrics
-  (each keeper's STATE needs a metrics block first).
+  (each keeper's STATE needs a metrics block first). **Home decided 2026-08-02:
+  a GENERAL tool in aifabric/bin (no new repo), astro sitrep = its first config;
+  schedule + output are config, not code.** See the aifabric spool.
+- **Blurbs are curated in `ubersitrep/docs/blurbs.md`** (2026-08-02) — the
+  canonical one-line map; per-strand CLAUDE.md openers should match. Keepers
+  verb-first ("Keeps …"), development object-first (no verb — the first ~40
+  chars are the crucial ones the listing shows). super reclassified dev.
 
 ### Original plan (below, for reference)
 

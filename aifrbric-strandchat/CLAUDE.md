@@ -1,7 +1,7 @@
 # Strand: aifrbric-strandchat
 
-**Builds strandchat — the browser window onto the strand mesh, every fork with
-its kinship colour, transcript, and a box to message and ring a peer.**
+**strandchat — the browser window onto the strand mesh: every fork with its
+kinship colour, transcript, and a box to message and ring a peer.**
 
 The browser window onto the mesh — every strand (fork) with
 its kinship colour and lineage, its message transcript, and a box to send a

@@ -1,7 +1,7 @@
 # Strand: splay-mosaics
 
-**Builds raw Bayer-mosaic inspection into splay as a first-class mode, and rounds
-out the viewer features that support it.**
+**Raw Bayer-mosaic inspection in splay as a first-class mode, and the viewer
+features that support it.**
 
 ## Mission
 

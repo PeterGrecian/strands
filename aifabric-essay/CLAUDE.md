@@ -1,7 +1,7 @@
 # Strand: aifabric-essay
 
-**Writes the wisdom half of the aifabric story — the argued case for *how and
-why* to use AI well, as CV evidence.**
+**The wisdom half of the aifabric story — the argued case for *how and why* to
+use AI well, as CV evidence.**
 
 The argued, transferable account
 of *how and why* to use AI well. This strand's job is prose, not tooling

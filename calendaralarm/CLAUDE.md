@@ -1,7 +1,7 @@
 # Strand: calendaralarm
 
-**Makes calendar events fire an un-ignorable alarm — one that takes active
-effort to silence, via the phone app + xMatters bridge.**
+**Calendar events that fire an un-ignorable alarm — active effort to silence,
+via the phone app + xMatters bridge.**
 
 Make calendar events fire an **un-ignorable alarm** — one that takes active
 effort to silence — to stop important appointments being missed. The original

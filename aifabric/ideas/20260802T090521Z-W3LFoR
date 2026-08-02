@@ -13,6 +13,13 @@ theory settles:
   rotation to dev strands.
 - The scheduled sitrep agent itself (reads all keepers' metrics blocks, posts
   an overnight report) — a concrete aifabric tool once keepers carry metrics.
+  DECIDED 2026-08-02: it's a **GENERAL tool in aifabric/bin, NO new repo** —
+  "read these keepers' metrics → post a report", sibling of strand-mailbox/ding/
+  sessions. The astro daily sitrep is its first CONFIG/instance (the 4 astro
+  keepers), not a bespoke astro script. The schedule (cron/routine) + output
+  destination are config, not code — the routine points at the aifabric tool.
+  Blurbs source: ubersitrep/docs/blurbs.md is the canonical one-line map (the
+  sitrep could reuse the same keeper-STATE-reading path).
 
 Driven by the astro re-org (ubersitrep 2026-08-02): polecam/eclipticam/canon/
 storage = keepers needing metrics blocks; astro-science = development.

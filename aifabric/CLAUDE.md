@@ -1,7 +1,7 @@
 # Strand: aifabric
 
-**Builds the tools, libraries and templates that make stranding actually run —
-and presents them as one portfolio cloth.**
+**The tools, libraries and templates that make stranding run — practical
+stranding, presented as one portfolio cloth.**
 
 `aifabric` (display name **"AI Fabric"**) is the *practice* half of the strand
 system (the *theory* half is the [[strands]] strand). It owns the working parts:

@@ -1,7 +1,7 @@
 # Strand: astro-science
 
-**Works out what a year of urban drift-scan reveals — the science at the top of
-the astro pipeline, and the sampling theory that makes it possible.**
+**What a year of urban drift-scan reveals — the science atop the astro pipeline,
+and the sampling theory that makes it possible.**
 
 The **science / insight** strand of the astro estate: the long-horizon question
 everything else scaffolds — *what does a year-scale, long-baseline urban

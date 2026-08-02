@@ -1,7 +1,7 @@
 # Strand: super
 
-**Keeps the super meta-repo — the daily-kitchen tooling, conventions and global
-context that drive everything else.**
+**The super meta-repo, carved down — daily-kitchen tooling and conventions, with
+the AI method migrating out to aifabric.**
 
 The `~/super` meta-repo: house tools (`secrets`, `resolve-host`, `alert`,
 `trash`, …), the global context (`GLOBAL.md`), and cross-repo conventions. The
