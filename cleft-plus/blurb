@@ -1,0 +1,3 @@
+cleft, grown from a usage-rate calculator into a small usage-observability surface.
+
+Grow `cleft` from a point-in-time usage-rate calculator into a small usage observability surface for Claude Code consumption. `cleft` (`aifabric/bin/cleft`, 228 lines of stdlib Python) today hits `https://api.anthropic.com/api/oauth/usage` once, reads the `five_hour` / `seven_day` `utilization` + `resets_at`, and prints current rate, required rate, and projected %-at-reset. It has no memory and no per-model breakdown.

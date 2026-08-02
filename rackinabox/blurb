@@ -1,0 +1,3 @@
+A silent laser-cut home-server enclosure — flat finger-jointed panels, DXF-generated, headed for SendCutSend fabrication.
+
+The `~/rackinabox` deliverable: a silent home-server rack, design locked as a flat laser-cut 6 mm finger-jointed box. `cad/panels.py` generates the DXF panel set (baseboard, walls with tube pass-throughs, fan panel); `DESIGN.md` is the spec. The gate to a physical rack is finishing the panel set and nesting, then a SendCutSend quote.

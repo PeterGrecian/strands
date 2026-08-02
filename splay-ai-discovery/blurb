@@ -1,0 +1,3 @@
+Keeps splay a first-class tool for AI-driven sessions — the viewer an agent reaches for to show Peter frames, or to inspect images itself.
+
+Making splay a first-class tool for AI-driven sessions — the viewer an agent reaches for (and drives) when it needs Peter to *see* frames, and when it needs to inspect images itself. splay is the visual-techniques lab's viewer (`~/splay`, on `$PATH` as `super/bin/splay`); this strand is the feedback loop from *actually using it in anger* during other strands (astro-canon, astro-subpixel, gardencam…) back into splay's UX, discoverability, and scripting surface.

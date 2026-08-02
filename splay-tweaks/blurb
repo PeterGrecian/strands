@@ -1,0 +1,3 @@
+Keeps the splay viewer sharp — small UX and behaviour tweaks to ~/splay, committed to the splay repo.
+
+Curates small UX/behaviour tweaks to the splay viewer (`~/splay/splay`) — selection modes, arrival handling, navigation polish. Changes commit to the splay repo; this dir holds only curation files. See memory `project_splay_lab.md` for splay's role.

@@ -1,0 +1,3 @@
+Keeps the fleet roster and liveness board — who's in the fleet and whether each always-on host is up (Pi or not).
+
+Fleet membership + dashboard/liveness for all always-on hosts. The board is `Berrylands/pi-fleet` (the source-of-truth inventory). This strand owns *knowing the fleet's state*; *changing* hosts to make the fleet healthy is the sibling ansible strand's job.

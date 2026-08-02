@@ -1,0 +1,3 @@
+Photo archiving to S3 Deep Archive — a prototype now, an app later.
+
+Photo archiving to S3 Deep Archive — prototype now, app later. The pitch (Peter's README.md): friends pay £10 *once, when the phone goes in the washing up*, not £10/month. Prototype: archive Peter's ~66 GB of photos from muppet (`/mnt/bigdisk/images`) with a permanently-browsable surface (ledger, listings, thumbs, meta) and static `/glacier` pages. DESIGN.md is the design of record — read it before doing anything; README.md is the original idea sketch. Spans `~/mywebsite` (the /glacier pages); ingest runs on muppet via ssh (data is local there). The ledger (`ledger.jsonl`) is committed to this dir in git as well as living in the bucket.

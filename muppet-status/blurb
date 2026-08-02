@@ -1,0 +1,3 @@
+Keeps muppet (and puppy) healthy as hosts — network/dongle config, NFS mounts, hardware quirks kept working.
+
+Host-level health of muppet and its sibling puppy: network profiles and dongle swaps (interface-agnostic NM config), static IPs, NFS write recovery, hardware notes. Detail lives in memory (`project_puppy_network.md`, `project_muppet_hardware.md`); this strand curates the host state.

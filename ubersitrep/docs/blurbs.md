@@ -56,20 +56,33 @@ the pin (before the dash) is the ≤40-char part that survives truncation.
 | Builds a silent laser-cut home-server enclosure… | A silent laser-cut home-server enclosure — flat finger-jointed panels… | dev strand → drop "Builds", lead with the object |
 | Builds RA/Dec graticule and star-name overlays… | RA/Dec graticule and star-name overlays on astro frames… | dev → object-first; "RA/Dec" is in the crucial 40 |
 
-## The mechanics (how the listing finds a blurb)
+## The mechanics (confirmed with the aicli strand 2026-08-02)
 
-`aicli`'s `strand_blurb()` reads, in order:
-1. **`<strand>/blurb`** if that file exists — line 1 is the listing summary; the
-   rest is the `--blurb` detail. (A dedicated file, if you want to decouple the
-   blurb from the doc body.)
-2. **otherwise the CLAUDE.md opener** — the first paragraph after the `#` heading,
-   up to the first blank line, with `**bold**`/`` `code` `` stripped and lines
-   beginning `*(` skipped (so a `*(provisional…)*` note is invisible to the
-   listing but stays in the file).
+**Every strand now ships a `<strand>/blurb` file** (generated 2026-08-02 — the
+first blurb files in the estate). Two views:
 
-Today no strand carries a `blurb` file, so **the CLAUDE.md opener IS the blurb** —
-write line 1 of the opener as the ≤40-crucial one-liner, blank line, then the
-paragraph, and the listing picks it up automatically.
+- **Listing summary** (`aicli`, no args → `strand_blurb`):
+  - If `<strand>/blurb` exists (non-empty): **line 1 shown VERBATIM** — no word
+    cap, and *no markup stripping* on this path. So **line 1 must be plain text**
+    (strip `*emphasis*` / `` `code` `` — they'd render literally). Truncated only
+    by terminal column width.
+  - Fallback (no blurb file): first CLAUDE.md prose paragraph, markup stripped,
+    then a **12-word cap** with "…" — which cuts a >12-word one-liner mid-clause.
+    The blurb file exists precisely to avoid this.
+- **Detail view** (`aicli --about <strand>` → `strand_about`, long-form only):
+  - If a blurb file: prints the **whole file** (line 1 + blank + detail
+    paragraphs), verbatim.
+  - Fallback: the CLAUDE.md opening prose, markup stripped, no cap.
+
+**Blurb-file format:** line 1 = the plain-text ≤40-crucial one-liner (the list
+summary); blank line; then the detail paragraph(s) for `--about`. Line 1 must be
+self-contained — it's all the listing shows.
+
+**Keep the blurb file in sync with the CLAUDE.md opener** (same one-liner). The
+generator that seeded them lives at
+`ubersitrep/…/scratchpad/mkblurbs.sh` in spirit — but going forward, edit the
+`blurb` file directly (it wins) and mirror line 1 into the CLAUDE.md opener.
+`.template` should gain a `blurb` stub so new strands start with one.
 
 ## Keeper vs development — the deeper distinction
 

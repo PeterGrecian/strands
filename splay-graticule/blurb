@@ -1,0 +1,3 @@
+RA/Dec graticule and star-name overlays on astro frames — a DS9 .reg file splay rotates about the pole per frame.
+
+RA/Dec graticule and star-name overlays on astro camera frames, viewed in splay. The overlay is a DS9 `.reg` file that splay rotates about the celestial pole per frame time, so one fit serves a whole camera epoch. Spans `~/splay` (the viewer + `.reg` rendering, scope hierarchy, rotation) and `~/astro` (`bin/make-epoch-graticule`, the WCS fit + overlay generator). Overlay data lives at each camera's frames_root on the muppet NFS (`/mnt/muppet/<camera>-frames/_epoch.{reg,wcs.json}`).
