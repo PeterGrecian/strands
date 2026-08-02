@@ -1,0 +1,184 @@
+# astro-science — state
+
+*Curated summary of where this strand is. Updated at the end of each session.
+The science/insight layer of the astro estate. **Consolidated 2026-08-02** from
+astro-subpixel + astro-breathing + astro-storage-discussion (theory half) +
+astro-v3s (sidereal direction) + astro-deliverables — those strands are archived;
+their operational/engineering halves went to the keepers (polecam/eclipticam/
+canon/storage).*
+
+## The thrust — sidereal-space static accumulator
+
+The framing that ties all the sub-pixel work together, and the strand's next
+phase (from astro-v3s, 2026-08-01).
+
+**Goal:** a **year-round static accumulator** — integrate every frame into a
+fixed sky frame so stars stop being streaks and become *points that accumulate*
+night after night, pulling faint stars out from between the bright ones (a deep
+stack far below the single-frame limit). Fixed mount + Earth rotation means
+every star sweeps a circle about the pole; de-rotate each frame and co-add.
+
+**Coordinate space = a PROJECTION from camera coords onto the SPHERE** (Peter's
+framing) — NOT a flat (r,θ) or flat RA/Dec grid. The accumulator lives on the
+sphere, so sampling density follows the real geometry (lens projection, pole
+compression, plate-scale variation) and uses parameter space efficiently. The
+camera→sphere projection *is* the model; de-rotation is a rotation on the sphere.
+
+**Why the sub-pixel work is load-bearing:** camera→sphere is a *resampling*. Feed
+it undersampled/aliased data and the aliasing bakes into the accumulator
+permanently. So plate-solve (pole + plate scale + distortion) and the sampling
+must be right, sub-pixel — hence the care about PSF, undersampling, exact focus,
+and cadence.
+
+**Anisotropic sampling → shorter exposures (the key rationale):** a star is a
+STREAK per exposure (11px/60s on astrocam). Along the streak the integration
+smears position/time → **along-track resolution is compromised**; cross-track
+keeps full PSF resolution. The fix is a **higher sampling rate** — shorter
+exposures shrink the streak toward a point, recovering along-track resolution,
+so de-rotation places near-points (not smears) and the sphere is sampled finely
++ isotropically. The concrete argument for shorter-exposure / more-frequent /
+smaller-dither. (Dither + breathing + beading all characterise the PSF being
+resampled.)
+
+**Status:** DIRECTION only — nothing built. Prereq: find the pole + plate scale
+(STALE from imx219 era). Trail-arc fit on a clear night gives the pole and
+doubles as the resampling geometry; then RA/Dec naming + the accumulator become
+possible.
+
+## Accumulation theory — the capacity law + TDI (from storage-discussion)
+
+- **Whole-night unshifted sums are information-bounded — the capacity law.**
+  For a rigid camera trails never cross, they *merge*: a star owns a ~3 px
+  cross-drift band, and two same-band stars confuse when separated by less than
+  trail length L = min(W, T/t_pix). Stored-sum capacity C(T) = (H/3)·(W/L),
+  giving the conservation law **C × T = (H/3)·W·t_pix ≈ 25M star·seconds** for
+  v3-wide portrait (was ~8M for OV5647). The 100k-star target needs ~500k cells
+  → T ≤ ~50 s. No unshifted window is both deep and high-capacity: sums are
+  eliminated *in principle*.
+- **TDI / shifted accumulation is the unique escape.** Shifting the accumulator
+  at the drift rate pins L at the PSF (~3–5 px): C ≈ 0.5–1.3M elements at
+  unlimited T. Chosen shape: **remap-then-shift** — one *static* distortion-field
+  mapping (camera fixed → measured once) into a regular (drift, dec) grid, then
+  integer shifts. Polar coords about the pole for astrocam/polecam; curved bands
+  for eclipticam's 102° field. Pure sidereal binning (same pixel, same sidereal
+  phase across nights — zero resampling, CFA-safe) kept only as a validation
+  patch (~170 GB). Full swept-sky accumulators: ~400–700 MB **total forever**
+  per instrument; per-night marginal cost ≈ 0.
+- **Resampling: drizzle, not interpolation.** Naive interpolation on undersampled
+  data aliases — use **drizzle-style** accumulation (variable-pixel linear
+  reconstruction) onto a finer-than-sensor sky grid, per CFA plane; the drift is
+  a continuous dither, drizzle's ideal input. Resampling undoes motion *between*
+  frames, never *within* an exposure — hence exposure ≲ t_pix; the within-exposure
+  trail kernel is exactly known (drift rate per pixel), so 1–2 px trailing is a
+  modellable field-varying PSF, not lost signal.
+- **Raw mosaics + drift: the Earth demosaics.** Accumulate CFA planes, never
+  demosaic first; drift sweeps each sky point across R/G/B pixels, building full
+  colour without interpolating. Shift by the 2×2 CFA period (or keep four
+  half-res planes).
+- **Sub-pixel makes the /3 pessimistic, direction-dependently.** Along-drift
+  super-res is free (continuous pixel-phase sweep, centroids ~0.1 px);
+  cross-drift is deblend-limited (~FWHM/√SNR) → ~**1000 effective vertical
+  channels at the faint limit** for v3w portrait.
+- **Saturation is not a constraint.** The archive owns the regime between the
+  catalogue floor and our noise floor; bright stars are only astrometric anchors
+  (sub-pixel centroids survive saturation via unsaturated PSF wings). Compression
+  corollary: **bits go to the darkest pixels**; bright static regions ≈ free.
+
+## Sub-pixel foundations (from astro-subpixel)
+
+- **v3w PSF genuinely ~1 px = undersampled.** Standard representation for white
+  point sources: **local white-balanced mosaic** (gains from the star's own
+  patch — Altair WB R×2.19 B×1.65). The residual checkerboard after WB *is*
+  sub-pixel aliasing = signal drizzle recovers, not an error to flatten.
+- **Streak astrometry:** cross-streak line fit pins a star's path to **0.14 px**
+  within one 55 s exposure; adjacent streaks tile end-to-end (angles agree to
+  0.04°); arc curvature over 2+ streaks measures the local drift vector field.
+- **Sub-pixel information theory (2026-07-09):** FWHM ≈ 1 px is near-*optimal*
+  for position encoding (neighbour flux ratio swings 7:1 for a 0.25 px shift);
+  info collapses only for FWHM ≲ 0.5 px. CRLB ~0.006 px for a bright star →
+  current 0.14 px is systematics-limited (per-pixel gain, intra-pixel response),
+  not photon-limited. Recipe = ePSF fitting (Anderson & King); streaks are ideal
+  ePSF input. Plot: `~/tmp/subpix_info.png`.
+- **What dither buys** (not "lower noise"): breaks position↔gain degeneracy,
+  lock-in rejects non-synchronous drifts, fixed-pattern errors average as 1/√N,
+  and it *measures* the gain/intra-pixel maps. Polaris (photometric anchor,
+  static on the same pixels forever) needs it most.
+
+## Dither mechanisms — three, mapped to camera modes
+
+- **Speaker rig** (build is `electronics`; see `astro/design/speaker-dither-rig.md`):
+  PWM-as-DAC + RC + current driver, ~1 µm/mA, 0.1 px = 0.77 µm. Modes: polecam
+  (astrocam) = 2-axis between-frame stepping; v3w = 1-axis continuous S-streak
+  (no-fold-back rule a·2πf < v_drift → ~0.15 px at 0.07 Hz); zenith = 1-axis
+  drift-clocked.
+- **VCM focus-breathing (from astro-breathing):** `V3W_FOCUS_DITHER` + LENSPOS
+  logging live on eclipticam. On a pole-pointing camera, breathing (radial, ε·R)
+  ⊥ drift (tangential, ω·R) *everywhere*, both ∝R → full 2D dither free, except a
+  central dead disc (which contains Polaris).
+  - **Measured 2026-07-13:** VCM genuinely steps (8 distinct 0.125-dpt
+    positions); **LENSPREP lags LENSPOS by exactly 4 frames** (libcamera control
+    queue + 60 s exposures) — use LENSPREP as the per-frame label. Peak-to-peak
+    scale change **0.27 % measured vs 0.245 % predicted** (right magnitude), but
+    per-position scatter ±0.30 % swamps it in a free per-frame fit → **must
+    register by the breathing model itself**, then drizzle MANY stars' cross-
+    sections, to beat matching noise. 6 breathing + 6 fixed nights captured
+    (07-01…07-12); don't mix the 07-07 wide ladder (0.1-dpt/20-step) with
+    07-08+ (0.125-dpt/8-step).
+  - **Numbers:** ≈0.28 %/dpt plate-scale change ⇒ ~0.35 px radial shift per
+    0.125-dpt step at r=1000 px; defocus blur ≈0.25 px/0.1 dpt (model per-frame
+    PSF width across the ladder).
+- **Drift itself** — the always-on dither the accumulator theory rests on.
+
+## Deliverables — the public face (from astro-deliverables)
+
+The output end of the science: where results become visible.
+- **Night pages + calendar** at www.petergrecian.co.uk/astro (calendar from
+  precomputed `<camera>/index.json`, built nightly by `build-calendar-index`).
+- **moon-net**: `moon-extract`/`moon-overlay`/`moon-deliver` + `moon-drift.mp4`;
+  **solver + star-ID still to build**.
+- **"Open in Splay"** flow (night player → `splay-launcher` daemon, port 8765).
+- **/astro/storage** page watches skycam raw growth (an astro-storage concern).
+- **Peter has a deliverables adjustment in mind spanning astro + mywebsite** —
+  to be described (noted 2026-07-10, still pending).
+
+## Quest board (from astro-subpixel; `astro/design/zenith-quests.md`)
+
+M51 (narrow Mod 3 at zenith), Algol eclipse (autumn), Mizar & Alcor (calibration
+ruler, nothing blocking — most immediate), Polaris B by binocular (afocal ~4.9″/px
+→ prime ~1.3″/px; contrast not resolution; stretch = Polaris A's Cepheid pulsation
+0.05 mag / 3.97 d). Q3 (Polaris split on Pi optics) closed as optics-blocked —
+dithering beats aliasing, not diffraction; aperture is the answer.
+
+## Pending / loose ends
+
+- **Prereq for everything: pole + plate scale from real imx708 sky** (STALE from
+  imx219 era). Trail-arc fit on a clear night → pole + resampling geometry, then
+  RA/Dec naming + the accumulator.
+- **Drizzle prototype** — detranslate Altair-region streaks onto a 6× supergrid,
+  verify a point reconstruction (first super-res result).
+- **ePSF builder from streaks** + predict-and-find tool (PSF + ephemeris motion).
+- **Breathing: register-by-model + multi-star drizzle** (the SNR crux above).
+- **moon-net solver + star-ID.**
+- **The deliverables adjustment** (astro + mywebsite) Peter has in mind.
+- Verify the accumulator on an archived night: stacked-PSF width vs single frame
+  + anchor astrometric residuals.
+- **Speaker-dither µm/mA calibration + camera-mode choice** (the astro *why* of
+  the rig, whose electrical/mechanical build lives in [[electronics]]): calibrate
+  loaded (mount stiffness changes response); first target is likely polecam
+  between-frame stepping (no smear), the prize is Polaris photometry (never
+  drifts off its pixels → needs the dither most). PoC proven; the blocker is the
+  mechanical flexure stage (electronics).
+
+## Decisions
+
+- **astro-science created 2026-08-02** as the consolidated science/theory strand
+  (a **development** strand). Absorbs subpixel + breathing-theory + storage-
+  discussion-theory + the sidereal direction + deliverables; those strands
+  archived. Storage *engineering* stayed in astro-storage; per-camera operations
+  stayed in the camera keepers.
+- Gain-corrected (star-patch WB) mosaic is the standard representation for white
+  point sources; interpolation blurs the undersampled signal.
+- Dither strategy is per-camera; drift is the always-on dither.
+- Accumulator lives on the **sphere** (projection from camera coords), not a flat
+  grid; de-rotation is a rotation on the sphere.
+- Use LENSPREP (not LENSPOS) as the per-frame focus label (4-frame lag).

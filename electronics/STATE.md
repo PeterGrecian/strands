@@ -32,6 +32,66 @@ Prior art that belongs to this strand but lives elsewhere for now:
   GPIO/Pico-W driven, distilled from a design chat. Raw chat kept at
   `~/electronics/chats/dcpower-switch`.
 
+## Speaker-dither rig — folded in from astro-speaker-dither (2026-08-02)
+
+`astro-speaker-dither` archived 2026-08-02; its **electrical + mechanical** work
+lives here now (the astro *why* / µm-mA calibration / camera-mode choice is in
+[[astro-science]]'s dither section). The PoC saga (deskpi bench):
+
+- **Force/range are a SOLVED non-issue.** Small speaker was too feeble (no
+  measurable shift); swapped to a **Faital Pro 4FE35** (4" full-range, 8 Ω),
+  coil at full rail (5.6 V RMS ≈ 0.70 A / ~3.9 W — darlington delivers full
+  current). Repositioned on the cone → **~3 mm cone travel ≈ ~230 px image shift**
+  across a 640 frame. Problem **fully inverted: ~1000× too MUCH travel** vs the
+  0.1 px ≈ 0.77 µm target. The camera even fell off the cone at big excursions.
+- **Response is stick-slip, not proportional** (camera resting *in contact*):
+  deadband → snap-to-detent → plateau. **Slow ramps do NOT cure it** (a friction
+  contact has no elastic element). Detector is excellent (control 0.008 px, drift
+  0.014 px). **Lesson: always interleave driven/undriven captures** (a 20 Hz-slam
+  "16σ" result was a scene-drift artifact).
+- **Carrier fix:** pigpio `set_PWM_frequency` snaps to a ladder (was 8 kHz,
+  audible) — use `pi.hardware_PWM(18,40000,duty*1e6)` (true HW PWM) + shunt cap
+  across the coil (**10 µF vital, +100 µF better**; fc ≈ 2.3 kHz/680 Hz) to kill
+  the carrier. Watch D882 dissipation (~1 W free-air; keep 100% bursts short —
+  fine dither is low-duty so it's fine).
+- **NEXT, difficulty-ranked (do FIRST = hardest):**
+  1. **Flexure stage + CSI-ribbon strain management — CRITICAL.** Sub-µm *smooth*
+     motion needs a **flexure, not bearings** (bearings have ~µm stiction = the
+     stick-slip). The **ribbon is the hard part** (stiffness/creep/hysteresis
+     fights a soft flexure). Strategy: exploit the ~1000× excess travel to run a
+     **stiffer flexure that swamps the ribbon**, then gear down to sub-µm. Design
+     note (ribbon + 5 mitigations): `~/astro/design/speaker-dither-rig.md`.
+  2. Bond camera→cone rigidly (easy; unblocks a proportional re-test).
+  3. **Real DAC** (MCP4725 → linear current driver) — kills the carrier, finer
+     low-end than 8-bit PWM. Phase 2; does NOT fix stick-slip; linear D882
+     dissipates more → heatsink/current-source.
+- Everything electronic + optical is proven (force, range, filtering, capture,
+  detector); the remaining work is **mechanical**. Reusable deskpi harness:
+  `/tmp/shift_test.sh <duty> <tag> <n>` + `/tmp/seq.py`; a calibration sweep
+  (duty 2/5/10/20% interleaved → px-shift-vs-current) is spec'd. Also **drive at
+  mechanical resonance** for max excursion, not DC. Data:
+  `~/Berrylands/pwmaudio/experiments/dither-deflection.md`.
+- **deskpi note:** recovered 2026-07-30 (RPi OS Lite armhf Trixie via
+  cloud-init-init), now `deskpi.local`/**.71** on the `.0.x` LAN (pi-fleet
+  `.4.154` is stale). ARMv6 bars rpicam/libcamera — capture via plain V4L2 on
+  `/dev/video0` (see [[armv6-camera-v4l2-not-rpicam]]).
+
+## EOS power-cycle switch — folded in from astro-canon-power (2026-08-02)
+
+`astro-canon-power` archived 2026-08-02; folded here (it's a DC-power circuit).
+Purpose: **power-cycle the Canon EOS 2000D when it hangs** (astro bombards it
+with commands → it wedges; this is the watchdog reset, not just remote on/off).
+Design of record: `~/electronics/designs/eos-dc-switch.md` (high-side P-MOSFET
+IRF9540/AO3401 + 2N3904 NPN level-shifter, Pico-W/GPIO driven). Hardware on hand:
+Pico W + P-ch MOSFETs. **Build deferred** — the cheaper first mitigation is the
+**astro side rate-limiting its commands** (fewer wedges); build the hatch when
+that isn't enough. Open when built: confirm the EOS DC-coupler/dummy-battery rail
+(~7–8 V, 5 V vs 7.4 V), Pico via a front-end buck (never VSYS-direct at 7.4 V),
+timed off→hold(caps drain)→on in MicroPython. **Astro keeps direct control — no
+home-automation/MQTT in the overnight recovery path.** Sibling seam: astro-canon
+(the [[astro-canon]] keeper) owns the camera as an instrument; this owns its
+power/reset.
+
 ## Pending / loose ends
 
 **Priority as of 2026-07-23:** rackinabox is the live bench project (in front of

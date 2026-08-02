@@ -296,42 +296,14 @@ frame: `.../2026-07-31/02/1785550053740.fits.fz` (02:07:33 UTC, LENSPOS 1.3).
   fat), not shutter dead time — any real inter-frame gap is sub-0.1s (below
   DATE-OBS resolution). Measuring bead pitch vs 11px/frame would quantify it.
 
-## DIRECTION: sidereal-space static accumulator (2026-08-01)
+## DIRECTION: sidereal-space static accumulator → moved to astro-science
 
-The framing that ties the sub-pixel work together, and the strand's next phase.
-
-**Goal:** a **year-round static accumulator** — integrate every frame into a
-fixed sky frame so stars stop being streaks and become *points that accumulate*
-night after night, pulling faint stars out from between the bright ones (a deep
-stack far below the single-frame limit). The fixed mount + Earth rotation means
-every star sweeps a circle about the pole; de-rotate each frame and co-add.
-
-**Coordinate space = a PROJECTION from camera coords onto the SPHERE** (Peter's
-framing) — NOT a flat (r,θ) or flat RA/Dec grid. The accumulator lives on the
-sphere, so sampling density follows the real geometry (lens projection, pole
-compression, plate-scale variation) and uses parameter space efficiently. The
-camera→sphere projection *is* the model; de-rotation is a rotation on the sphere.
-
-**Why the sub-pixel work is load-bearing:** camera→sphere is a *resampling*. Feed
-it undersampled/aliased data and the aliasing bakes into the accumulator
-permanently. So plate-solve (pole + plate scale + distortion) and the sampling
-must be right, sub-pixel — hence tonight's care about PSF, undersampling, exact
-focus, and cadence. "Getting this right is important."
-
-**Anisotropic sampling → shorter exposures (the key rationale):** a star is a
-STREAK per exposure (11px/60s here). Along the streak the 60s integration smears
-position/time into one exposure → **along-track resolution is compromised**;
-cross-track keeps full PSF resolution. The fix is a **higher sampling rate** —
-shorter exposures shrink the streak toward a point, recovering along-track
-resolution, so de-rotation places near-points (not smears) and the sphere is
-sampled finely + isotropically. This is the concrete argument for the
-shorter-exposure / more-frequent / smaller-dither direction. (Dither + breathing
-+ beading all characterise the PSF being resampled.)
-
-**Status:** DIRECTION only — nothing built. Prereq: find the pole + plate scale
-(currently STALE from imx219 era). Trail-arc fit on a clear night gives the pole
-and doubles as the resampling geometry; then RA/Dec naming + the accumulator
-become possible.
+The sidereal-space static-accumulator direction (the *science* framing that ties
+the sub-pixel work together) **moved to the `astro-science` strand 2026-08-02** —
+it's cross-cutting theory (drift, dither, undersampling, accumulation), not v3s
+camera operations. See `astro-science/STATE.md` ("The thrust"). What stays here
+is purely operational: this camera's setup, focus, calibration, and processing
+topology. (This strand becomes **astro-polecam** at the device-rename step.)
 
 ## Pending / loose ends
 
