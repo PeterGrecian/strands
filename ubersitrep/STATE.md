@@ -38,10 +38,12 @@ Rest of each CLAUDE.md body not yet swept for stale framing below the opener.
   (each keeper's STATE needs a metrics block first). **Home decided 2026-08-02:
   a GENERAL tool in aifabric/bin (no new repo), astro sitrep = its first config;
   schedule + output are config, not code.** See the aifabric spool.
-- **Blurbs are curated in `ubersitrep/docs/blurbs.md`** (2026-08-02) — the
-  canonical one-line map; per-strand CLAUDE.md openers should match. Keepers
-  verb-first ("Keeps …"), development object-first (no verb — the first ~40
-  chars are the crucial ones the listing shows). super reclassified dev.
+- **Blurb how-to: `ubersitrep/docs/blurbs_howto.md`** (2026-08-02) — the
+  *guide* for writing blurbs (not a registry; the blurbs themselves live in each
+  `<strand>/blurb` file, line 1 shown verbatim in the `aicli` listing). Keepers
+  verb-first ("Keeps …"), development object-first (no verb — the first ~40 chars
+  are what the listing shows). super reclassified dev. Every strand now ships a
+  `blurb` file (35 generated 2026-08-02; astro-v3s pending its polecam mission).
 
 ### Original plan (below, for reference)
 
