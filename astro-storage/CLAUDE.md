@@ -1,5 +1,8 @@
 # Strand: astro-storage
 
+**Keeps astro data under control — the full storage lifecycle (squash, ship,
+retain) of every camera stream as one system.**
+
 ## Mission
 
 Own the full storage lifecycle of the astro data streams (astrocam,

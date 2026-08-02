@@ -1,5 +1,7 @@
 # Strand: glacier-app
 
+**Builds photo archiving to S3 Deep Archive — a prototype now, an app later.**
+
 Photo archiving to S3 Deep Archive — prototype now, app later. The pitch
 (Peter's README.md): friends pay £10 *once, when the phone goes in the
 washing up*, not £10/month. Prototype: archive Peter's ~66 GB of photos

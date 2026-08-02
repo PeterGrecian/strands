@@ -1,6 +1,9 @@
 # Strand: astro-speaker-dither
 
-**Placeholder** (created 2026-07-13). Sub-pixel dither by *physically nudging
+**Builds a speaker/voice-coil rig that physically nudges the camera — commanded
+sub-pixel dither driven as a PWM DAC.**
+
+Sub-pixel dither by *physically nudging
 the camera* with a speaker/voice-coil actuator driven as a PWM DAC — the
 commanded-dither mechanism, as opposed to VCM focus-breathing
 (`astro-breathing`) or drift itself. Child of the umbrella strand

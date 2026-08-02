@@ -1,5 +1,8 @@
 # Strand: hardware
 
+**Keeps the physical infrastructure sound — disks, CPUs, ethernet, power,
+cooling across the fleet, maintained consciously not reactively.**
+
 ## Mission
 
 The physical-infrastructure **and conscious-maintenance** strand: **disks,

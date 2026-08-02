@@ -1,6 +1,9 @@
 # Strand: testbook
 
-**Mission (as of 2026-07-25 — pivoting):** an **assisted sleep-listening app**
+**Builds an assisted sleep-listening app for Android — spoiler-safe,
+landmark-based rewind for listening while falling asleep.**
+
+Mission (as of 2026-07-25 — pivoting): an **assisted sleep-listening app**
 for Android. Peter listens to audiobook readings to fall asleep; the app solves
 the four problems that breaks: (1) how long to set the sleep timer, (2) how to
 wind back to the last thing you actually registered before drifting off, (3)

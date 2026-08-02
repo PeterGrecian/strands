@@ -1,5 +1,8 @@
 # Strand: srfc — Surbiton Racket & Fitness Club
 
+**Builds SRFC court-booking automation — Peter's Surbiton Racket & Fitness Club
+padel/tennis slots, integrated into the tooling.**
+
 Integrate Peter's **Surbiton Racket & Fitness Club** (SRFC) padel/tennis court
 bookings into the alerting fleet. Forked out of `calendaralarm` (2026-07-22)
 when the club-bookings work grew into its own thing.

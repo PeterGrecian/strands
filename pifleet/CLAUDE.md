@@ -1,8 +1,12 @@
 # Strand: pifleet
 
-*(Mission not yet written: say what this strand is, which repos it spans,
-and where its deliverables live. Fill this in by hand or define it with
-Claude at the start of the first session.)*
+**Keeps the fleet roster and liveness board — who's in the fleet and whether
+each always-on host is up (Pi or not).**
+
+Fleet membership + dashboard/liveness for all always-on hosts. The board is
+`Berrylands/pi-fleet` (the source-of-truth inventory). This strand owns
+*knowing the fleet's state*; *changing* hosts to make the fleet healthy is the
+sibling **ansible** strand's job.
 
 ## Session ritual
 

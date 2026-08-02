@@ -1,5 +1,8 @@
 # Strand: astro-breathing
 
+**Works out sub-pixel sampling from focus breathing — small VCM focus dithers on
+eclipticam's v3w that shift the image radially by fractions of a pixel.**
+
 Sub-pixel sampling on eclipticam's v3w (IMX708 Wide) by exploiting **focus
 breathing**: small LensPosition (VCM) changes produce a mild magnification
 change, radially shifting the image on the sensor by fractions of a pixel.

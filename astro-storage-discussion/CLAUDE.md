@@ -1,5 +1,8 @@
 # Strand: astro-storage-discussion
 
+**Works out how to shrink astro data without losing the science — the design
+behind the ~1 GB/night budget, where storage and star-ID meet.**
+
 ## Mission
 
 Design how to shrink historical astro data (starcam first) **without losing the

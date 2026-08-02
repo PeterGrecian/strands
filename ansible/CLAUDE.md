@@ -1,6 +1,9 @@
 # Strand: ansible
 
-**Mission: apply and maintain configuration across the fleet.** This strand
+**Keeps fleet configuration applied and current — the strand that *changes
+hosts* and fixes config drift across the estate.**
+
+This strand
 owns *changing hosts* — editing `~/ansible` roles/templates/inventory, rolling
 those changes out with `ansible-playbook`, and verifying they landed. It is the
 "catch up with fleet maintenance" workstream: the durable home for the backlog

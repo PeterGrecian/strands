@@ -1,8 +1,12 @@
 # Strand: muppet-status
 
-*(Mission not yet written: say what this strand is, which repos it spans,
-and where its deliverables live. Fill this in by hand or define it with
-Claude at the start of the first session.)*
+**Keeps muppet (and puppy) healthy as hosts — network/dongle config, NFS
+mounts, hardware quirks kept working.**
+
+Host-level health of muppet and its sibling puppy: network profiles and dongle
+swaps (interface-agnostic NM config), static IPs, NFS write recovery, hardware
+notes. Detail lives in memory (`project_puppy_network.md`,
+`project_muppet_hardware.md`); this strand curates the host state.
 
 ## Session ritual
 

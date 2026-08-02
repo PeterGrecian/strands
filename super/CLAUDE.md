@@ -1,8 +1,13 @@
 # Strand: super
 
-*(Mission not yet written: say what this strand is, which repos it spans,
-and where its deliverables live. Fill this in by hand or define it with
-Claude at the start of the first session.)*
+**Keeps the super meta-repo — the daily-kitchen tooling, conventions and global
+context that drive everything else.**
+
+The `~/super` meta-repo: house tools (`secrets`, `resolve-host`, `alert`,
+`trash`, …), the global context (`GLOBAL.md`), and cross-repo conventions. The
+*content* of strands lives in the `strands` repo; super owns the *tooling and
+conventions* around them. (Note: aicli/strand tooling moved to `aifabric` —
+super no longer symlinks into it.)
 
 ## Session ritual
 

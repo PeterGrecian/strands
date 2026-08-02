@@ -1,5 +1,8 @@
 # Strand: cleft-plus
 
+**Grows cleft from a usage-rate calculator into a small usage-observability
+surface.**
+
 Grow `cleft` from a point-in-time usage-rate **calculator** into a small usage
 **observability surface** for Claude Code consumption. `cleft` (`aifabric/bin/cleft`,
 228 lines of stdlib Python) today hits `https://api.anthropic.com/api/oauth/usage`

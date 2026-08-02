@@ -1,6 +1,9 @@
 # Strand: aicli
 
-The `aicli` launcher itself — the backend-agnostic strand session tool
+**Builds and hardens the aicli launcher itself — strand resolution, terminal
+colour/title, WM integration, backend launch, doorbell wiring.**
+
+The backend-agnostic strand session tool
 (`~/aifabric/bin/aicli`, invoked as `aicli` or `cld`). This strand is where
 aicli's own behaviour gets developed and hardened: strand resolution, terminal
 colour/title, window-manager integration, raise/focus, backend launch, and the

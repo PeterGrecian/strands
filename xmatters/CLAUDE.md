@@ -1,6 +1,9 @@
 # Strand: xmatters
 
-**Mission:** own the alerting / paging pipeline that ends at xMatters — keeping
+**Keeps the alerting/paging pipeline useful and quiet — real problems page, no
+floods or test noise, all the way to xMatters.**
+
+Owns the alerting / paging pipeline that ends at xMatters — keeping
 it useful (real problems page) and quiet (no floods, no test noise). This spans
 the `alerting` repo (`~/alerting`: the Lambda, terraform, feeds), the host
 monitor (`/opt/monitor/monitor.py` on muppet et al.), the `alert` house tool

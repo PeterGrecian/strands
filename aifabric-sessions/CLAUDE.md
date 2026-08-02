@@ -1,6 +1,9 @@
 # Strand: aifabric-sessions
 
-Build the **session archive + RAG**: every Claude Code session transcript,
+**Builds the session archive + RAG — every Claude Code transcript ingested into
+local OpenSearch and made searchable, for Peter and for agents.**
+
+Every Claude Code session transcript,
 ingested into local OpenSearch (the `~/osd` stack) and made searchable —
 first for Peter (dashboards, full-text queries), then as a retrieval surface
 agents can consult ("what did we conclude about X in March?"). The strand is

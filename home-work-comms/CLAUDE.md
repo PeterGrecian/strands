@@ -1,6 +1,9 @@
 # Keeper: home-work-comms
 
-This strand is the **keeper of home↔work comms** — the owner of one subject:
+**Keeps home↔work comms working — how Peter's personal and work (NiCE) zones
+exchange code, messages and context across the air gap.**
+
+The owner of one subject:
 *how Peter's personal (home) and work (NiCE) zones exchange code, messages, and
 context across the air gap.* Like `mywebsite-keeper`, it is a **role a strand
 plays**, not a repo: it holds the deep knowledge of the comms *method*, serves

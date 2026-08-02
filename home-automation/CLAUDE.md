@@ -1,8 +1,13 @@
 # Strand: home-automation
 
-*(Mission not yet written: say what this strand is, which repos it spans,
-and where its deliverables live. Fill this in by hand or define it with
-Claude at the start of the first session.)*
+**Keeps the home's Matter/Zigbee automation running — headless commissioning
+via the matter-server WS API on homepi, no phone app needed.**
+
+Home Assistant + Matter/Zigbee device control, run headlessly. HA and
+`python-matter-server` run as docker containers on **homepi**; devices are
+commissioned via the matter-server WebSocket API (`ws://homepi.local:5580/ws`),
+not a phone app or browser UI. Spans the homepi HA stack and the fleet it
+controls.
 
 ## Session ritual
 

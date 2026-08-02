@@ -1,5 +1,8 @@
 # Strand: electronics
 
+**Makes the circuits that interface things — driver circuits, level shifters,
+PWM-as-DAC, the bench layer between software and actuators.**
+
 ## Mission
 
 The **things Peter makes to interface things** — electronic circuit design and

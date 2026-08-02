@@ -1,8 +1,12 @@
 # Strand: splay-tweaks
 
-*(Mission not yet written: say what this strand is, which repos it spans,
-and where its deliverables live. Fill this in by hand or define it with
-Claude at the start of the first session.)*
+**Keeps the splay viewer sharp — small UX and behaviour tweaks to `~/splay`,
+committed to the splay repo.**
+
+Curates small UX/behaviour tweaks to the splay viewer (`~/splay/splay`) —
+selection modes, arrival handling, navigation polish. Changes commit to the
+splay repo; this dir holds only curation files. See memory
+`project_splay_lab.md` for splay's role.
 
 ## Session ritual
 

@@ -1,5 +1,8 @@
 # Strand: cld-colours
 
+**Builds per-strand terminal colours for cld — distinct backgrounds per strand,
+like ssp does for fleet hosts (OSC 11/10).**
+
 Per-strand terminal colours for `cld`, in the same manner as `ssp`
 (OSC 11/10 background/foreground escapes). Where ssp picks from a fixed
 14-colour palette keyed per host, cld generates colours on the

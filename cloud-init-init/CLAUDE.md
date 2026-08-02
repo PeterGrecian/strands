@@ -1,8 +1,13 @@
 # Strand: cloud-init-init
 
-*(Mission not yet written: say what this strand is, which repos it spans,
-and where its deliverables live. Fill this in by hand or define it with
-Claude at the start of the first session.)*
+**Keeps the bootable-Pi-image tooling working — `configure-sd-card.sh` writes
+and self-provisions a Pi OS card so a new Pi comes up ready.**
+
+Bootable-Pi-image creation via the `Berrylands/cloud-init-init` repo:
+`configure-sd-card.sh` writes a Raspberry Pi OS image to an SD card and
+provisions it (WiFi, SSH keys, AWS creds, cloud-init user-data) so the Pi
+self-provisions on first boot. Spans `Berrylands/cloud-init-init` (the tooling)
+and the fleet hosts it images.
 
 ## Session ritual
 

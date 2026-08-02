@@ -1,5 +1,8 @@
 # Strand: gardencam
 
+**Keeps gardencam running — a generic garden-camera capture→process→publish
+pipeline across Berrylands/gardencam and puppy.**
+
 ## Mission
 
 Own the **gardencam** camera lifecycle — a *generic* garden-camera pipeline.
