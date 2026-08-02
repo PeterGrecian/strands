@@ -36,6 +36,27 @@ history and auto-memory to the launch directory, each strand gets:
 | `colour` | Terminal background colour (rrggbb hex). Auto-assigned on first launch from the golden-angle hue wheel; edit by hand to override |
 | `memory/` | Strand-scoped auto-memory (symlinked from `~/.claude/projects/`) |
 
+## Two kinds: keepers and builders
+
+Every strand is one of two kinds, and knowing which shapes how a session behaves:
+
+- **Keeper** — a *bounded concern*: it owns and serves one subject, staying in
+  steady state (maintain it, answer about it precisely). It doesn't grow; it
+  keeps. Think of a strand whose job is to be the reliable source of truth on
+  one thing.
+- **Builder** — an *active development* workstream with a trajectory: it's
+  growing or changing something, driving work forward toward a goal. Most strands
+  are builders; this is the default.
+
+The kind is declared by the **first word of the strand's `blurb`** summary line:
+if it starts with **"Keeps"**, the strand is a keeper; otherwise a builder. So a
+keeper's one-line summary reads its own declaration — e.g. *"Keeps the aicli
+launcher hardened…"*. aicli exports this as `CLD_STRAND_KIND` and its SessionStart
+hook injects it, so a session opens **knowing which kind it is** and can lean
+accordingly: a keeper resists scope-creep and keeps its served surface sharp; a
+builder drives the work and curates STATE.md for the next visit. (No blurb file
+⇒ builder, so today's blurb-less strands are all builders until declared.)
+
 ## The loop
 
 1. Between sessions: jot ideas into `IDEAS.md` (it's in git — any machine).

@@ -53,6 +53,17 @@ would mislead). Bare `aicli -d` prints the current default + the switch command
 instead of erroring. `--claude` / `--copilot` are per-launch shorthands for
 `--backend <name>`.
 
+**Strand KIND: keeper vs builder, declared by the blurb.** A strand is a *keeper*
+(bounded concern — owns/serves one subject, steady state) if the first word of its
+`blurb` summary line is `Keeps`; otherwise a *builder* (active development, a
+trajectory) — the default, incl. no blurb file. `strand_kind()` reads it; aicli
+exports `CLD_STRAND_KIND` (export path + launch path), and the SessionStart hook
+injects a kind-specific line so the session opens *knowing which it is* (keeper →
+maintain + resist scope-creep; builder → drive + curate STATE.md). Reuses blurb
+line 1 rather than adding a `kind` file — the summary sentence is the declaration.
+Concept documented in `strands/README.md`. Today no strand ships a blurb, so all
+are builders until declared.
+
 **Strand summaries: list line vs full mission (`--about`).** The listing summary
 (`strand_blurb`) is line 1 of a `<strand>/blurb` file if present (verbatim), else
 derived from the first prose paragraph of `<strand>/CLAUDE.md` (markup stripped,
