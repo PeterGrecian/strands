@@ -187,6 +187,26 @@ solve.
 The output end of the science: where results become visible.
 - **Night pages + calendar** at www.petergrecian.co.uk/astro (calendar from
   precomputed `<camera>/index.json`, built nightly by `build-calendar-index`).
+- **The catalogue AS the headline deliverable** (Peter, 2026-08-03; design
+  `astro/design/catalogue-deliverable.md`). The local star catalogue isn't just
+  an internal table — it's the public face of the science, a **forever-growing
+  numbered spine with star #0 = Polaris** (the field origin / brightest anchor
+  doubles as the catalogue origin). ID number ≈ discovery order = a timeline
+  working down the magnitude ladder. Fed by **cadence-tiered accumulators**
+  (nightly / weekly / monthly / all-time — the *same* accumulator read at
+  increasing depth, each tier lowering the floor + promoting sources), sitting
+  above the internal three cadences (`drift-scan-cadences.md`). Every entry AND
+  nightly detection carries a **confidence value** that grows with evidence
+  (persistence, field-agreement across configs, detection depth/SNR, Gaia
+  cross-match as a *boost not a gate*, brightness-ceiling consistency) →
+  candidate→probable→confirmed→catalogued tiers, time-stamped so sources are seen
+  *earning* their place. **Nightly new-star count is the scoreboard** ("47 new,
+  3 promoted, catalogue now 12,431"). Emits `catalogue.json` (spine) +
+  `discoveries.json` (per-night) + a new `/astro` catalogue page. Design only;
+  builds on the `zenith-quests.md` local-catalogue spec (mint-on-persistence,
+  class-from-behaviour). Confidence-as-graded-field, cadence-tier deliverables,
+  and the page are all new — not built. Open: hard persistence gate vs
+  enter-at-conf-0; confidence calibration against Gaia.
 - **moon-net**: `moon-extract`/`moon-overlay`/`moon-deliver` + `moon-drift.mp4`;
   **solver + star-ID still to build**.
 - **"Open in Splay"** flow (night player → `splay-launcher` daemon, port 8765).
