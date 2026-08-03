@@ -4,10 +4,53 @@
 
 ## What this is
 
-The single pane of glass: one agent-driven tmux surface (OVERVIEW / keeper panes
-/ DRIVER) replacing scattered strand terminal windows. This strand is the
+An **aifabric-pane**: one agent-driven surface (overview + keeper terminals +
+driver) replacing scattered strand terminal-emulator windows. This strand is the
 conductor. Split out of [[aifabric]] on 2026-08-03; full design in
 `aifabric/ideas/20260803T144642Z-ZAMrik`.
+
+## VOCABULARY (settled 2026-08-03 session 3 — use these words, not tmux's)
+
+**an aifabric-pane → deck → page → terminal.**
+
+| Level   | Word | tmux term | What it is |
+|---|---|---|---|
+| Product | **an aifabric-pane** | (product) | The whole thing. "pane" lives HERE, at the product level. |
+| Top     | **deck**     | session | The tmux container; survives detach. |
+| Mid     | **page**     | window  | One full-screen arrangement; flip via the page strip. |
+| Leaf    | **terminal** | pane    | One shell/keeper/driver/overview (a pty). SEVERAL per page. |
+
+Rules: "pane" names ONLY the product (so the strand name is correct, not a
+misnomer). The leaf is a **terminal**. Retired: "single pane of glass",
+"cockpit", "session"/"window" as our words, "3-zone". Say "terminal-emulator" for
+the desktop app (xfce4-terminal) to avoid clashing with terminal-the-leaf.
+Full rationale in memory `pane-of-glass-vocabulary` + `no-cockpit-naming`.
+NB the live tmux session is still *named* `pane` (its tmux id) — rename to `deck`
+when convenient. Terminals do NOT nest; a labelled cluster is BUILT via the
+keeper registry, not a tmux primitive.
+
+### Page strip = a HyperCard card stack (idea 20260803T180658Z-3xAh6v)
+Peter's HyperCard recall (Mac 1987, Atkinson — stack of index cards). Pages =
+cards: a page-tab should be a little CARD with a headline + a few summary lines
+(keeper count, unread mail, what's live), not tmux's cryptic `n:name`. Buildable
+in the curses overview surface we already own.
+
+## Session 3 (2026-08-03) — pages (tabs), swaps, and the vocabulary above
+
+- **Pages work (tmux windows = "pages").** Created/removed pages live from the
+  CLI prefix-free (`new-window -d` = no focus steal, `kill-window`, `rename`).
+  A page strip renders in the status bar. **GOTCHA:** the strip was invisible
+  because `status` was **off on the attached client** (global said on) — `tmux
+  set-option -t <deck> status on` fixed it (costs 1 row). Human flips pages with
+  `Ctrl-b 0/1/n/p/w` (the one place you DO touch the prefix); conductor drives
+  pages prefix-free.
+- **Cross-page terminal move proven:** swapped the live ubersitrep keeper out of
+  page 0 into its own page via `join-pane` across windows; the empty page's
+  shell took its slot. **Registry-by-name survived the move** (`PANE_KEEPER_*`
+  still resolved) — identity holds across pages, not just within one.
+- **Terminology nailed down** (see VOCABULARY section). Peter rejected "cockpit"
+  and "single pane of glass"; ladder is an aifabric-pane → deck → page →
+  terminal. HyperCard page-stack direction spooled.
 
 ## WENT LIVE 2026-08-03 (session 2) — real keepers, conductor-driven, Peter 5/5
 

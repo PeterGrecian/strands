@@ -29,9 +29,9 @@ which holds the full design.
   prefix-key hell. You never press Ctrl-b; you talk to the conductor in the
   driver pane and it rearranges the middle.
 - **Panes host KEEPERS.** Keepers are idempotent (steady-state maintain+answer,
-  no fragile trajectory), so they're safe to spin up / tear down / restart on the
-  pane — a "keeper cockpit". Builders have a trajectory you'd disrupt; they stay
-  in their own window.
+  no fragile trajectory), so they're safe to spin up / tear down / restart on
+  pane 0. Builders have a trajectory you'd disrupt; they stay in their own
+  window.
 - **Overview is a SUMMARY, not a list.** Headline count + only strands WITH mail
   (from the unified ding+strand-mailbox model) + a compact cleft usage line.
   Independent of the conductor being awake — pure status.
