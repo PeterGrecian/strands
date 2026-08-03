@@ -24,11 +24,45 @@ House tools: `all-repos-status` / `reposcheck` (parallel uncommitted/unpushed),
 `sync-repos.sh`. Neither catches stashes or ahead/behind on orphaned branches —
 those are checked by hand (see loops above).
 
+### Two distinct axes — don't conflate them
+
+1. **pip's own repos** (the workstation) — the loops above, plus `sync-repos.sh`
+   (which *only* operates on pip's siblings, running locally).
+2. **The Pi fleet's clones** — a separate concern. Each host carries its own
+   clones that drift **behind** `main`. Fixing these is **ansible's job, not
+   `sync-repos.sh`**: the `git-repos` role (`ansible/roles/git-repos`,
+   `safe_pull.yml`) stashes any dirty tree first (`ansible-auto <iso8601>`, `-u`
+   so untracked kept), fixes origin URL, then pulls to the pinned branch. So the
+   right move for stale fleet clones is to **ask the `ansible` strand to run the
+   role** — this keeper does the sweep and hands off. A fleet clone being
+   *behind* is harmless staleness; only *ahead* (unique unpushed work on a host)
+   is a real data-loss risk.
+
+**Fleet sweep tool:** `check-repos.sh` (kept in this strand's scratchpad /
+paste-able) — finds git repos under `~` on a host (depth 3) and prints
+`branch / OK|AHEAD|BEHIND|DIVERGED|NO-UPSTREAM / ahead / behind / dirty`. Run it
+over `ssp` hosts via `ssh peter@<host> 'bash -s' < check-repos.sh`, skipping
+offline hosts. Reachability first: try `.local`, fall back to `resolve-host`.
+
 ## What exists
 
 - Strand mission written (git housekeeping / data-loss framing).
 
-## Done this session
+## Done this session (2026-08-03)
+
+- **Fleet repo-divergence sweep.** Ran `check-repos.sh` across the 7 reachable
+  `ssp` hosts (homepi, cloudcam, muppet, eclipticam, astrocam, vole, puppy).
+  deskpi, xoverpi, starcam offline (down via both `.local` and `resolve-host`
+  IP). Result: **no true ahead+behind divergence anywhere.** Almost everything
+  is just **behind** (stale clones: `super` behind up to 159, `strands` ~169,
+  `mywebsite` ~193, `Berrylands` ~241 on homepi). One at-risk item: eclipticam
+  `astro` on deprecated branch `moon-net-marking`, 41 ahead / 2 dirty (only host
+  with unique unpushed work). Peter: fine to drop it.
+- **Handed the sync to the `ansible` strand** (correct owner — it owns the
+  inventory + `git-repos` role). Sent via `strand-mailbox send ansible …` and
+  rang its doorbell (`ding pts/0`). Awaiting its reply.
+
+### Earlier session
 
 - **`alerting` tidied.** `remove-hourly-digest` was 1-ahead/0-behind main (clean
   fast-forward): removes the hourly incident digest + disables the feeds
@@ -37,7 +71,13 @@ those are checked by hand (see loops above).
 
 ## Pending / loose ends
 
-Snapshot of the fleet's data-loss surface at session end (not yet cleared):
+- **Fleet sync in flight** — waiting on the `ansible` strand to run the
+  `git-repos` role over the reachable hosts (behind clones → up to date). Once
+  done, the deprecated `moon-net-marking` branch stays orphaned on eclipticam
+  until deleted by hand: `git -C ~/astro checkout main && git -C ~/astro branch
+  -D moon-net-marking`.
+
+Snapshot of pip's own data-loss surface at session end (not yet cleared):
 
 - **`splay/splay-grid-mode`** — 1 ahead / 7 behind. One commit to rescue
   (`4c9ab6e` grid contact-sheet mode). Needs a rebase onto current main (not a
