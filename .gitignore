@@ -4,3 +4,5 @@
 .title
 .tty
 .wid
+__pycache__/
+*.pyc

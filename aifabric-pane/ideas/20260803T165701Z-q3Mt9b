@@ -1,0 +1,1 @@
+Overview: add an EFFECTIVENESS SCORE column. Peter scores panes (scored the driver pane 5/5 on 2026-08-03). Easy path: a tiny per-strand score file (e.g. <strand>/score or a scores dir) the driver writes when Peter scores a pane; the curses overview reads it as a column next to MAIL. Cheap, local, no API.
