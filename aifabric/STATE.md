@@ -33,6 +33,27 @@ Promote-by-default when triaged; dropping is the considered act.
    [[template-corruption-via-symlink]]. Blurb rules in
    `ubersitrep/docs/blurbs_howto.md`.
 
+## Session 2026-08-03 — mailbox unified, aifabric-pane spun out
+
+Three things moved (commits: aifabric repo `e00175d`, `c17a0b4`; strands repo
+`958c073`, `25ecf4b`, `09ae1ad`):
+
+- **`idea` autocompletion — DONE** (backlog egDH0p part b; `e00175d`). Strand-name
+  completion in `aicli-completion.bash`.
+- **Mailbox UNIFIED — DONE** (`c17a0b4`). The ansible "ignored mail" miss traced
+  to two disconnected channels: `ding --arm` watches MAILBOX.md (file), a
+  `strand-mailbox send` drops into the tmpfs spool — a spool send never rang the
+  armed waiter, and consume-on-read at session start could eat mail unacted-on.
+  Fix: `send` now also appends a pointer to the receiver's MAILBOX.md (rings the
+  waiter); `ding --arm` surfaces the spool inline; SessionStart ritual peeks
+  non-destructively (`--arm --keep` + `peek`) and drains only after acting.
+- **aifabric-pane SPUN OUT — new strand.** The "drive a tmux session from an
+  agent" idea (`20260803T144642Z-ZAMrik`, still in this inbox) grew into its own
+  strand `aifabric-pane` — the single pane of glass (overview / keeper panes /
+  driver). POC built, Peter likes it; scripts in `aifabric-pane/poc/`. Further
+  work lives THERE now, not here. A live aifabric-pane session is driving it;
+  this (aifabric) session stepped back to avoid file collisions.
+
 ## What this is
 
 Extract Peter's AI working method from `~/super` into a standalone repo
