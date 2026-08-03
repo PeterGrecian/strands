@@ -45,6 +45,24 @@ resampled.)
 doubles as the resampling geometry; then RA/Dec naming + the accumulator become
 possible.
 
+**The camera→sphere map = the hierarchical vector field** (design written
+2026-08-03, `astro/design/hierarchical-vector-field.md`). The resampling map the
+accumulator co-adds through is *the same object* as the bright-anchored
+identification field: one static per-camera `pixel → true sky direction` map,
+built **brightest-first / hierarchical** (pole star + bright anchors pin the SIP
+field → fainter stars read off it by relative position → local Gaia cross-match),
+in **three layers by timescale** (per-frame detections / per-night params /
+per-epoch residual maps — "lens interpolates, sensor accumulates"), densified as
+sidereal drift sweeps bright anchors across every pixel over weeks. The **new
+aspect**: this field is not just for naming faint stars — evaluated at *every*
+pixel it *is* the camera→sidereal-space accumulation map, so building it
+brightest-first solves the accumulator's geometry prerequisite, the static field
+makes per-night resampling cheap, and drizzle rains each pixel onto the sphere
+through it. Consolidates framing that was split across `zenith-quests.md` +
+`worklog/2026-07-05.md`. Valid over one move epoch (`camera-moved-signal.md`).
+Proven in pieces; not assembled end-to-end; blocked on the same imx708 clear-night
+solve.
+
 ## Accumulation theory — the capacity law + TDI (from storage-discussion)
 
 - **Whole-night unshifted sums are information-bounded — the capacity law.**
