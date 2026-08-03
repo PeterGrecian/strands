@@ -63,6 +63,26 @@ through it. Consolidates framing that was split across `zenith-quests.md` +
 Proven in pieces; not assembled end-to-end; blocked on the same imx708 clear-night
 solve.
 
+**Atmospheric term — the static field breathes with weather** (Peter, 2026-08-03;
+`astro/design/atmospheric-model-residuals.md`). The field's refraction component:
+for a fixed camera each pixel sees the same altitude, so the *pattern* `shape(x,y)`
+(vertical, altitude-dependent) is genuinely static — but its *amplitude* `k` is
+**time-varying with air pressure + temperature** (colder/higher-P → more bending),
+so `R(x,y)=k(weather)·shape(x,y)`. The static-field model bakes in one average `k`;
+a colder/higher-P night is off by `Δk·shape` at low altitude. Fix: fit `shape` once,
+make `k` a **per-frame logged covariate** `k(P,T)` from the known refraction physics
+(Bennett/Sæmundsson) — turns weather from unmodelled error into a known covariate
+(same move as breathing→LENSPREP). Chromatic (blue refracts more) → per-CFA-plane
+`k_colour`, natural since the accumulator keeps planes separate. Consequences: it's
+a real astrometric error floor, worst for v3w-low-alt / ~zero for astrocam-near-pole
+/ maybe below precision at zenith (estimate first); an unmodelled pressure swing can
+**fake a wobble** → threatens the companion science (`what-accumulation-buys.md`),
+must model not average; a better atmo model is a **prime reprocessing driver**
+(logged weather → always re-correctable, `retrospective-reprocessing.md`); per-night
+atmospheric residual + seeing/scintillation feed **confidence** + best-seeing
+weighting. Design/refinement only; open: weather sensor vs API, magnitude at zenith,
+seeing floor vs the 0.14 px systematic.
+
 ## Accumulation theory — the capacity law + TDI (from storage-discussion)
 
 - **Whole-night unshifted sums are information-bounded — the capacity law.**
