@@ -33,12 +33,18 @@
 ## Pending / loose ends
 
 - **Fleet git-repos divergence sweep: DONE** (2026-08-03, prompted by
-  housekeeping mail). Ran the `git-repos` role across all 7 reachable hosts to
-  clear the BEHIND-clone backlog housekeeping found. `safe_pull` stashed dirty
-  trees (grep-able `ansible-auto <iso>` messages, recoverable on-host); no true
-  ahead+behind divergence anywhere. Results: homepi(1), muppet(5), puppy(6),
-  vole(4), eclipticam(4), cloudcam(3), astrocam(3) changed — **failed=0** after
-  fixes below. Skipped offline: deskpi, xoverpi, starcam.
+  housekeeping mail; results corrected after housekeeping VERIFY caught an
+  over-optimistic first report). Ran the `git-repos` role across all 7 reachable
+  hosts to clear the BEHIND-clone backlog. `safe_pull` stashed dirty trees
+  (grep-able `ansible-auto <iso>`, recoverable on-host); no true ahead+behind
+  divergence anywhere. Skipped offline: deskpi, xoverpi, starcam. Final state,
+  re-verified vs origin after fetch: muppet, puppy, vole, eclipticam, astrocam,
+  cloudcam(Berrylands), homepi all `## main` clean.
+  - **homepi was a real MISS in the first pass** (role reported changed=1 /
+    failed=0 but super stayed behind 103, Berrylands behind 241). Root cause is
+    a genuine config bug — see the drift-sweep item below. Fixed for now by a
+    hand `pull --ff-only` of homepi super+Berrylands; the structural fix is
+    pending (needs Peter, edits inventory/user).
   - **eclipticam astro restored to main**: was on deprecated `moon-net-marking`
     (ahead 41, dirty 2). Role stashed the 2 files (`ansible-auto 2026-08-03T14:26:32Z`,
     labelled "On moon-net-marking") and checked out main. The dead branch is
@@ -53,6 +59,11 @@
     ran with `-e ansible_user=peter` (peter has NOPASSWD there) — 3 changed OK.
     Its `dotfiles` (behind 11, dirty) is deliberately NOT in astrocam's
     git_repos — capture Pis omit dotfiles (stow symlinks read dirty). Expected.
+  - **cloudcam super(behind 159)/dotfiles(behind 11) are NOT sweep misses**:
+    cloudcam's `host_vars/cloudcam.yml` overrides git_repos to **Berrylands
+    only** (Pi Zero 2 W, 362 MB). super/dotfiles are present-but-unmanaged, so
+    the role never touches them. Whether cloudcam *should* manage super is a
+    Peter call, not a bug.
 
 - **aifabric+strands rollout: DONE** (see What exists). Unblocks the
   super-to-aifabric strand's PATH-flip (`~/aifabric/bin` before `super/bin`) —
@@ -140,6 +151,20 @@ Standing / not-yet-scheduled items (were in IDEAS.md, promoted 2026-07-29):
 - **pi-fleet → fleet rename**: tech debt, ride-along only, never standalone
   (naming is load-bearing in code/units/env/Lambda path; live-capture blast
   radius, zero new capability).
+- **BUG: `group_vars/homepi.yml` is misfiled — needs Peter** (found 2026-08-03).
+  `inventory/group_vars/homepi.yml` (100 lines: git_repos, `ansible_user: pi`,
+  `pi_packages`, `users`, `dotfiles_*`) is **silently ignored** — there is no
+  `[homepi]` inventory GROUP; homepi is a HOST in `[stationary]`. group_vars are
+  keyed by group name, so none of it loads. Proof: `ansible homepi -m debug -a
+  var=git_repos` → *undefined*. Consequence caught this session: homepi's
+  super/Berrylands never sync (only `git_repos_global`/ansible does). Also note
+  it would set `ansible_user: pi`, but homepi actually connects as `peter` (from
+  the inventory host line) — so the ignored file's intent and the live behaviour
+  already disagree. **Fix**: merge `group_vars/homepi.yml` into the existing
+  `host_vars/homepi.yml` (they overlap on `enable_pi_fleet`; the group one also
+  flips ansible_user + enables aws/gh roles + packages — real blast radius, so a
+  human should do the merge and re-apply, not an autonomous run). Repos synced by
+  hand for now.
 - **General fleet-maintenance catch-up** (drift sweep): sweep `~/ansible` for
   config drift / half-applied roles. Known seeds: vim-default-editor pending on
   starcam/deskpi/xoverpi; **astrocam `pi`-user sudo broken — reconfirmed
