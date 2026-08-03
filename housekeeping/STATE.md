@@ -59,8 +59,23 @@ offline hosts. Reachability first: try `.local`, fall back to `resolve-host`.
   `astro` on deprecated branch `moon-net-marking`, 41 ahead / 2 dirty (only host
   with unique unpushed work). Peter: fine to drop it.
 - **Handed the sync to the `ansible` strand** (correct owner — it owns the
-  inventory + `git-repos` role). Sent via `strand-mailbox send ansible …` and
-  rang its doorbell (`ding pts/0`). Awaiting its reply.
+  inventory + `git-repos` role). It ran the role and reported "7/7 hosts synced
+  clean, failed=0".
+- **Verified the run — it was only partial.** Re-swept + direct
+  HEAD-vs-`origin/main` check on the inventory-managed repos:
+  - eclipticam `astro` off `moon-net-marking`, back on `main` ✅ (the one
+    at-risk item — resolved).
+  - **But several managed repos are still BEHIND after the run:** homepi
+    `Berrylands`/`busclock`/`super` (super stuck at Jul-16), cloudcam `super`,
+    muppet `Berrylands`, puppy `astro`. Fetch *did* run (FETCH_HEAD ~15:33) but
+    the working tree didn't advance — smells like `safe_pull` stashed a dirty
+    tree / hit a non-fast-forward and `ansible.builtin.git` reported `ok`
+    without advancing (so the strand's `failed=0` was falsely reassuring).
+    Flagged back to the `ansible` strand to investigate the module behaviour.
+  - **Lesson recorded:** trust-but-verify a delegated fleet sync with a direct
+    HEAD==origin/main check, not the runner's own success count. And beware
+    running `check-repos.sh` *concurrently* with the sync — its fetch races the
+    role's pull and yields mid-sync "behind" numbers (bit me here).
 
 ### Earlier session
 
@@ -71,11 +86,13 @@ offline hosts. Reachability first: try `.local`, fall back to `resolve-host`.
 
 ## Pending / loose ends
 
-- **Fleet sync in flight** — waiting on the `ansible` strand to run the
-  `git-repos` role over the reachable hosts (behind clones → up to date). Once
-  done, the deprecated `moon-net-marking` branch stays orphaned on eclipticam
-  until deleted by hand: `git -C ~/astro checkout main && git -C ~/astro branch
-  -D moon-net-marking`.
+- **Fleet sync PARTIAL — with `ansible` strand.** Role ran, moon-net fixed, but
+  managed repos still behind on homepi (Berrylands/busclock/super), cloudcam
+  (super), muppet (Berrylands), puppy (astro). Flagged to the ansible strand to
+  chase why `ansible.builtin.git` didn't advance them (non-ff / stashed-dirty
+  suspected). Waiting on its fix + re-run. eclipticam `moon-net-marking` may
+  still linger as an orphaned branch on-host: `git -C ~/astro branch -D
+  moon-net-marking` if so.
 
 Snapshot of pip's own data-loss surface at session end (not yet cleared):
 
