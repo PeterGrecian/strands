@@ -20,8 +20,11 @@ Promote-by-default when triaged; dropping is the considered act.
    strand (esp. keepers); tune `dcp` to be reluctant to rewrite a successful
    keeper's STATE. Pairs with QlC5sN.
 5. **egDH0p** — want a tool-improvement strand + a general-ideas strand;
-   also `idea` autocompletion per strand (check: may already exist —
-   `aicli-completion.bash`).
+   also `idea` autocompletion per strand. **`idea` autocompletion DONE
+   (2026-08-03)**: added `_idea_complete` to `aicli-completion.bash` (same file
+   `.bashrc` already sources) — completes strand names as the first positional
+   word and after `-s`, offers nothing once the strand is fixed (free-text idea),
+   `-` lists flags. The two-new-strands part is still pending.
 6. **QlC5sN** — regularly score agent performance /5 to learn what works;
    pairs with WnWp2c (human-supplied signal vs mined signal).
 7. **TYH8Ou** — `.template` needs a `blurb` stub so scaffolded strands ship a
