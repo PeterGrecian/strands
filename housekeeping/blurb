@@ -1,3 +1,3 @@
-Keeps the housekeeping workflow honest — the ~/.claude/housekeeping.log session-start check and the routines behind it.
+Keeps the ~36-repo fleet from silently losing work — git housekeeping framed as data-loss avoidance.
 
-*(Provisional — derived from the strand name; refine at first real session.)* The housekeeping discipline: the session-start `housekeeping.log` read, and whatever automated tidy-up/maintenance routines feed it. Spans and deliverables to be defined.
+Git housekeeping across the ~36-repo fleet, done on demand when Peter feels it needs it. The framing: **housekeeping is mostly about avoiding data loss** — surfacing and clearing the risks `all-repos-status` alone doesn't make obvious, in order of volatility: local uncommitted work (highest risk), stashes (recoverable but invisible), and orphaned remote branches (pushed but with no open PR, holding commits not in `main`). House tools `all-repos-status`/`reposcheck` and `sync-repos.sh` catch uncommitted/unpushed; stashes and ahead/behind on orphaned branches are checked by hand.

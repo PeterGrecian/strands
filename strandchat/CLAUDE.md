@@ -1,4 +1,4 @@
-# Strand: aifrbric-strandchat
+# Strand: strandchat
 
 **strandchat — the browser window onto the strand mesh: every fork with its
 kinship colour, transcript, and a box to message and ring a peer.**

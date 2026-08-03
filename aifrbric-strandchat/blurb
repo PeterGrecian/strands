@@ -1,3 +1,0 @@
-strandchat — the browser window onto the strand mesh: every fork with its kinship colour, transcript, and a box to message and ring a peer.
-
-The browser window onto the mesh — every strand (fork) with its kinship colour and lineage, its message transcript, and a box to send a message that shells out to the CLI and rings the peer's bell. The browser becomes another driver of the mesh, alongside the terminal; the phone-onto-the- mesh path (always-on home node behind Tailscale `--serve`).

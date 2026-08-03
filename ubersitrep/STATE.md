@@ -4,6 +4,30 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## Blurb gap-fill + defect sweep — 2026-08-03
+
+Second pass over the estate's `blurb` files (the how-to is
+`docs/blurbs_howto.md`). Fixed everything that broke the two-part format
+(1-liner + blank + paragraph):
+- **Added the missing 2nd paragraph** to the one-liner-only blurbs:
+  astro-storage, electronics, hardware, splay-grid, splay-mosaics (drawn from
+  each strand's CLAUDE.md mission; gardencam already had one and is now archived
+  under `archive/gardencam/`).
+- **Finished truncated paragraphs**: calendaralarm (dangling colon), strandchat
+  (dangling clause).
+- **First-person → third**: mywebsite-tweaks blurb *and* its CLAUDE.md opener.
+- **De-provisionalised** cv + housekeeping blurbs — both had firm STATE now, so
+  the "(Provisional — refine later)" stubs were replaced with real missions.
+- **Also fixed** the `strandchat/CLAUDE.md` heading (was `# Strand:
+  aifrbric-strandchat`, a typo + wrong dir name).
+- Linked related strands with `[[…]]` throughout (astro-storage↔gardencam
+  opposite storage models; electronics↔hardware/home-automation boundary; the
+  three splay siblings; cv↔aifabric-essay).
+
+Note: the tree was reorganised mid-session (gardencam→archive, aifrbric-strandchat
+→strandchat rename), so a couple of paths moved under me — verified the final
+landing spots before committing.
+
 ## Strand blurb format — new convention, applied to 3 (2026-08-02)
 
 New CLAUDE.md opener shape: a **verb-first 1-liner** (state the *content/TWIMC*,
