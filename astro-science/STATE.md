@@ -116,6 +116,26 @@ solve.
   per-cell clipping. Effective-N tracked per cell → honest depth. This is the
   co-add twin of "persistence = identity". Design only; prototype = clipped vs
   straight stack on a night with a known plane pass.
+- **What accumulation buys — position saturates, structure doesn't** (Peter's
+  question 2026-08-03; `astro/design/what-accumulation-buys.md`). Once a star is
+  pinned sub-pixel you do NOT need to accumulate it *for its position* —
+  astrometry is systematics-limited early (0.14 px in one frame), so bright
+  anchors resolve fast and become **fixed scaffolding** (field anchors, photometric
+  + clip references), not integration targets. Depth keeps paying off for three
+  OTHER things: (1) **detection** of faint sources below the single-frame floor
+  (the "see" number — sources the sum *creates*); (2) **photometric depth**
+  (flux/variability/colour keep improving √N); (3) — Peter's target — **sub-PSF
+  STRUCTURE on resolved stars: the bumps** = unresolved binaries/companions,
+  astrometric wobble (planets/dark companions, integrated over the season), and
+  PSF-residual photometry (subtract an ePSF built from confirmed-single anchors →
+  the residual IS the companion). Reframing: accumulation is coarse-to-fine in
+  *what question* (locate → detect → photometer → resolve-structure); only
+  resolve-structure wants unbounded depth. Practical: skip deep integration of
+  anchor centroids, but KEEP their ePSF residuals over time (the wobble signal
+  lives in the high-SNR bright stars). New stated goal — residual/wobble pipeline
+  not yet designed; feasibility of dynamical wobble (sub-mas, likely below floor)
+  TBD; static in-PSF companion (Polaris-B/Titan generalised) is the reachable
+  first target.
 
 ## Sub-pixel foundations (from astro-subpixel)
 
