@@ -178,6 +178,21 @@ migration — a **cloud-verdict miscalibration**:
   thumbnails). Ran on the astrocam Pi (`nightly-cam` then `publish-night-cam
   --web-only`); slow because the Pi reads frames over NFS from muppet's bigstore
   (~13 min/night stacking), so future backfills are better run on pip.
+- **Follow-on: reconciled the git + frames_root divergence** (2026-08-03). The
+  astrocam config lived on origin/main (the Pi's pedestal-50 chart-fix commits);
+  pip's `main` was behind and the frames_root=bigstore fix sat on an unmerged
+  feature branch. Fast-forwarded pip's `main` to origin (picking up the scs fix)
+  — which reverted frames_root to the Pi's `~/astrocam-frames`, breaking pip
+  (symlink gone → 0 frames). Root design flaw: **one `frames_root` string can't
+  serve both hosts** (Pi automounts bigstore at `~/…`; pip sees it at
+  `/mnt/muppet/bigstore/…`). Fix (`dc36e38`, on origin/main): `frames_root`
+  resolves **per short-hostname** via an optional `frames_root_by_host` map
+  (else the host-agnostic default = the Pi's view). One property, every caller
+  inherits it. pip now finds 385 frames for 08-01; non-pip hosts unchanged.
+  Resolves the per-host divergence astro-storage flagged. (Optional follow-up
+  not taken: the abandoned branch also converted the two uploaders to read
+  `CameraConfig.frames_root` — safe now that it's host-relative, completes the
+  "config is the only seam" goal, but the Pi's hardcoded `~/…` already works.)
 
 ### A standard "the camera has moved today" signal (idea → design need, 2026-08-03)
 
