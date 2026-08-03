@@ -56,6 +56,17 @@ offline hosts. Reachability first: try `.local`, fall back to `resolve-host`.
   fold verified present as commit `6272c58`, strand duly archived). Left in
   place — harmless, tmpfs spool evaporates on reboot.
 
+## Gotchas
+
+- **`strand-mailbox drain`/`peek` default to *pwd's* strand.** Run from the
+  strands repo *root* they mis-resolve to `strands` (reporting 0 pending) while
+  real mail sits in `housekeeping`. Always drain from the strand dir
+  (`cd .../strands/housekeeping`) or — note — the `[strand]` arg is a strand
+  *name*, not a MAILBOX.md path (passing a path silently finds nothing). The
+  `ding --arm` waiter also drains the spool when it fires, so a `.msg` you still
+  see after a wake is usually already consumed. (Hit 2026-08-03 on a POC
+  unread-flag test message.)
+
 ## Done this session (2026-08-03)
 
 - **Fleet repo-divergence sweep.** Ran `check-repos.sh` across the 7 reachable
