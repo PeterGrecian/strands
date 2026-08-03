@@ -101,6 +101,21 @@ solve.
   catalogue floor and our noise floor; bright stars are only astrometric anchors
   (sub-pixel centroids survive saturation via unsaturated PSF wings). Compression
   corollary: **bits go to the darkest pixels**; bright static regions ≈ free.
+- **Outlier rejection — clouds/planes must not co-add** (design 2026-08-03,
+  `astro/design/accumulator-outlier-rejection.md`). The naive sum is fragile; a
+  plane/meteor/cosmic-ray is a positive per-cell spike, cloud is a correlated
+  region-wide lift (or dimming). Two rejection layers, both *non-sidereal ⇒
+  reject*: **RANSAC** (Fischler & Bolles — the two-inventor technique, already
+  proven here at TOL 0.10 px/s: "stars obey the rotation, everything else
+  doesn't") rejects bad tracks/anchors from the FIELD fit; **per-cell temporal
+  clipping** (sigma-clip / windowed median against the accumulator's own
+  reference) rejects bad samples from the SUM. Coarse frame/region brightness
+  gating + streak pre-detection (off-angle vs the analytic sidereal direction)
+  throw out the obvious cheaply first; cloud's correlated/dimming signature is
+  handled by frame gating + a bright-anchor transparency normalisation, not
+  per-cell clipping. Effective-N tracked per cell → honest depth. This is the
+  co-add twin of "persistence = identity". Design only; prototype = clipped vs
+  straight stack on a night with a known plane pass.
 
 ## Sub-pixel foundations (from astro-subpixel)
 
