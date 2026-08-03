@@ -34,7 +34,18 @@ conductor. Split out of [[aifabric]] on 2026-08-03; full design in
 
 ## Pending / next
 
-- Read aicli's existing `--tmux` flag — it may already be half of this (FIRST).
+- ~~Read aicli's existing `--tmux` flag~~ DONE (2026-08-03): `--tmux` is
+  UNRELATED — it wraps ONE session in its own tmux for stable scrollback (a
+  single-session convenience). It is NOT the pane-of-glass and does NOT help the
+  conductor; using it on the conductor risks the tmux-in-tmux nesting the design
+  forbids. Correct topology (confirmed live): conductor session launches PLAIN
+  (outside tmux) and drives the SEPARATE `plane` tmux session from the CLI. Two
+  distinct tmux things: `aifabric-pane` (the conductor session) vs `plane` (the
+  surface it arranges, which you attach to full-screen).
+- OPEN (from Peter's instinct): "self-hosting" variant — should the conductor's
+  driver live INSIDE the `plane` tmux (conductor runs in the driver pane of the
+  very plane it arranges)? Appealing, but it's the nesting trap unless the
+  conductor still drives via CLI and never `attach`es a nested client. Decide.
 - Put REAL `aicli <keeper>` sessions in the panes (replace dummy shells).
 - Build the conductor agent (plain-language driver -> tmux CLI).
 - Launcher menu on empty startup + live suggestions in the overview.
