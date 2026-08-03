@@ -128,3 +128,27 @@ pane_list_keepers() {
   done < <(tmux show-environment -t "$_pane_session" 2>/dev/null | grep '^PANE_KEEPER_')
   (( any )) || echo '  (no keepers up)'
 }
+
+# The overview terminal is curses and can't resize its own pane, so it PUBLISHES
+# the row count it needs to <strand>/.overview-rows on each redraw. These sync the
+# pane height to that number, so the overview is always "just tall enough".
+_pane_overview_rows_file="${STRANDS_DIR:-$HOME/strands}/aifabric-pane/.overview-rows"
+
+# pane_fit_overview — one-shot: resize the overview pane to its published height.
+pane_fit_overview() {
+  local ov want cur
+  ov="$(_pane_env PANE_OVERVIEW)"; [[ -n "$ov" ]] || return 1
+  [[ -r "$_pane_overview_rows_file" ]] || return 0
+  want="$(<"$_pane_overview_rows_file")"; [[ "$want" =~ ^[0-9]+$ ]] || return 0
+  cur="$(tmux display-message -t "$ov" -p '#{pane_height}' 2>/dev/null)"
+  [[ "$want" != "$cur" ]] && tmux resize-pane -t "$ov" -y "$want" 2>/dev/null
+}
+
+# pane_fit_overview_watch — background loop keeping the overview fitted. Cheap:
+# only resizes when the published number changes. Start once from the bootstrap.
+pane_fit_overview_watch() {
+  while tmux has-session -t "$_pane_session" 2>/dev/null; do
+    pane_fit_overview
+    sleep 2
+  done
+}

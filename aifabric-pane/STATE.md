@@ -35,6 +35,40 @@ cards: a page-tab should be a little CARD with a headline + a few summary lines
 (keeper count, unread mail, what's live), not tmux's cryptic `n:name`. Buildable
 in the curses overview surface we already own.
 
+## Session 4 (2026-08-03) — colours, overview polish, mondrians
+
+- **Palette overhaul (shared scheme, made vivid).** Finding: `aicli` (strand
+  colours) and `ssp` (host colours) use the SAME golden-angle wheel
+  (`h=n*137.508°`) — they were only diverging because ssp had hand-picked vivid
+  NAMED colours while strands took the auto wheel clamped to `s=0.5 l=0.22`
+  (muddy — everything read as ~3 grey-green families). Fixed the shared generator
+  in BOTH `aifabric/bin/aicli` and `super/bin/ssp` to **`s=1.0 l=0.28`** (pure
+  dark jewel-tones, hues actually separable). Regenerated all 31 strand `colour`
+  files; `recolour --all` (the house tool — use it, don't hand-roll OSC) repaints
+  live terminals from `.tty`. ubersitrep pinned to dark red `#7a0000` (a hand
+  override, like ssp named colours). Old muddy colours backed up in `~/.trash`.
+- **Overview uses the colours** (`poc/aifabric-tmux-overview.py`): each strand
+  name in the roster is tinted with that strand's kinship hex (init_color when
+  truecolour, else nearest ANSI), matching its terminal.
+- **Overview auto-fits its height.** Curses can't resize its own pane, so it
+  PUBLISHES needed rows to `aifabric-pane/.overview-rows`; a conductor watcher
+  (`pane_fit_overview_watch` in the helpers) resizes the pane to match — "just
+  tall enough", grows/shrinks as the roster changes.
+- **Terminals show their strand name (clobber-proof).** Set a per-pane `@strand`
+  option (Claude can't rewrite it, unlike the title) + `pane-border-status top`
+  with a border-format reading `@strand`. Survives `swap-pane` (labels travel
+  with the pane). TWO identity stores now: `PANE_KEEPER_*` (deck env, for the
+  conductor to FIND) + `@strand` (per-pane, for the border to SHOW).
+- **MONDRIANS — saved page layouts** (`poc/mondrian.sh`, `mondrians/*.mondrian`).
+  A "mondrian" = one storable/loadable page arrangement (grid of strand
+  rectangles; the Windows-8/Metro tile look is the same De Stijl lineage). File =
+  tmux's exact `window_layout` string + a `slots` line (leaf→strand via @strand).
+  `save/load/list/save-deck`; load spawns keepers, applies geometry, re-tags
+  slots. Both named mondrians AND a whole-deck snapshot. Vocabulary now: an
+  aifabric-pane → deck → page → terminal, and a **mondrian** = saved page layout.
+- **9 terminals per page** is the target/cap (idea `20260803T182530Z-gkp5RE`);
+  WindowShade "shade a terminal to a rail" + drag-dividers (mouse on) explored.
+
 ## Session 3 (2026-08-03) — pages (tabs), swaps, and the vocabulary above
 
 - **Pages work (tmux windows = "pages").** Created/removed pages live from the

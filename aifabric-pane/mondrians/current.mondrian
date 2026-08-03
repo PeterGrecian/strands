@@ -1,0 +1,5 @@
+deck    pane
+page    0
+size    237x57
+layout  da1d,237x57,0,0{81x57,0,0[81x10,0,0,5,81x46,0,11,9],155x57,82,0[155x12,82,0{94x12,82,0,8,60x12,177,0,1},155x15,82,13,3,155x28,82,29{77x28,82,29,10,77x28,160,29,2}]}
+slots   overview astro-science (empty) ansible ubersitrep astro-storage driver

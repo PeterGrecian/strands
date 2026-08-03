@@ -6,3 +6,5 @@
 .wid
 __pycache__/
 *.pyc
+aifabric-pane/.overview-rows
+aifabric-pane/*/.tty

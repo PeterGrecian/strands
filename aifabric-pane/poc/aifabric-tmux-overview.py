@@ -100,6 +100,16 @@ def read_score(strand):
         return None
 
 
+def read_colour(strand):
+    """The strand's kinship hex (rrggbb, no #), same file aicli/recolour read. None if unset."""
+    try:
+        with open(os.path.join(STRANDS_ROOT, strand, "colour")) as f:
+            hx = f.read().strip().lstrip("#").lower()
+        return hx if len(hx) == 6 and all(c in "0123456789abcdef" for c in hx) else None
+    except OSError:
+        return None
+
+
 def build_roster():
     strands = all_strands()
     sessions = live_sessions()
@@ -113,6 +123,7 @@ def build_roster():
             "pid": pid, "tty": tty, "up": up,
             "mail": mail.get(s, 0),
             "score": read_score(s),
+            "colour": read_colour(s),
         })
     # sort: live first, then strands with mail, then by mail count desc, then name
     rows.sort(key=lambda r: (not r["live"], r["mail"] == 0, -r["mail"], r["strand"]))
@@ -137,6 +148,56 @@ def fetch_cleft():
 def _first(pat, text):
     m = re.search(pat, text)
     return m.group(1).strip() if m else None
+
+
+# --- strand kinship colours in curses ---------------------------------------
+# Each strand's rrggbb (from its `colour` file, same one aicli/recolour use) is
+# turned into a curses color-pair so the overview tints each name to match that
+# strand's terminal. On a truecolour-capable terminal we define exact colours via
+# init_color; otherwise we snap the hex to the nearest of the 8 base ANSI colours.
+_PAIR_CACHE = {}          # hex -> pair number
+_next_color = 16          # custom color slots start above the 16 ANSI defaults
+_next_pair = 10           # strand pairs start above the fixed pairs 1-4
+_can_change = False
+
+_BASE8 = [  # (r,g,b) of the 8 ANSI colours, for the fallback nearest-match
+    (0, 0, 0), (205, 0, 0), (0, 205, 0), (205, 205, 0),
+    (0, 0, 238), (205, 0, 205), (0, 205, 205), (229, 229, 229),
+]
+
+
+def _nearest_ansi(r, g, b):
+    best, bi = 1 << 30, 7
+    for i, (cr, cg, cb) in enumerate(_BASE8):
+        d = (r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2
+        if d < best:
+            best, bi = d, i
+    return bi
+
+
+def colour_pair(hx):
+    """curses color-pair for a strand hex (rrggbb). 0 (default) if none/unavailable."""
+    global _next_color, _next_pair
+    if not hx:
+        return 0
+    if hx in _PAIR_CACHE:
+        return _PAIR_CACHE[hx]
+    try:
+        r = int(hx[0:2], 16); g = int(hx[2:4], 16); b = int(hx[4:6], 16)
+        if _can_change and _next_color < curses.COLORS and _next_pair < curses.COLOR_PAIRS:
+            cn = _next_color; _next_color += 1
+            # curses init_color wants 0-1000 per channel
+            curses.init_color(cn, r * 1000 // 255, g * 1000 // 255, b * 1000 // 255)
+            fg = cn
+        else:
+            fg = _nearest_ansi(r, g, b)
+        pn = _next_pair; _next_pair += 1
+        curses.init_pair(pn, fg, -1)
+        _PAIR_CACHE[hx] = pn
+        return pn
+    except (curses.error, ValueError):
+        _PAIR_CACHE[hx] = 0
+        return 0
 
 
 def _addstr(win, y, x, s, attr=0):
@@ -213,7 +274,9 @@ def draw(win, state):
         mail_attr = yellow | bold if r["mail"] else dim
 
         score_txt = f"{r['score']}/5" if r["score"] else "·"
-        _addstr(win, y, 1, f"{r['strand']:<20}", name_attr)
+        # tint the name with the strand's own kinship colour (matches its terminal)
+        cpair = colour_pair(r.get("colour"))
+        _addstr(win, y, 1, f"{r['strand']:<20}", (curses.color_pair(cpair) if cpair else 0) | name_attr)
         _addstr(win, y, 22, f"{state_txt:<6}", state_attr)
         _addstr(win, y, 29, f"{r['pid']:>7}", dim)
         _addstr(win, y, 37, f"{r['tty']:<6}", dim)
@@ -225,17 +288,45 @@ def draw(win, state):
         y = hy + 1 + len(shown)
         _addstr(win, y, 1, f"… +{footer_n} {footer_lbl}", dim)
 
+    # Publish the number of rows we actually drew so the conductor can size the
+    # pane to fit (curses can't resize its own tmux pane). content = header(2) +
+    # column header(1) + shown rows + footer(1 if any).
+    content_rows = 3 + len(shown) + (1 if footer_n > 0 else 0)
+    _publish_height(content_rows)
+
     win.noutrefresh()
     curses.doupdate()
 
 
+_last_published = None
+
+
+def _publish_height(rows):
+    """Write desired pane height to <deck>/.overview-rows when it changes."""
+    global _last_published
+    if rows == _last_published:
+        return
+    _last_published = rows
+    try:
+        path = os.path.join(STRANDS_ROOT, "aifabric-pane", ".overview-rows")
+        with open(path, "w") as f:
+            f.write(f"{rows}\n")
+    except OSError:
+        pass
+
+
 def main(win):
+    global _can_change
     curses.curs_set(0)
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_CYAN, -1)
     curses.init_pair(2, curses.COLOR_YELLOW, -1)
     curses.init_pair(3, curses.COLOR_RED, -1)
     curses.init_pair(4, curses.COLOR_GREEN, -1)
+    try:
+        _can_change = curses.can_change_color()
+    except curses.error:
+        _can_change = False
     win.nodelay(True)
 
     rows, nlive, nmail = build_roster()
