@@ -136,6 +136,27 @@ solve.
   not yet designed; feasibility of dynamical wobble (sub-mas, likely below floor)
   TBD; static in-PSF companion (Polaris-B/Titan generalised) is the reachable
   first target.
+- **Retrospective reprocessing — the archive appreciates** (Peter's question
+  2026-08-03; `astro/design/retrospective-reprocessing.md`). YES — when the models
+  improve we revisit old data, and it's the *defining* property, not an extra.
+  Already stated for the distortion model (`drift-scan-cadences.md`: re-warp old
+  frames with a better field → strictly better stacks, "archive more valuable over
+  time"); generalised here to EVERY model: the vector field (denser anchors), the
+  **catalogue** (old blobs now named), field anchor density, the ePSF, the sensor
+  gain map ("sensor map accumulates"), and **confidence** (old candidates re-scored
+  to confirmed by intervening nights). Uniform pattern: models are functions of
+  the whole archive → growing it improves them → better models reprocess it — a
+  **convergent** loop (gains front-loaded, taper as models mature; the frontier is
+  the faint tail — bright stars saturate and stop benefiting). **Raw retention IS
+  the reprocessing policy**: keep raws a rolling window (~3mo) so any improvement
+  reaches the pixels; past the window the per-frame source tables (kept forever)
+  carry identity/photometry reprocessing but not pixel re-warp — so schedule big
+  field/ePSF jumps to sweep the held raws *before* they age out (the load-bearing
+  tension). Runs as a puppy/NFS batch, triggered on material model improvement not
+  every night. Deliverable consequence: **catalogue is versioned, old nights
+  update** — "3 new stars in last month's data" is retrospective discovery;
+  entries carry first_seen + last_reprocessed + model-version. Design/principle
+  only.
 
 ## Sub-pixel foundations (from astro-subpixel)
 
