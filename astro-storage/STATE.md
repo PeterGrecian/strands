@@ -1,6 +1,30 @@
 # astro-storage — state
 
-*Updated 2026-08-02*
+*Updated 2026-08-03*
+
+## Cutover mail drained — all resolved by operation (2026-08-03)
+
+Six-message backlog in the spool, all from the bigdisk→bigstore cutover
+(Jul 30–31, from astro-v3s / ansible strands). Cross-checked each against live
+state (not just STATE) before draining:
+
+- **astrocam auto-processing is HEALTHY on muppet.** state.json written nightly
+  on bigstore (`/mnt/bigstore/astro-data/astrocam-frames/YYYY/MM/DD/astrocam/`)
+  through 08-03 — the "silent, no state.json" symptom is gone. 07-30 (the night
+  flagged as needing a manual run) is fully published (sum.fits, posters,
+  sweep-colour/diff mp4s). Migration gap closed: 07-29 (1040 files) + 07-30 both
+  verified on bigstore.
+- **Residue → ansible strand:** puppy `/etc/default/astro-process` still names
+  `CAMERAS='--camera astrocam'` (stale double-assignment). **Dormant, not a live
+  conflict** — puppy's astro-process/astro-state services are inactive (only
+  `astro-latest-links.timer` runs). Mailboxed ansible to clear it when next
+  touching puppy config (puppy config is their domain per the cutover hand-off).
+- Other four messages were informational (capture.py deprecation, POSINDEX
+  header, labelling/pedestal fixes) or already-recorded decisions (ubersitrep:
+  astro-storage owns skycam cleanup). No STATE change needed for those.
+
+**Genuine open work unchanged:** the **skycam ship-and-free pipeline** (§skycam
+gap) is still the one un-built stream.
 
 ## frames_root is config-truth; navigation is inventory-driven (2026-08-02)
 
