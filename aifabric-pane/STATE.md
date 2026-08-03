@@ -35,6 +35,40 @@ cards: a page-tab should be a little CARD with a headline + a few summary lines
 (keeper count, unread mail, what's live), not tmux's cryptic `n:name`. Buildable
 in the curses overview surface we already own.
 
+## Session 5 (2026-08-03) — restart-deck hardened + `panedeck` launcher
+
+Deck is now a one-command cold start Peter likes. Two scripts in `poc/`:
+
+- **`panedeck`** — opens the deck in its OWN full-screen, chrome-free
+  terminal-emulator window and attaches. If the deck (`pane` session) isn't up,
+  it rebuilds via `restart-deck.sh` first. Refuses to run inside tmux (no
+  nesting). Peter will remember the name `panedeck` (chosen over `open-deck.sh`).
+  - **TRUE full-screen is asserted via `wmctrl`, NOT `xfce4-terminal --fullscreen`**:
+    the built-in flag loses a race with the WM at map time and silently falls
+    back to MAXIMIZED (panel + titlebar still eat the top ~99px). We launch
+    without it, wait for the window (matched by frozen title `pane`, via
+    `xdotool search --name '^pane$'`), then `wmctrl -i -r <wid> -b add,fullscreen`.
+    Verified: `_NET_WM_STATE_FULLSCREEN`, geom `0 0 1920 1080`. F11 toggles out.
+  - Scrollbar/menubar/toolbar hidden on THIS window only (`--hide-*`); other
+    terminal-emulator windows keep their scrollbar. `--dynamic-title-mode=none`
+    freezes the title `pane` (CLI twin of TITLE_HIDE; keeps panel label + the
+    fullscreen lookup valid).
+- **`restart-deck.sh` fixes:**
+  1. **Keepers were launching as bare shells** — `aicli <strand>` hit aicli's
+     de-dupe ("already live", prints "launch another with: aicli --new") and
+     dropped to a shell, leaving panes empty. Fix: `aicli --new <strand>`
+     everywhere. (Peter: "-N is fine I'll be careful" re: duplicate sessions.)
+  2. **Driver pane now runs the conductor** — `driver` slot launches
+     `aicli --new aifabric-pane` (the strand that IS the conductor), not a bare
+     shell. Sets `PANE_DRIVER` env.
+  3. **Per-strand coloured borders, NO text labels** — dropped
+     `pane-border-status`/`pane-border-format` (the `--- 3: ansible ---` labels).
+     Each terminal's border is now tinted from its strand's `colour` file
+     (`fg=#<hex>`, active = `,bold`); driver uses aifabric-pane's colour. Peter:
+     the prompt already says what each terminal is for → labels redundant. Signed
+     off "Good as-is" (coloured dividers between panes; tmux doesn't draw the
+     screen's OUTER edges — not wanted).
+
 ## Session 4 (2026-08-03) — colours, overview polish, mondrians
 
 - **Palette overhaul (shared scheme, made vivid).** Finding: `aicli` (strand
@@ -196,9 +230,10 @@ the driver pane puppeteering real keepers via the tmux CLI:
   this session that a plain Claude session in the driver pane, sourcing
   `pane-conductor-helpers.sh`, IS the conductor — no separate agent needed yet.
 - Launcher menu on empty startup + live suggestions in the overview.
-- Per-strand identity: coloured borders + titles (transparency can't tint
-  per-pane; terminal-fork parked). Decide the colour source (each keeper's
-  `colour` file).
+- ~~Per-strand identity: coloured borders~~ DONE 2026-08-03 (session 5): each
+  terminal's border tinted from its strand's `colour` file; text labels dropped
+  (prompt says what it is). Colour source decided = the strand `colour` file.
+  (Transparency per-pane tint / terminal-fork still parked.)
 - Where do the POC scripts finally live — promote from `aifabric-pane/poc/` into
   `~/aifabric/bin/` once past POC. The curses overview `.py` is the graduation
   candidate.

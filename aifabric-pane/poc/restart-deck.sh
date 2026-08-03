@@ -57,27 +57,54 @@ tmux select-layout -t "$DECK:0" "$layout" \
 # 4) fill slots: walk panes in order; launch keepers, tag @strand. overview/driver
 #    /(empty) are structural — the overview runs the curses readout, driver is a
 #    shell you type in, (empty) is a spare shell.
+# strand -> border colour: read the strand's own `colour` file (hex, no #). The
+# driver's strand IS aifabric-pane. overview/(empty) have no strand → no colour.
+_slot_colour() {
+  case "$1" in
+    driver)          cat "$STRANDS/aifabric-pane/colour" 2>/dev/null ;;
+    overview|'(empty)'|-|'') : ;;
+    *)               cat "$STRANDS/$1/colour" 2>/dev/null ;;
+  esac
+}
+
 i=0
 while IFS= read -r pid; do
   s="${slots[$i]:-}"; i=$((i+1))
   tmux set-option -pt "$pid" @strand "$s"
+  # Thin coloured border per strand (bleeds to the pane edges); no text label —
+  # each pane's own prompt already says what it's for.
+  hex="$(_slot_colour "$s")"
+  if [[ -n "$hex" ]]; then
+    tmux set-option -pt "$pid" pane-border-style "fg=#$hex"
+    tmux set-option -pt "$pid" pane-active-border-style "fg=#$hex,bold"
+  fi
   case "$s" in
     overview)
       tmux send-keys -t "$pid" "clear; while true; do python3 $HERE/aifabric-tmux-overview.py; sleep 1; done" C-m
       tmux set-environment -t "$DECK" PANE_OVERVIEW "$pid" ;;
-    driver|'(empty)'|-|'')
-      : ;;  # leave as a shell
+    driver)
+      # The driver is where you talk to the conductor — and the conductor of
+      # this pane IS the aifabric-pane strand. Launch it here so you drive the
+      # deck by talking to aifabric-pane directly.
+      tmux send-keys -t "$pid" "aicli --new aifabric-pane" C-m
+      tmux set-environment -t "$DECK" PANE_DRIVER "$pid" ;;
+    '(empty)'|-|'')
+      : ;;  # leave as a spare shell
     *)
-      tmux send-keys -t "$pid" "aicli $s" C-m
+      # --new: always launch a fresh keeper into the pane. Without it aicli's
+      # de-dupe sees a stale same-title session as "already live", prints
+      # "launch another with: aicli --new" and drops us back to a bare shell —
+      # leaving the pane empty.
+      tmux send-keys -t "$pid" "aicli --new $s" C-m
       tmux set-environment -t "$DECK" "$(_pane_keeper_var "$s")" "$pid" ;;
   esac
 done < <(tmux list-panes -t "$DECK:0" -F '#{pane_id}')
 
-# 5) deck conveniences
+# 5) deck conveniences. No border LABELS (pane-border-status off) — the coloured
+# border set per-pane above is the strand's identity; the prompt says the rest.
 tmux set-option -t "$DECK" status off
 tmux set-option -t "$DECK" mouse on
-tmux set-option -t "$DECK" pane-border-status top
-tmux set-option -t "$DECK" pane-border-format ' #{pane_index}: #{?@strand,#{@strand},#{pane_title}} '
+tmux set-option -t "$DECK" pane-border-status off
 
 # 6) start the overview auto-fit watcher (backgrounded), then tell the human to attach
 nohup bash -c "source '$HERE/pane-conductor-helpers.sh'; pane_fit_overview_watch" >/dev/null 2>&1 &
