@@ -47,6 +47,14 @@ offline hosts. Reachability first: try `.local`, fall back to `resolve-host`.
 ## What exists
 
 - Strand mission written (git housekeeping / data-loss framing).
+- `check-repos.sh` — the fleet divergence sweep tool, committed in this dir.
+- **Stranded-mail audit (routine).** Checking archived strands for undrained
+  mail: non-empty `archive/*/MAILBOX.md` + per-strand spool at
+  `$XDG_RUNTIME_DIR/strand-mailboxes/<name>/`. 2026-08-03 audit found two dead
+  letters, both already-actioned (nothing to save): `gardencam` (stale S3-clarif
+  pointer) and `archive/astro-speaker-dither` (ubersitrep's fold+archive notice;
+  fold verified present as commit `6272c58`, strand duly archived). Left in
+  place — harmless, tmpfs spool evaporates on reboot.
 
 ## Done this session (2026-08-03)
 
