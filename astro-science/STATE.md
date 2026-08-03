@@ -140,6 +140,56 @@ The output end of the science: where results become visible.
 - **/astro/storage** page watches skycam raw growth (an astro-storage concern).
 - **Peter has a deliverables adjustment in mind spanning astro + mywebsite** —
   to be described (noted 2026-07-10, still pending).
+- **Possible split back out as a keeper** (idea, 2026-08-03): deliverables was
+  consolidated INTO astro-science yesterday (2026-08-02); the thought is it may
+  eventually earn its own keeper strand (like polecam/eclipticam/canon/storage),
+  since it's an *operational* output surface, not open research. Not now — too
+  soon after consolidation; revisit once the science layer above it stabilises
+  and the deliverables set stops churning.
+
+### Fixed 2026-08-03: astrocam star-trails deliverable missing since Aug 1
+
+The pole cam (astrocam) stopped producing its max-stack star-trail image
+(`max.jpg`/`max.fits.fz`) + derot from 2026-08-01. **Not** the bigstore
+migration — a **cloud-verdict miscalibration**:
+- astrocam's imx708 pedestal was deliberately lowered 105→99→50 (Pi commits
+  `6c2f2bb`, `e854c54`, on origin/main) **to keep the brightness chart usable**
+  (dark nights get ≥1 stop of footroom instead of flooring at 0). Correct for
+  the chart — but `pedestal` is shared with the cloud ceiling `sky_clear_max_stops`.
+- On the pedestal-50 axis a *clear* dark trough anchor reads **5.5–5.8 stops**
+  (measured across the 5 imx708 nights 07-29..08-02), so the interim ceiling of
+  **5.0 cut straight through the clear-night population**. Genuinely-clear dark
+  nights 08-01/08-02 → anchor above ceiling → every frame out of band →
+  `n_stacked=0` → verdict cloudy → `nightly-cam` deletes the stale stacks and
+  writes brightness+summary only. 07-31 escaped only because a twilight/moon
+  peak pulled its anchor into a stackable band — the *brighter* night stacked,
+  the truly-dark one didn't.
+- **Fix (`ab6619f`, pushed to origin/main): `sky_clear_max_stops` 5→8**, keeping
+  pedestal=50. Worst clear night (5.81) now gets a ~2.2-stop cloudy margin,
+  matching the imx219-era clear/cloudy gap. Pedestal unchanged so the chart
+  stays usable; the ceiling is decoupled by living on the same shifted axis.
+- **Lesson:** `pedestal` does double duty (chart y-axis AND cloud ceiling);
+  moving it for the chart silently shifts the cloud gate. Re-derive the ceiling
+  whenever the pedestal moves. Re-check scs=8 if a fully-cloudy imx708 night
+  ever shows it's too high (no fully-cloudy imx708 night logged yet).
+- **Reprocessed + republished 08-01 + 08-02** with the corrected config: both
+  now verdict=clear (357 / 143 frames stacked), full `max.jpg` star-trail +
+  `derot.jpg` + thumbs live on S3, calendar index rebuilt (49/49 nights with
+  thumbnails). Ran on the astrocam Pi (`nightly-cam` then `publish-night-cam
+  --web-only`); slow because the Pi reads frames over NFS from muppet's bigstore
+  (~13 min/night stacking), so future backfills are better run on pip.
+
+### A standard "the camera has moved today" signal (idea → design need, 2026-08-03)
+
+Real gap, promoted here because a re-aim invalidates the pole + plate scale the
+accumulator/plate-solve rest on. `position_index` (`POSINDEX` stamped per FITS)
+already records **camera-generation epochs** (sensor/lens/mount swaps — astrocam
+is index 2 = imx708 v3s). What's missing is the **sub-epoch** signal: a nudge or
+small re-aim that doesn't warrant a generation bump but still shifts the pole and
+must not be co-added blindly across the boundary. Design: a lightweight per-day
+"moved" marker (the accumulator resets/re-solves geometry at it), sitting below
+`position_index`. Mechanics tie into astro-storage's inventory (recording the
+event); the *science* need is that de-rotation must key off it. Not yet designed.
 
 ## Quest board (from astro-subpixel; `astro/design/zenith-quests.md`)
 
