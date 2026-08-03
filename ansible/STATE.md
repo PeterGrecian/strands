@@ -41,10 +41,16 @@
   re-verified vs origin after fetch: muppet, puppy, vole, eclipticam, astrocam,
   cloudcam(Berrylands), homepi all `## main` clean.
   - **homepi was a real MISS in the first pass** (role reported changed=1 /
-    failed=0 but super stayed behind 103, Berrylands behind 241). Root cause is
-    a genuine config bug — see the drift-sweep item below. Fixed for now by a
-    hand `pull --ff-only` of homepi super+Berrylands; the structural fix is
-    pending (needs Peter, edits inventory/user).
+    failed=0 but super stayed behind 103, Berrylands behind 241, **busclock
+    behind 26**). Root cause is a genuine config bug — see the drift-sweep item
+    below. Fixed for now by hand `pull --ff-only` of all three homepi repos (all
+    → `## main` clean); the structural fix is pending (needs Peter, edits
+    inventory/user). busclock isn't in the ignored group_vars either — another
+    hand-cloned homepi repo, not role-managed anywhere — but synced regardless.
+  - **housekeeping's other flags were false alarms** (confirmed by them): puppy
+    astro + muppet Berrylands are present-but-unmanaged (not in those hosts'
+    git_repos), correctly untouched — same category as cloudcam super. Net
+    genuine misses across the whole sweep = homepi's three repos only.
   - **eclipticam astro restored to main**: was on deprecated `moon-net-marking`
     (ahead 41, dirty 2). Role stashed the 2 files (`ansible-auto 2026-08-03T14:26:32Z`,
     labelled "On moon-net-marking") and checked out main. The dead branch is
