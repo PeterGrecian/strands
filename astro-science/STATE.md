@@ -255,6 +255,20 @@ ruler, nothing blocking — most immediate), Polaris B by binocular (afocal ~4.9
 0.05 mag / 3.97 d). Q3 (Polaris split on Pi optics) closed as optics-blocked —
 dithering beats aliasing, not diffraction; aperture is the answer.
 
+**Quest 6 dual — the catalogue is a free brightness CEILING** (Peter,
+2026-08-03; `zenith-quests.md` §"catalogue is a free brightness ceiling"). The
+inverse of the completeness curve: if we hold every catalogued star to mag M over
+a region, any detection there that ISN'T catalogued is **provably fainter than M**
+(else it'd be catalogued) — "collect all the mag-0 stars and anything in between
+is darker." So every unmatched detection arrives free-bracketed: **fainter than
+local M** (catalogue ceiling) *and* **brighter than the noise floor** (it was
+detected), both bounds for free, no photometry. M(region) is a spatially-varying
+field (evaluated through the same bright-anchored vector field); it sanity-checks
+measured fluxes (a flux above M ⇒ suspect the match / it's a transient) and turns
+the see-vs-identify gap into hard *fainter-than-M-here* labels from detection.
+Holds only where the catalogue is genuinely complete to M (uncrowded/bright
+regime); the ceiling lifting where the catalogue thins is itself information.
+
 ## Pending / loose ends
 
 - **Prereq for everything: pole + plate scale from real imx708 sky** (STALE from
