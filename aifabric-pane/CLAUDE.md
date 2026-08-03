@@ -40,11 +40,10 @@ which holds the full design.
 
 ## Status / where to look
 
-POC built and liked (2026-08-03). Scripts live in the aifabric strand's inbox
-while this settles:
-- `aifabric/ideas/aifabric-tmux-poc.sh` — builds the 3-zone pane from outside via
-  the tmux CLI (never attaches). `tmux attach -t plane` to view.
-- `aifabric/ideas/aifabric-tmux-overview.sh` — the summary readout.
+POC built and liked (2026-08-03). Scripts live in this strand's `poc/`:
+- `aifabric-pane/poc/aifabric-tmux-poc.sh` — builds the 3-zone pane from outside
+  via the tmux CLI (never attaches). `tmux attach -t plane` to view.
+- `aifabric-pane/poc/aifabric-tmux-overview.sh` — the summary readout.
 Full design + open questions: `aifabric/ideas/20260803T144642Z-ZAMrik`.
 
 ## Session ritual
