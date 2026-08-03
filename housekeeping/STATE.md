@@ -86,10 +86,14 @@ offline hosts. Reachability first: try `.local`, fall back to `resolve-host`.
 
 ## Pending / loose ends
 
-- **Fleet sync — nearly closed, one straggler left.** After the ansible strand's
-  root-cause + hand-fixes and this keeper's re-verify, the genuine outstanding
-  miss is **just homepi `busclock`** (still behind; ansible strand asked to ff
-  it). Everything else reconciled:
+- **Fleet sync — CLOSED from this keeper's side (2026-08-03).** Sweep done,
+  handed to the ansible strand, which ran the role + hand-fixes; this keeper
+  verified against `origin/main` throughout. Remaining loose ends are the
+  ansible strand's / Peter's, not this strand's: (a) ff homepi `busclock`, (b)
+  the homepi `group_vars` inventory fix (needs Peter — real blast radius). No
+  data-loss risk outstanding (the one at-risk item, eclipticam moon-net, is
+  resolved). After the strand's root-cause + hand-fixes and this keeper's
+  re-verify, everything else reconciled:
   - homepi `super`+`Berrylands`: hand-ff'd by ansible strand, **SYNCED** ✅.
   - puppy `astro`, muppet `Berrylands`: **false alarms of mine** — not in those
     hosts' `git_repos`, so present-but-unmanaged and correctly untouched. (Same
