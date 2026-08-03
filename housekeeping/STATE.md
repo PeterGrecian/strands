@@ -86,13 +86,28 @@ offline hosts. Reachability first: try `.local`, fall back to `resolve-host`.
 
 ## Pending / loose ends
 
-- **Fleet sync PARTIAL — with `ansible` strand.** Role ran, moon-net fixed, but
-  managed repos still behind on homepi (Berrylands/busclock/super), cloudcam
-  (super), muppet (Berrylands), puppy (astro). Flagged to the ansible strand to
-  chase why `ansible.builtin.git` didn't advance them (non-ff / stashed-dirty
-  suspected). Waiting on its fix + re-run. eclipticam `moon-net-marking` may
-  still linger as an orphaned branch on-host: `git -C ~/astro branch -D
-  moon-net-marking` if so.
+- **Fleet sync — nearly closed, one straggler left.** After the ansible strand's
+  root-cause + hand-fixes and this keeper's re-verify, the genuine outstanding
+  miss is **just homepi `busclock`** (still behind; ansible strand asked to ff
+  it). Everything else reconciled:
+  - homepi `super`+`Berrylands`: hand-ff'd by ansible strand, **SYNCED** ✅.
+  - puppy `astro`, muppet `Berrylands`: **false alarms of mine** — not in those
+    hosts' `git_repos`, so present-but-unmanaged and correctly untouched. (Same
+    scope trap: `check-repos.sh` reports every clone; only inventory-listed ones
+    are ansible's to move.)
+  - eclipticam `moon-net-marking` dead branch left on-host for manual delete:
+    `git -C ~/astro branch -D moon-net-marking`.
+
+- **NEW durable finding — homepi ansible inventory bug (for Peter).** The
+  ansible strand found `inventory/group_vars/homepi.yml` is **silently ignored**:
+  there is no `[homepi]` inventory *group* (homepi is a host in `[stationary]`),
+  so that ~100-line file — `git_repos`, `ansible_user: pi`, `pi_packages`,
+  `users`, `dotfiles` — never applies. That's why homepi's super/Berrylands/
+  busclock never synced (only `git_repos_global` reached it). Fix = move it to
+  `host_vars/homepi.yml` (merging the existing one), but it changes
+  `ansible_user` and enables roles — **too much blast radius for an autonomous
+  merge; needs Peter's review.** Owned by the ansible strand; noted here as the
+  root cause of the homepi sync misses.
 
 Snapshot of pip's own data-loss surface at session end (not yet cleared):
 
