@@ -194,17 +194,25 @@ migration — a **cloud-verdict miscalibration**:
   `CameraConfig.frames_root` — safe now that it's host-relative, completes the
   "config is the only seam" goal, but the Pi's hardcoded `~/…` already works.)
 
-### A standard "the camera has moved today" signal (idea → design need, 2026-08-03)
+### A standard "the camera has moved today" signal (DESIGNED 2026-08-03)
 
-Real gap, promoted here because a re-aim invalidates the pole + plate scale the
-accumulator/plate-solve rest on. `position_index` (`POSINDEX` stamped per FITS)
-already records **camera-generation epochs** (sensor/lens/mount swaps — astrocam
-is index 2 = imx708 v3s). What's missing is the **sub-epoch** signal: a nudge or
-small re-aim that doesn't warrant a generation bump but still shifts the pole and
-must not be co-added blindly across the boundary. Design: a lightweight per-day
-"moved" marker (the accumulator resets/re-solves geometry at it), sitting below
-`position_index`. Mechanics tie into astro-storage's inventory (recording the
-event); the *science* need is that de-rotation must key off it. Not yet designed.
+Real gap, promoted because a re-aim invalidates the pole + plate scale the
+accumulator/plate-solve rest on. `position_index` (`POSINDEX` per FITS) records
+**generation epochs** (sensor/lens/mount swaps — astrocam is index 2 = imx708
+v3s). The **sub-epoch** signal — a nudge/re-aim, same hardware, that shifts the
+pole but doesn't warrant a generation bump — was missing. **Now designed:**
+`astro/design/camera-moved-signal.md`. Shape (mirrors `position_index` one level
+down): a `move_index` / `MOVEID` per-FITS header + a `move_registry` in
+`camera.json` scoped within a generation (key `"<pos>.<move>"`, each entry the
+pole+occlusion that changed); the event logged in astro-storage's inventory; a
+one-liner `astro-moved <cam> [night]` to raise it (increment + stub registry +
+re-solve reminder); nightly pole-jump detection *prompts* but never
+auto-increments. The accumulator's outer loop = **per move epoch**: one (pole,
+plate-scale, distortion) solution per `(POSINDEX, MOVEID)`, all landing on the
+*same* sphere so a re-aim doesn't fork the science product. Precedent it
+formalises: `astrocam/occlusion.json` already notes a by-hand "camera moved
+~2026-06-09" tile re-mark. **Not built** — design only; `astro-moved` +
+`StreamingConfig.move_index` + registry plumbing still to write.
 
 ## Quest board (from astro-subpixel; `astro/design/zenith-quests.md`)
 
