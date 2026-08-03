@@ -32,6 +32,28 @@
 
 ## Pending / loose ends
 
+- **Fleet git-repos divergence sweep: DONE** (2026-08-03, prompted by
+  housekeeping mail). Ran the `git-repos` role across all 7 reachable hosts to
+  clear the BEHIND-clone backlog housekeeping found. `safe_pull` stashed dirty
+  trees (grep-able `ansible-auto <iso>` messages, recoverable on-host); no true
+  ahead+behind divergence anywhere. Results: homepi(1), muppet(5), puppy(6),
+  vole(4), eclipticam(4), cloudcam(3), astrocam(3) changed — **failed=0** after
+  fixes below. Skipped offline: deskpi, xoverpi, starcam.
+  - **eclipticam astro restored to main**: was on deprecated `moon-net-marking`
+    (ahead 41, dirty 2). Role stashed the 2 files (`ansible-auto 2026-08-03T14:26:32Z`,
+    labelled "On moon-net-marking") and checked out main. The dead branch is
+    **left on-host** for manual delete (Peter agreed to drop it).
+  - **cloudcam drift found + fixed**: first run FAILED on git *dubious-ownership*
+    — `/home/peter/ansible` was `root:root` (an old root-made clone), but the
+    role runs git as `peter`. Tree was clean on main, so `sudo chown -R
+    peter:peter /home/peter/ansible` on cloudcam; re-ran clean. (Its other repos
+    super/dotfiles were already `peter:peter`. Note cloudcam's `peter` is **uid
+    1001**, an old hand-made account, and it has no strands clone.)
+  - **astrocam run needed the peter override**: pi-sudo still broken (below), so
+    ran with `-e ansible_user=peter` (peter has NOPASSWD there) — 3 changed OK.
+    Its `dotfiles` (behind 11, dirty) is deliberately NOT in astrocam's
+    git_repos — capture Pis omit dotfiles (stow symlinks read dirty). Expected.
+
 - **aifabric+strands rollout: DONE** (see What exists). Unblocks the
   super-to-aifabric strand's PATH-flip (`~/aifabric/bin` before `super/bin`) —
   mailboxed 2026-07-22.
@@ -120,9 +142,12 @@ Standing / not-yet-scheduled items (were in IDEAS.md, promoted 2026-07-29):
   radius, zero new capability).
 - **General fleet-maintenance catch-up** (drift sweep): sweep `~/ansible` for
   config drift / half-applied roles. Known seeds: vim-default-editor pending on
-  starcam/deskpi/xoverpi; **astrocam `pi`-user sudo broken — confirmed
-  2026-07-30 (blocks ansible managing astrocam: `become` fails; `peter` sudo
-  works). Fix so `pi` gets passwordless sudo like the rest of the fleet.**
+  starcam/deskpi/xoverpi; **astrocam `pi`-user sudo broken — reconfirmed
+  2026-08-03 (git-repos sweep needed `-e ansible_user=peter` to run; `become` as
+  `pi` fails, `peter` NOPASSWD works). Fix so `pi` gets passwordless sudo like
+  the rest of the fleet.** cloudcam `/home/peter/ansible` root-ownership was
+  found + fixed during the 08-03 sweep (chown'd to peter:peter) — watch for
+  other root-made clones on the fleet.
 - **Recurring maintenance schedule** (idea, 2026-07-22): stand up a cadence for
   the drift sweep (scheduled `/loop` or cron routine) rather than ad-hoc.
   Decide interval + form with Peter; ties into the drift-watch role.
