@@ -106,6 +106,14 @@ tmux set-option -t "$DECK" status off
 tmux set-option -t "$DECK" mouse on
 tmux set-option -t "$DECK" pane-border-status off
 
+# F9 minimises the deck's own full-screen terminal-emulator window. Bound in the
+# root table (no prefix) so it's a bare keypress. When full-screen the WM never
+# sees the key, so tmux shells out to xdotool (matched by the frozen title
+# 'pane', robust across rebuilds); wmctrl is the fallback. F11 still toggles
+# fullscreen (that one the terminal-emulator handles).
+tmux bind-key -T root -N 'minimise the deck window' F9 \
+  run-shell "xdotool search --name '^${DECK}\$' windowminimize %@ 2>/dev/null || wmctrl -r ${DECK} -b add,hidden"
+
 # 6) start the overview auto-fit watcher (backgrounded), then tell the human to attach
 nohup bash -c "source '$HERE/pane-conductor-helpers.sh'; pane_fit_overview_watch" >/dev/null 2>&1 &
 

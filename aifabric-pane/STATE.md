@@ -53,6 +53,10 @@ Deck is now a one-command cold start Peter likes. Two scripts in `poc/`:
     terminal-emulator windows keep their scrollbar. `--dynamic-title-mode=none`
     freezes the title `pane` (CLI twin of TITLE_HIDE; keeps panel label + the
     fullscreen lookup valid).
+- **F9 minimises the deck window** — bound in restart-deck.sh (tmux root table,
+  no prefix) to `xdotool ... windowminimize` on the window titled `pane` (wmctrl
+  hidden as fallback). When full-screen the WM never sees the key, so tmux does
+  the shell-out. F11 still toggles fullscreen (terminal-emulator handles that).
 - **`restart-deck.sh` fixes:**
   1. **Keepers were launching as bare shells** — `aicli <strand>` hit aicli's
      de-dupe ("already live", prints "launch another with: aicli --new") and
