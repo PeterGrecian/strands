@@ -2,6 +2,106 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## ★★★ PLUG REPLACED + power-cycles now VERIFIED (2026-08-09)
+
+**Smart plugs have proved outrageously unreliable — the reset path now checks
+the plug's work instead of trusting it.**
+
+**The plug swap.** The Currys Sandstrom (node 4) was binned and replaced with a
+**Realwe Innovation plug, node 7** (commissioned in [[home-automation]], which
+also rewrote `eos-power` to resolve the plug by **VENDOR** — `MATTER_VENDOR=
+'Realwe'`, attr 0/40/1 — with `MATTER_NODE=7` only as fallback, so future swaps
+need no code edit. **Match vendor, not product**: the node-4 ghost still on the
+fabric is also named '...Smart Plug'.)
+
+- **muppet was running a STALE `eos-power`** — hardcoded `MATTER_NODE = 4`,
+  pointing at the dead ghost node. The vendor-resolving rewrite existed only in
+  `~/astro/bin/` and had never been deployed, so the reset path was down on
+  muppet regardless of which plug was fitted. **Deploying is a separate step
+  from editing — check muppet's copy, not just the repo.**
+- New plug verified end-to-end: `eos-power cycle` → rc=0, camera **Dev 107 →
+  108**. Mains switching still drops the 12V rail through the DR-E10 adapter and
+  **10 s is still sufficient** — no `--secs` bump needed for the Realwe.
+
+**THE REAL FIX — `cycle` now VERIFIES the rail dropped** (astro `a778bfd`).
+A genuine power cut forces the camera to re-enumerate with a **NEW USB Dev
+number**; `eos-power` records it before and confirms it changed after. Until
+now, `eos-power` returned rc=0 as soon as the WebSocket command was *ACKed* —
+so **a lying plug and a genuinely uncurable wedge were indistinguishable**, both
+surfacing as `post-cycle: STILL WEDGED`. New exit codes:
+
+| rc | meaning |
+|---|---|
+| 0 | cycled **and verified** (Dev changed) |
+| 2 | plug unreachable / command failed — the reset never ran |
+| 3 | **PLUG LIED** — ACKed but Dev unchanged; mains never dropped |
+| 4 | camera never came back on the bus |
+
+`eos-focus-cycle` treats **rc=3 as a plug fault, not a camera fault**: it
+**refunds the power budget** (nothing was reset, so a working plug later in the
+night keeps its cycles) and Slacks that the reset never happened. The STILL
+WEDGED alert can now say *positively* that the rail did drop — i.e. a genuine
+power-resistant wedge. Both paths tested on hardware: real cycle → rc=0 (Dev
+108→109); `--secs 0` (too short to drop the rail) → **rc=3 PLUG LIED**.
+
+**2026-08-08 night — 104 frames, then two aborts; VERDICT SUSPECT.** Ran
+22:07→02:26 well: **104 CR2 + 108 JPEG** in `~/tmp/canon-focus-nightly/
+2026-08-08/`, four passes, wedges clearing normally. From 02:26 cycles started
+returning `STILL WEDGED`; breaker aborted at **02:58**, and the 03:13 restart
+repeated it and aborted **03:53** (`NRestarts` 21). **But this ran on the dying
+Sandstrom**, which vanished from Wi-Fi at 08:43 the same morning (CHIP Error
+0x32 timeouts → "Marked node as unavailable" 08:45 → "considered offline"
+09:29; never in homepi's ARP table; homepi itself up 35d, matter-server 13d, HA
+5w — infrastructure was fine, the plug was not). **3 RECOVERED / 4 STILL WEDGED
+interleaved within one hour is the signature of a flaky plug, not a dead one** —
+a dead plug fails every time. So last night's failures are **more likely plug
+flakiness than a new cure-resistant wedge class**, and should NOT be taken as
+evidence of one. Tonight's run on the Realwe arbitrates — and now, whichever it
+is, the logs will say which.
+
+**Do NOT raise `--power-budget` yet.** It was pending, but more budget against a
+lying plug buys thrashing, not frames. Revisit once cycles are provably cutting
+power.
+
+**Still unvalidated (home-automation's caveat, unchanged):** whether mains
+switching clears a *genuine* Class-B wedge is STILL unproven on this plug —
+today's test cycled a **healthy** camera, which proves the mechanism, not the
+cure. Only a live wedge settles it.
+
+## PEAK HUNT INCONCLUSIVE — clouded, d9 re-confirmed, no turning point (2026-07-31 → 08-02)
+
+Ran the d5–d15 peak-hunt schedule (2026-07-31 night, 105 frames, clean
+autonomous run — **no wedges**, 21:44→03:18 UTC). Analysed with
+`eos-star-psf 2026-07-31 --dmin 5 --dmax 15` + `eos-psf-view`. **Did NOT
+bracket the peak** — and the reason is instructive:
+
+- **The night was PARTLY CLOUDY** (Peter: clear only from ~02:10 BST /
+  01:10 UTC to dawn, with a short cloudy bit even then). The by-d **stamp
+  grid is the giveaway**: d5/d8/d9/d14/d15 rows = crisp diagonal star
+  streaks; d6/d7/d10/d11/d12/d13 rows = big amorphous **orange glow blobs**
+  = cloud, which the detector wrongly counted as fat "stars". So the
+  V-curve's d10–d13 hump is CLOUD, not defocus.
+- **Restricting to the clear window** (frames ≥01:10 UTC) sharpens it but
+  can't fully clean it (the cloud was intermittent, hitting scattered
+  passes): clear-window medians d5 4.1, **d9 3.64**, d14 **3.16**, d15 4.23
+  px — with a noisy 7–9 px hump still across d10–d13 (residual cloud).
+- **What we CAN trust:** **d9 sharp on three independent measures now**
+  (07-28 shelf, 07-31 all-night, 07-31 clear-window) — solid. **d14 also
+  reads sharp** (3.16 px, 732 clean stars) — a real new signal, not
+  obviously cloud. **Still no clear turning point**: d15 (4.23) is barely
+  above d14, so the far edge isn't past the peak. Either the sharp region
+  is very broad (d9–d14) or there's field-dependent focus.
+
+**THE BLOCKER (root cause, now clear): `eos-star-psf` counts cloud-glow as
+stars.** A diffuse bright blob (cloud lit by LP) is large, round, low-
+gradient — nothing like a compact star streak — but it passes the current
+area/peak filters. A time cut only partly removes it. **Fix = a
+COMPACTNESS filter** (reject large low-gradient / low-elongation blobs;
+the streak vs blob distinction the stamp grid shows by eye). This both
+salvages last night AND makes every future partly-cloudy night usable.
+Recommended next step (Peter leaning yes, not yet greenlit): harden the
+detector, re-run 07-31, then a clear night confirms.
+
 ## ★★★ FOCUS MEASURED — d8 sharpest on a flat d5–d9 shelf (2026-07-29/30)
 
 The pending "full-res CR2 PSF analysis" is **built and run** — the designed
@@ -120,9 +220,11 @@ Two nights that closed the loop end-to-end.
 - Run `eos-star-psf` on **2026-07-27** too and check the d8 shelf
   reproduces across nights before fully trusting it (offered this session,
   Peter chose to bank the tools first).
-- Raise `--power-budget` (relay proven cheap and effective; 4/run ran dry
-  mid-night) and/or suppress the page when a fresh-budget service restart is
-  imminent anyway.
+- ~~Raise `--power-budget`~~ **ON HOLD (2026-08-09)** — the premise ("relay
+  proven cheap and effective") no longer holds: the Sandstrom was ACKing without
+  switching. More budget against a lying plug buys thrashing. Revisit once
+  verified cycles (rc=0, Dev changed) show the Realwe reliably cuts power.
+  Still open: suppress the page when a fresh-budget service restart is imminent.
 - Why does the wedge recur ~every 90 min? Correlate with runtime / d /
   frame count — looks systematic, possibly long-exposure-count related.
 
@@ -264,15 +366,19 @@ smart plug** (strand option (b): switch mains to the DR-E10 adapter rather than
 a GPIO relay in the 12V line — coarser, whole-adapter, but no new hardware).
 `_relay_set()` now drives the plug over the HA python-matter-server WebSocket
 API (`ws://homepi.local:5580/ws`, `commission_with_code`/`device_command`, On/Off
-cluster). Config at the top of `eos-power`: `MATTER_WS`, `MATTER_NODE=4`,
-`PLUG_ON_POWERS_CAMERA=True`. off/on/cycle/status all verified against the plug
-(cycle: off → hold `--secs` → on, rc=0). Degrades safely: if matter-server is
-unreachable or the node isn't commissioned it prints the failure and exits
-non-zero (recovery logs "power-cycle unavailable" rather than hanging).
+cluster). Config at the top of `eos-power`: `MATTER_WS`, `MATTER_VENDOR`,
+`MATTER_NODE`, `PLUG_ON_POWERS_CAMERA=True`. off/on/cycle/status all verified
+against the plug (cycle: off → hold `--secs` → on, rc=0). Degrades safely: if
+matter-server is unreachable or the node isn't commissioned it prints the
+failure and exits non-zero (recovery logs "power-cycle unavailable" rather than
+hanging).
 
-  - **Plug:** Currys Sandstrom Wi-Fi Smart Plug (VendorID 5470 / ProductID
-    9217), commissioned as **node 4** on the Matter fabric. Commissioning +
-    BLE-on-homepi setup done in the [[home-automation]] strand (see its STATE).
+  - **Plug: SUPERSEDED — see the 2026-08-09 section at the top.** The plug is
+    now a **Realwe Innovation, node 7**, resolved by vendor. The original
+    **Currys Sandstrom** (VendorID 5470 / ProductID 9217, node 4) was binned
+    2026-08-09 as unreliable; its ghost node remains on the fabric. The
+    commissioning + BLE-on-homepi setup below still describes how plugs get
+    onto the fabric — that part stands. See [[home-automation]] STATE.
   - **POWER-CYCLE MECHANISM CONFIRMED LIVE (2026-07-26).** Ran `eos-power
     cycle` on muppet with the camera healthy, watching lsusb: camera dropped
     **OFF BUS within 3s** and re-enumerated with a **NEW Dev number (013→014)**
