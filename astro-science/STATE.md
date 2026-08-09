@@ -228,6 +228,46 @@ seeing floor vs the 0.14 px systematic.
 The output end of the science: where results become visible.
 - **Night pages + calendar** at www.petergrecian.co.uk/astro (calendar from
   precomputed `<camera>/index.json`, built nightly by `build-calendar-index`).
+- **EOS 2000D (canon) is now a first-class deliverables camera** (BUILT
+  2026-08-09). The Canon DSLR — long the astro-canon focus/wedge/plug saga —
+  landed its **focus (pinned d7**, Peter: "we found the focus at last") and got
+  wired into the nights pipeline. **Approach: a CR2→FITS adapter**, not a bespoke
+  builder, so canon flows through the *existing* `nightly-cam` /
+  `publish-night-cam` / `build-calendar-index` unchanged — every downstream gain
+  (derot, drizzle, accumulator, catalogue) applies to it for free. Pieces (astro
+  `2130b14`, mywebsite `6eb8ca1`):
+  - `canon/camera.json`: `flat` night layout, **GBRG** bayer (decoded from a real
+    CR2 — *not* RGGB, don't assume), 6020×4015, focus d7. plate_scale/pole
+    **UNSOLVED** → derot disabled; nightly-cam degrades gracefully (prints "no
+    pole prior; skipping derot", still writes max.jpg + brightness + summary).
+    pedestal (2048) + sky_clear_max_stops (null) are **PROVISIONAL** — the canon
+    black level is ~2048 (14-bit) vs imx708's ~62, so nothing could be copied
+    from astrocam; **re-derive both from the first real fixed-d7 night** (the
+    pedestal double-duty trap: this axis anchors the cloud verdict too).
+  - `bin/eos-cr2-to-fits` (**muppet**, needs rawpy): CR2 → one `.fits.fz`
+    (undemosaiced Bayer in HDU 1, DATE-OBS/EXPTIME/GAIN=**ISO/100**/BAYERPAT/
+    POSINDEX). Time/exposure/ISO from the night's `manifest.csv` (authoritative,
+    no exiftool). Idempotent; `--only-d 7` filters sweep nights.
+  - `bin/canon-nightly` (**pip**): the DELIVERY chain (adapt on muppet → stack+
+    publish on pip → refresh index). **Host split is load-bearing**: muppet has
+    rawpy not matplotlib, pip has matplotlib not rawpy — neither does both halves.
+  - Website: 4th `/astro` hub card ("EOS Camera") + canon in the camera-page &
+    player route regexes. Reads `astro-berrylands/canon/` + `canon/index.json`
+    like the others.
+  - **Verified end-to-end on 2026-08-08** (8-frame d7 subset): adapter →
+    nightly-cam → **real sharp star-field max.jpg** (d7 focus visually confirmed:
+    compact points, not the sweep's defocus blobs), published to S3, calendar
+    index built (verdict=clear, 4/8 stacked).
+  - **The capture/delivery boundary** (Peter, 2026-08-09): astro-capture (CR2s
+    on disk) "should just work"; astro-canon = the keeper; **astro-science = this
+    delivery layer**. The adapter is the *seam* — consumes capture's output, never
+    reaches into it. Untouched capture files (`eos-focus-cycle`, `eos-power`) were
+    left staged-but-uncommitted by their own strand.
+  - **PENDING**: run `canon-nightly` on a **dense fixed-d7 night** (tonight is the
+    first, Peter babysitting) → measure & write back real pedestal + scs; only
+    THEN install a systemd timer (post-dawn) for hands-off nightly delivery.
+    Later refinements: occlusion mask (foreground foliage in frame), pole solve →
+    enable derot. Website Lambda **deploy still pending** (outward-facing).
 - **The catalogue AS the headline deliverable** (Peter, 2026-08-03; design
   `astro/design/catalogue-deliverable.md`). The local star catalogue isn't just
   an internal table — it's the public face of the science, a **forever-growing
