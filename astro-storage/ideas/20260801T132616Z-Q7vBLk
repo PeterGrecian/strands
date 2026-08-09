@@ -1,1 +1,0 @@
-astrocam-storage having ln -s to automounted dirs in my home directory causes delay.  are they used or is the cannonical /mnt/muppet used.  This lacks reference so if I move the disk to another host we will need to change things.  maybe that's best done in a config file rather than at os level

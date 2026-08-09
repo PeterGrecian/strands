@@ -1,6 +1,55 @@
 # astro-storage — state
 
-*Updated 2026-08-03*
+*Updated 2026-08-09*
+
+## eclipticam ship timer INSTALLED + first run freed ~74G (2026-08-09)
+
+Enabled the built-and-tested `eclipticam-ship-night` on its nightly cadence and
+ran one ship. The SSD had refilled to **93%** (the tool was only ever run by
+hand, timer never installed) — so this closes "Next action 1" from the
+bs-nightly-sync design.
+
+- **Timer installed + enabled** on eclipticam:
+  `eclipticam-ship-night.timer` (daily ~09:00 Europe/London, `Persistent=true`,
+  300s jitter). Next fire Mon 2026-08-10 09:03 BST. So the SSD now stays cleared
+  automatically.
+- **BUG in the staged unit, caught + fixed.** The `.service` had **no `User=`**,
+  so systemd ran it as **root** → `%h`=`/root` → `ExecStart=%h/super/bin/…` not
+  found → instant `status=203/EXEC` fail (fail-safe held; no data touched). Had
+  the timer just been switched on, it would have **silently failed every night**
+  while the SSD refilled. Fix: `User=peter` + absolute paths (also the
+  `Documentation=%h/…`). Fixed both on-host **and** the durable staged copy in
+  this strand dir, so a future redeploy / ansible fold-in is correct.
+- **LIVE RESULT (2026-08-09):** `done: copied+verified=14 freed=11`. All 14 SSD
+  nights checksum-verified on bs; **11 freed** (07-26..08-05), newest **3 kept**
+  (08-06/07/08, the safety window). Most nights were already on bs from earlier
+  rsyncs (transfer=0, all matched) — the slow part was the per-night `-c` verify
+  over the ~100Mbit powerline before freeing. **SSD 93% → 21% (~74G reclaimed).**
+- **Monitoring lesson:** a single `is-active` poll blip made my first wait-loop
+  declare "finished" prematurely (it hadn't). Require ≥2 consecutive inactive
+  reads before trusting completion of a long powerline job.
+
+## skycam raw IS bounded now — the "un-built stream" gap is smaller than recorded (2026-08-09)
+
+STATE has long recorded skycam raw on puppy as **unbounded** (pressure GC
+retired 2026-07-01, "one un-built stream"). **Verified on puppy: not true today.**
+A **`skycam-cleanup-incoming.timer`** (04:30 UTC daily, gardencam/skycam repo)
+runs **deliverable-gated deletion**: it frees the incoming raw jpgs for an hour
+**once that hour's mp4 encode exists**, keeping a **3-night safety window**.
+This morning's run: `freed_hours=24 (~5644MB)` — it removed the fully-encoded
+2026-08-06 night. `~/skycam-frames` now holds ~12G (3 live nights ~5.3G each +
+tiny Jul stubs), **not a month of unbounded raw**. Puppy `/` comfortable at 61%.
+
+**What this is / isn't:** for skycam the retention decision is *"the hourly mp4
+is the keeper; raw is discarded once the deliverable exists"* — a **local
+deliverable-gated prune**, NOT ship-raw-to-bigstore-then-free. So the raw is
+bounded, but skycam raw is **not** archived to bs the way the other streams are;
+only the mp4 products persist (53G of skycam already on bs, per 07-31). If we
+ever decide skycam raw itself deserves archival, that ship path is still unbuilt
+— but the disk-pressure problem STATE flagged is **already solved** on-host.
+(This is on puppy, gardencam's territory; astro-storage owns the *decision* that
+raw-discard-on-deliverable is the right skycam retention, per the 07-31 ubersitrep
+hand-off.)
 
 ## Cutover mail drained — all resolved by operation (2026-08-03)
 
