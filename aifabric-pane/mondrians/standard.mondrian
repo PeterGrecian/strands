@@ -1,0 +1,5 @@
+deck    pane
+page    0
+size    239x63
+layout  7732,239x63,0,0{79x63,0,0[79x6,0,0,0,79x56,0,7,1],79x63,80,0[79x31,80,0,5,79x31,80,32,7],79x63,160,0[79x31,160,0,8,79x31,160,32,6]}
+slots   overview astro-science astro-storage astro-canon (free) driver
