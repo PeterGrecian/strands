@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# pane — deterministic deck verbs for the aifabric-pane conductor.
+#
+# The driver is an LLM, but deck MECHANICS must be deterministic tools, not
+# natural-language interpretation (Peter 2026-08-09): predictable, instant,
+# free (no model turn to move a term), and self-documenting. The conductor,
+# when it acts, calls THESE — it does not drive tmux ad-hoc. The LLM is for
+# judgement ("which strands are worth up now"), not mechanics.
+#
+# Every verb is deck-aware: it keeps the keeper registry (PANE_KEEPER_<strand>
+# in the deck env) consistent, so nothing is left half-torn-down the way a raw
+# `tmux kill-pane` / `Ctrl-b x` would leave a dangling registry entry.
+#
+# Usage:
+#   pane list                     what's up (keepers + ribbons), from the registry
+#   pane up    <strand>           spawn/focus a keeper term (= pane_spawn_keeper)
+#   pane drop  <strand>           close a keeper term, prune registry, re-even row
+#   pane ribbon  <strand>         shrink a keeper to a small VISIBLE strip (alive)
+#   pane restore <strand>         un-ribbon: grow it back and re-even the row
+#   pane grow  <strand> [cells]   widen a term by N cells (default 20), row-only
+#   pane even                     give every keeper on the strands row equal width
+#
+# Ribbon note: tmux has no native "minimise". A ribbon is a term resized down to
+# RIBBON_COLS wide but left LIVE and clickable in place (mouse on). restore grows
+# it back. This is the "visible clickable ribbon" model (not break-pane offscreen).
+set -uo pipefail
+
+HERE="$(dirname "$(readlink -f "$0")")"
+source "$HERE/pane-conductor-helpers.sh"
+
+RIBBON_COLS="${PANE_RIBBON_COLS:-14}"
+
+die() { echo "pane: $*" >&2; exit 1; }
+
+# _redraw — nudge tmux to repaint borders/identity after a structural change.
+# Border-status labels can lag until something forces a redraw (Peter saw a term
+# with no strand name until he resized). refresh-client is the cheap nudge.
+_redraw() { tmux refresh-client 2>/dev/null || true; }
+
+# mark/unmark a keeper as ribboned via a per-term option, so `list` and `restore`
+# know its state (clobber-proof, same idea as @strand).
+_set_ribbon()   { tmux set-option -pt "$1" @ribbon 1 2>/dev/null; }
+_clear_ribbon() { tmux set-option -pt "$1" -u @ribbon 2>/dev/null; }
+_is_ribbon()    { [[ "$(tmux display-message -pt "$1" '#{@ribbon}' 2>/dev/null)" == 1 ]]; }
+
+cmd_ribbon() {
+  local strand="${1:-}"; [[ -n "$strand" ]] || die "usage: pane ribbon <strand>"
+  local p; p="$(_pane_keeper_pane "$strand")" || die "no keeper '$strand' up"
+  tmux resize-pane -t "$p" -x "$RIBBON_COLS"
+  _set_ribbon "$p"
+  _redraw
+  echo "ribboned $strand ($p) -> ${RIBBON_COLS} cols (still live; 'pane restore $strand' to grow back)"
+}
+
+cmd_restore() {
+  local strand="${1:-}"; [[ -n "$strand" ]] || die "usage: pane restore <strand>"
+  local p; p="$(_pane_keeper_pane "$strand")" || die "no keeper '$strand' up"
+  _clear_ribbon "$p"
+  _pane_even_strands_row   # growing back = re-even everything that isn't ribboned
+  # keep other ribbons small: re-shrink any term still marked @ribbon
+  local q top row_top
+  row_top="$(tmux display-message -p -t "$(_pane_env PANE_STRANDS_ROW)" '#{pane_top}')"
+  while IFS= read -r q; do
+    _is_ribbon "$q" && tmux resize-pane -t "$q" -x "$RIBBON_COLS"
+  done < <(tmux list-panes -t "$_pane_session" -F '#{pane_id} #{pane_top}' \
+             | awk -v t="$row_top" '$2==t {print $1}')
+  _redraw
+  echo "restored $strand ($p)"
+}
+
+cmd_grow() {
+  local strand="${1:-}" cells="${2:-20}"
+  [[ -n "$strand" ]] || die "usage: pane grow <strand> [cells]"
+  local p; p="$(_pane_keeper_pane "$strand")" || die "no keeper '$strand' up"
+  tmux resize-pane -t "$p" -x "$(( $(tmux display-message -pt "$p" '#{pane_width}') + cells ))"
+  _redraw
+  echo "grew $strand ($p) by $cells cols"
+}
+
+cmd_list() {
+  echo "keepers up:"
+  # augment pane_list_keepers with ribbon state
+  local line var strand pid any=0
+  while IFS= read -r line; do
+    case "$line" in PANE_KEEPER_*=*)
+      var="${line%%=*}"; pid="${line#*=}"
+      strand="${var#PANE_KEEPER_}"; strand="${strand//_/-}"
+      tmux list-panes -t "$_pane_session" -F '#{pane_id}' | grep -qxF "$pid" || continue
+      if _is_ribbon "$pid"; then printf '  %-16s %s  [ribbon]\n' "$strand" "$pid"
+      else printf '  %-16s %s\n' "$strand" "$pid"; fi
+      any=1 ;;
+    esac
+  done < <(tmux show-environment -t "$_pane_session" 2>/dev/null | grep '^PANE_KEEPER_')
+  (( any )) || echo '  (no keepers up)'
+}
+
+verb="${1:-}"; shift || true
+case "$verb" in
+  list)    cmd_list ;;
+  up)      pane_spawn_keeper "$@" >/dev/null && { _redraw; echo "up: $*"; } ;;
+  drop)    pane_drop_keeper "$@" && { _redraw; echo "dropped: $*"; } ;;
+  ribbon)  cmd_ribbon "$@" ;;
+  restore) cmd_restore "$@" ;;
+  grow)    cmd_grow "$@" ;;
+  even)    _pane_even_strands_row && { _redraw; echo "evened strands row"; } ;;
+  ''|help|-h|--help)
+    sed -n '2,30p' "$(readlink -f "$0")" | sed 's/^# \{0,1\}//' ;;
+  *) die "unknown verb '$verb' (try: pane help)" ;;
+esac

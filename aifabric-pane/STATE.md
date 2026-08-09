@@ -21,7 +21,10 @@ conductor. Split out of [[aifabric]] on 2026-08-03; full design in
 | Leaf    | **terminal** | pane    | One shell/keeper/driver/overview (a pty). SEVERAL per page. |
 
 Rules: "pane" names ONLY the product (so the strand name is correct, not a
-misnomer). The leaf is a **terminal**. Retired: "single pane of glass",
+misnomer). The leaf is a **terminal** — but Peter leaned toward **"term"** on
+2026-08-09 ("maybe term rather than terminal — it's not quite a terminal, we'll
+work on that"), since the leaf is a strand-slot that merely *hosts* a pty. Not
+yet settled; "term" is the working shorthand. Retired: "single pane of glass",
 "cockpit", "session"/"window" as our words, "3-zone". Say "terminal-emulator" for
 the desktop app (xfce4-terminal) to avoid clashing with terminal-the-leaf.
 Full rationale in memory `pane-of-glass-vocabulary` + `no-cockpit-naming`.
@@ -34,6 +37,60 @@ Peter's HyperCard recall (Mac 1987, Atkinson — stack of index cards). Pages =
 cards: a page-tab should be a little CARD with a headline + a few summary lines
 (keeper count, unread mail, what's live), not tmux's cryptic `n:name`. Buildable
 in the curses overview surface we already own.
+
+## Session 6 (2026-08-09) — deterministic verbs, border fix, design cluster
+
+Attached-conductor session (this session drove the live deck from the driver
+term, %6). Fixes + a coherent design cluster spooled (9 ideas). Kept working
+because the deck was mid-use: astro-storage backfilling, ubersitrep done-for-now.
+
+**Live fixes to the deck:**
+- **Closed the ansible keeper** (`pane_drop_keeper ansible`); astro-storage stays
+  live. astro-storage was ALREADY a keeper (not off-deck) — "move it there" = just
+  drop ansible, astro-storage reflows in.
+- **Border legibility bug FIXED.** Both `pane-border-style` AND
+  `pane-active-border-style` were `fg=#53008f` (dark purple) on black — illegible
+  AND identical (couldn't tell the active term). A strand KINSHIP COLOUR had leaked
+  into the GLOBAL border style. Fixed live → `fg=colour245` (grey) /
+  `fg=colour39,bold` (blue active). Also `pane-border-status` had been left `off`
+  so NO strand names showed — turned back `top`. ROOT CAUSE of the leak still to
+  find (idea) so it can't recur on rebuild.
+- **ubersitrep recovered** from a `/model` overlay Peter opened (status line had
+  been taken over; Esc/Enter dismissed it) and the stray `I` at its prompt cleared
+  (`C-u`). Not a deck fault — transient in-app UI state.
+
+**Identity layers clarified (corrects earlier muddle):**
+- **BORDER (top) = reliable identity** — tmux-drawn from `@strand`, deck-controlled,
+  overlay-proof (e.g. `3: ubersitrep`). This is the trustworthy layer.
+- **Claude STATUS LINE (bottom) = app plumbing** — per-session, mostly noise
+  (`⏵⏵ bypass · 1 shell · 1 agent`); the one useful token (strand) duplicates the
+  border. Direction: quieten it for keepers via aicli statusLine config.
+- **Border repaint LAGS** — a term showed no strand name until Peter resized
+  (forced redraw). Needs a redraw nudge (refresh-client) after spawn / @strand set.
+- **DESIGN FORK** (open): Peter may DROP borders for the Metro "tiles join up" look
+  → then the status line MUST carry identity (one line: strand · context · git),
+  trading overlay-proof identity for the clean look. Not decided.
+
+**`poc/pane` — deterministic deck verbs (NEW, working):**
+- Principle Peter set: deck MECHANICS = deterministic tools, NOT natural-language-
+  to-the-conductor. Predictable, instant, free, self-documenting; LLM reserved for
+  judgement, and even the conductor CALLS these verbs rather than driving tmux
+  ad-hoc. Supersedes any "just say it to the driver" option.
+- Verbs (all deck-aware, keep PANE_KEEPER registry consistent; wrap the existing
+  helpers): `list` (with `[ribbon]` mark) · `up` · `drop` · `grow` · `even` ·
+  `ribbon` (shrink-but-alive) · `restore`. Proven live on ubersitrep.
+- Ribbon = shrink-but-live + reversible. OPEN (not a bug): ribbon PLACEMENT —
+  Peter's model is a small strip parked UNDER the top-left term, which tmux's
+  binary-split-tree can't do by resize alone (needs join-pane/select-layout).
+- NEXT: promote 2-3 verbs to `bind -n` root chords (no Ctrl-b) once the vocabulary
+  settles; `pane_index` renumbers on kill → addressing needs a stable `@slot`.
+
+**Also learned:** tmux has NO focus-follows-mouse (that's a WM feature, not tmux);
+click-to-focus via `mouse on` (already live) is the closest. `focus-events` is a
+different thing (forwards focus events to apps inside).
+
+Design cluster (all interlock: attention-driven reflow + stable-addressed terms +
+deterministic verbs/hotkeys) is in `ideas/` — triage next session.
 
 ## Session 5 (2026-08-03) — restart-deck hardened + `panedeck` launcher
 

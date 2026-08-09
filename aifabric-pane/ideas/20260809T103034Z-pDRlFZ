@@ -1,0 +1,1 @@
+QUIRK: tmux border-status (@strand label) doesn't always auto-repaint — Peter 2026-08-09 saw a term with no strand name until he grabbed the border and resized, which forced a redraw. Border label is CORRECT, just lags. POC needs a redraw nudge after set-option @strand / after spawn (e.g. tmux refresh-client, or a resize-pane no-op) so identity shows without a manual resize.
