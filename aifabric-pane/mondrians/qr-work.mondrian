@@ -1,0 +1,5 @@
+deck    pane
+page    0
+size    239x59
+layout  d873,239x59,0,0{77x59,0,0[77x7,0,0,0,77x51,0,8,1],70x59,78,0,7,90x59,149,0[90x33,149,0,5,90x25,149,34,6]}
+slots   overview astro-science astro-canon home-automation driver

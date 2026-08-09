@@ -38,6 +38,42 @@ cards: a page-tab should be a little CARD with a headline + a few summary lines
 (keeper count, unread mail, what's live), not tmux's cryptic `n:name`. Buildable
 in the curses overview surface we already own.
 
+## Session 6b (2026-08-09) — standard layout, live rearranging, two bugs found
+
+Drove the live deck hands-on with Peter (attached-conductor). Outcomes:
+
+- **STANDARD LAYOUT defined + saved** (`mondrians/standard.mondrian`): 3 cols × 2
+  rows, DIAGONAL CORNER SYMMETRY — overview top-left SHORT, driver bottom-right
+  SHORT (always-findable home). Two LONG work terms (main-thrust left column +
+  top-right); two SECONDARY terms in the middle column. Overview auto-fits short,
+  which is what MAKES col1's lower term long (feature). Build notes in the idea:
+  tmux `tiled` picks 2×3 at wide aspect — build 3×2 by hand (even-horizontal→6
+  cols, join-pane -v pairs into 2 rows, resize cols to W/3); `swap-pane` moves
+  terms between cells with @strand travelling (no relaunch). Later variant saved
+  as `qr-work` (astro-canon full-height middle, home-automation top-right).
+- **`recolour` a strand:** home-automation pinned GREEN by hand (`colour` file →
+  `004d00` deep dark green, like ubersitrep's red pin), repainted live via the
+  house `recolour` tool. Hand-overrides sit outside the golden-angle wheel — a
+  bulk regen would clobber them (same fragility as ubersitrep).
+- **BUG: identity divergence** — a deck term tagged `@strand=astro-storage` was
+  ACTUALLY running `aicli home-automation`; the tag and process had silently
+  drifted all session (we believed astro-storage was backfilling — it was
+  home-automation; astro-storage wasn't running at all). @strand is only
+  clobber-proof if kept in sync on swap/relaunch. Fix: deck should VERIFY tag vs
+  the running process, not trust it. (idea `…l7LjQS`)
+- **BUG: deck window title clobber + fullscreen degrade** — the deck's X11 window
+  title got rewritten to `astro-canon` (backend-clobbers-net-wm-name) and
+  fullscreen had fallen back to MAXIMIZED. Fixed live: `xdotool set_window --name
+  pane` + `wmctrl -b add,fullscreen`. Needs a title REASSERTER loop to stick.
+- **WORKSPACE/BROWSER GAP** — Peter wanted a term beside a Chrome browser (QR
+  lookup): WS2 = 1/3 term + 2/3 Chrome. Blocked: a term is a tmux pane inside the
+  fullscreen deck window; XFCE workspaces move WINDOWS not panes. Design question
+  banked (idea `…XyPg59`): how does one term coexist with a non-deck window?
+- **tmux has NO focus-follows-mouse** (that's a WM feature); click-to-focus via
+  `mouse on` (already live) is the closest. `focus-events` is unrelated.
+- Doorbell waiter kept getting reaped at turn boundaries this session; spool stayed
+  empty throughout (no mail missed). Harness/turn-cycling interaction, not a fault.
+
 ## Session 6 (2026-08-09) — deterministic verbs, border fix, design cluster
 
 Attached-conductor session (this session drove the live deck from the driver
