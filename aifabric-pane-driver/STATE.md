@@ -74,9 +74,13 @@ strand's own code):
   `list` · `up` · `drop` · `grow` · `even` · `ribbon` · `restore`. Each is
   deck-aware and keeps the keeper registry consistent. **This is the driver's
   real interface** and the artefact most worth carrying across the pivot.
-- **`pane-conductor-helpers.sh`** — the primitives the verbs wrap
+- **`pane-driver-helpers.sh`** — the primitives the verbs wrap
   (`pane_spawn_keeper`, `pane_drop_keeper`, `pane_list_keepers`); registry lives
   in the tmux session env as `PANE_KEEPER_<strand>`.
+- **`pane reconcile [--fix]` + a verify-and-refuse guard** (NEW 2026-08-10, this
+  strand's first real code): identity is re-derived from the running `aicli`
+  argv, and no verb will act on a term whose tag has diverged. See the resolved
+  item under Pending, and `aifabric/method/identity-verification.md`.
 - **Proven live** (2026-08-03, Peter scored the driver 5/5): a plain Claude
   session in the driver term, sourcing the helpers, IS a working driver — no
   separate agent framework needed.
@@ -141,6 +145,25 @@ strand's own code):
   status, without owning the refresh.
 - **Where driver code lives** — graduate from `aifabric-pane/poc/` into
   `aifabric/bin/` once past POC.
+
+## Found in use 2026-08-10 (both still open)
+
+- **DOORBELL RE-ARM LOOPS — the session ritual is incomplete.** After acting on
+  mail, `strand-mailbox drain` empties the SPOOL but **not** `MAILBOX.md`. With
+  `--keep` (whose whole point is a non-destructive first read) the re-armed
+  waiter then sees a still-full mailbox and rings INSTANTLY, forever. Hit live
+  this session. Fix in the moment: `: > MAILBOX.md` before re-arming. **The
+  ritual text in every strand's CLAUDE.md says "drain and re-arm" and is missing
+  this step** — worth fixing centrally, not per-strand. Plausibly the real
+  explanation for the "waiter kept getting reaped at turn boundaries" note in
+  `aifabric-pane` session 6b, which was written off as harness turn-cycling.
+- **`pane up` cannot serve the live deck.** It needs `PANE_STRANDS_ROW`, which
+  is unset on the standard-layout deck (that anchor comes from the original
+  bootstrap; the deck in use was built by the standard-layout path). Had to
+  split and register by hand to place a term. So the tool layer does NOT
+  currently cover the deck Peter actually runs — the verbs assume a shape the
+  layout has moved past. Fix belongs with the deck scripts ([[aifabric-pane]]),
+  but it blocks the driver, so worth raising rather than working around again.
 
 ## Waiting on
 
