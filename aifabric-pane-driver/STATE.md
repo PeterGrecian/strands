@@ -15,11 +15,22 @@ and its terms, not the whole fabric. Mission in `CLAUDE.md`.
 
 The control vocabulary, curated as it emerges rather than designed up front.
 Each entry: what Peter SAYS → what it MEANS → the tools it composes to.
-Nothing pinned yet — this fills as we actually drive a deck. Candidates
-inherited from the prototype, not yet confirmed in Peter's own speech:
-**ribbon** (shrink-but-live, reversible) · **up** / **drop** a strand ·
-**even** · **main** (the term you're working in). Watch for what he reaches
-for unprompted; that is the real vocabulary.
+
+Observed in Peter's own speech (2026-08-10, first live driving):
+- **"this window"** → the term the driver is in. NB he says *window* for what
+  the vocabulary calls a *term* — worth noting before enforcing the ladder on
+  him; the naming ladder is `aifabric-pane`'s to set, but a jargon nobody
+  speaks is a spec, not a language.
+- **"<strand> bigger/smaller"** → resize by STRAND NAME, never a term id or a
+  position. Confirms strand-name is the natural address (and is exactly why the
+  identity guard below matters — the name must resolve to the right term).
+- **"make X smaller and Y bigger"** → one utterance, one compound: a relative
+  reallocation between two terms, not two independent resizes. When they share
+  a column this is a single `resize-pane`.
+
+Candidates inherited from the prototype, NOT yet heard from Peter:
+**ribbon** (shrink-but-live, reversible) · **up** / **drop** · **even** ·
+**main**. Watch for what he reaches for unprompted; that is the real vocabulary.
 
 ## What exists
 
@@ -73,11 +84,24 @@ strand's own code):
 - **Driver's own address space.** `pane_index` renumbers on kill; the prototype
   wanted a stable `@slot`. In the DOM this is free (`data-strand`, unclobberable
   — unlike `_NET_WM_NAME`/pane_title). Carry the *requirement*, drop the hack.
-- **Identity verification.** Prototype bug (2026-08-09): a term tagged
-  `@strand=astro-storage` was really running `aicli home-automation` — tag and
-  process silently drifted a whole session. **The driver must VERIFY tag against
-  the running process, not trust it.** This is a driver responsibility and it
-  transfers directly to the browser model.
+- ~~**Identity verification.**~~ **DONE 2026-08-10** — and it was not theoretical:
+  the bug recurred live (`%5` tagged `home-automation`, running `hardware`) and a
+  resize asked for by name nearly hit the wrong strand. **ROOT CAUSE FOUND:** the
+  spawn path is sound (it writes tag + registry atomically with the `aicli` it
+  launches); drift comes from a HUMAN typing `aicli <other>` into a live term's
+  shell. The tag is written ONCE at spawn and thereafter describes the process
+  that *used to* run there. **The registry is authoritative about WHERE a term is
+  and stale about WHAT it runs.** Fixed in `poc/pane*`: `_pane_term_strand` reads
+  ground truth from tty + `aicli` argv; `_pane_keeper_pane` verifies and REFUSES
+  on mismatch; new verb `pane reconcile [--fix]` audits and repairs the deck.
+  Design lesson that transfers to the browser: **identity must be re-derived from
+  the running process, never cached at spawn** — `data-strand` in the DOM will be
+  just as unclobberable and just as stale.
+- **Verification belongs IN the tools, not in the driver's discretion.** The
+  guard sits in the resolve path every verb shares, so no verb can act on a term
+  whose identity is known wrong. A driver that merely *remembers* to check is one
+  distracted turn from the 08-09 failure. Generalise this: where correctness
+  depends on a check, the tool enforces it.
 - **How the driver is addressed in a browser.** In tmux it had a term and a
   prompt. As a web component: text box? persistent? does it stream? Open.
 - **Merge seam with the overview** — what the driver renders when it also shows
