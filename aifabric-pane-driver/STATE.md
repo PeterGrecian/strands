@@ -22,11 +22,15 @@ sync when the mission or the jargon model changes.
 The control vocabulary, curated as it emerges rather than designed up front.
 Each entry: what Peter SAYS → what it MEANS → the tools it composes to.
 
+**THE LADDER IS ASPIRATION, NOT ENFORCEMENT** (settled 2026-08-10 by
+[[aifabric-pane]], who owns it; Peter: *"sort of - I'll get it wrong from time
+to time but it's a good idea"*). Keep the ladder in the WRITING; understand
+*window* / *pane* / *term* alike when he speaks; **never correct him mid-flow**.
+This is the driver's standing rule for every vocabulary mismatch below.
+
 Observed in Peter's own speech (2026-08-10, first live driving):
-- **"this window"** → the term the driver is in. NB he says *window* for what
-  the vocabulary calls a *term* — worth noting before enforcing the ladder on
-  him; the naming ladder is `aifabric-pane`'s to set, but a jargon nobody
-  speaks is a spec, not a language.
+- **"this window"** → the term the driver is in. He says *window* for what the
+  ladder calls a *term*. Per the rule above: understand it, don't correct it.
 - **"<strand> bigger/smaller"** → resize by STRAND NAME, never a term id or a
   position. Confirms strand-name is the natural address (and is exactly why the
   identity guard below matters — the name must resolve to the right term).
@@ -41,9 +45,10 @@ Observed in Peter's own speech (2026-08-10, first live driving):
   two proposals; the right move was to do BOTH rather than guess, since they were
   complementary. Treat a bare assent after a menu as "all of it" unless the items
   conflict.
-- **"STATUS.md"** (2026-08-10) → he means `STATE.md`. No STATUS.md exists
-  anywhere in the house. Recorded because a driver should map the human's word
-  onto the real file silently, not correct him mid-flow.
+- ~~**"STATUS.md"**~~ → a slip of the tongue, not jargon (confirmed by
+  [[aifabric-pane]] 2026-08-10). It IS `STATE.md`; nothing to reconcile. Kept
+  struck-through as a reminder that not every mismatch is vocabulary — check
+  before pinning one. The silent-mapping instinct was still right.
 
 Candidates inherited from the prototype, NOT yet heard from Peter:
 **ribbon** (shrink-but-live, reversible) · **up** / **drop** · **even** ·
@@ -51,7 +56,18 @@ Candidates inherited from the prototype, NOT yet heard from Peter:
 
 ## What exists
 
-Inherited from the tmux prototype (in `aifabric-pane/poc/`, not yet this
+**PATHS MOVED 2026-08-10**: the deck scripts are now `aifabric/tmux-deck/`
+(was `strands/aifabric-pane/poc/`, aifabric `0a151b8`), and
+`pane-conductor-helpers.sh` → `pane-driver-helpers.sh` as part of the
+conductor→driver scrub (`e778b58`). Verified the identity guard survived the
+move and still runs from the new path.
+
+**RENAME GOTCHA** (from that scrub): the rename collapsed two distinct words —
+"conductor" was the AGENT, "driver" was the PANE it sat in. Blind `sed` yields
+"the driver's driver". Say **"the driver"** for the agent and **"the driver
+pane"** for the term.
+
+Inherited from the tmux prototype (now in `aifabric/tmux-deck/`, not yet this
 strand's own code):
 
 - **`pane` — deterministic deck verbs** (working, proven live 2026-08-09):
