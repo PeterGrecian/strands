@@ -84,13 +84,21 @@
     camera **480M** — a worn path silently drops to 12M) and
     `UDMA_CRC_Error_Count` on any SMART-visible disk. Re-run when anything on
     muppet's USB misbehaves, *before* building a software theory.
-  - **Open question — powered hub as sacrificial front-end.** Put a £15 powered
-    hub in front of everything so insert/remove wear lands on a replaceable part
-    instead of soldered-on laptop sockets. That is effectively what the camera
-    now has. Cheap insurance; **decide next bench session.** Caveat: it adds a
-    shared power feed, and a shared feed is exactly what caused the 2026-07-15
-    disk drop — so if adopted, disks keep their **own** feeds and the hub carries
-    only the low-power tether devices.
+  - **THE REAL COST — why this outranks its £0 part price (2026-08-10).** Judge
+    this fault by consequence, not components. It cost **missed camera time on a
+    rig that only works on clear nights** (unrepeatable — a lost clear night is
+    gone), plus **two weeks of Peter's and Claude's time** chasing firmware
+    theories that could never have found it. **astro-canon is a saga** largely
+    because of this one socket. A £0 part with a very expensive, silent,
+    progressive failure mode.
+  - **✅ DECIDED — powered hub as sacrificial front-end.** Put a ~£15 powered hub
+    in front of the tether. Two reasons, the second underrated at first: wear
+    lands on a replaceable part instead of a soldered-on laptop socket; and **a
+    hub fails LEGIBLY** — swappable, testable, you can watch it enumerate —
+    whereas a laptop socket fails as a two-week mystery. **No shared-feed
+    objection any more:** the 12V disk feed is soldered and separate, so the hub
+    carries only the camera. This is what the camera de-facto has now; make it
+    deliberate.
   - **Open question — is muppet the right astro tether host at all?** It's
     flagged in GLOBAL.md as "spare, difficult-to-use screen", is deliberately
     headless, and is an old laptop in daily service. Not urgent (the rig is
@@ -151,13 +159,29 @@
     just Acknowledged — see [[xmatters-response-close]].) Edit is manual, not
     ansible-managed (the role templates only the base unit).
 
-### 6 TB migration runbook — DISK ARRIVED 2026-07-27 (migration DEFERRED)
+### 6 TB migration runbook — ✅ DONE (verified 2026-08-10)
 
-**⏸ DEFERRED (2026-07-27):** disk arrived and was inspected, but migration is
-**on hold until the current disk-full emergency is over** — Peter has no free
-space and no bench time right now. Nothing was changed: the drive was mounted
-**read-only**, inspected, and unmounted cleanly. **Resume from step 1 below when
-the emergency clears.**
+**✅ MIGRATION COMPLETE — done by astro-storage, verified live 2026-08-10.**
+`/dev/sda1` is **ext4** (as decided), mounted at **`/mnt/bigstore`**, holding
+**1.4 TB** in `astro-data` (+ `old_backups` 4.4 G, `old_backups2` 1018 M swept
+up from the old disks), **4.2 TB free (25% used)**. **photodisk (sdb) is
+RETIRED and no longer attached** — the 274-pending-sector drive is off the
+machine, so the single-copy-on-a-dying-disk exposure is **closed**. bigdisk
+(sdc) remains attached as XFS at `/mnt/bigdisk` + `/mnt/bigdisk2`.
+
+**Value check (2026-08-10):** 1.4 TB on bigstore ≈ **£90/TB one-off** vs S3
+Standard ≈ $32/mo (~£25) for the same 1.4 TB — pays back in ~5 months, before
+egress ($0.09/GB to read the bulk back). **On-prem is the right home for astro
+bulk; this disk is earning its keep.**
+
+**⚠ STILL OPEN — the shuck.** bigstore is still behind the **Seagate Expansion
+bridge (0bc2:2038)**, which firmware-blocks ATA pass-through → **1.4 TB of
+astro data on a disk whose health cannot be read.** The IcyBox shuck (£0) is
+the one remaining physical job on this disk. See
+[[seagate-expansion-blocks-sat]].
+
+*Historical runbook below — kept for the inspection findings and the
+bridge/SMART evidence; the migration steps themselves are done.*
 
 **Inspection findings (2026-07-27), attached to muppet over USB:**
 - Presents as `sda`, **5.5 TiB**, factory-fresh: single **exFAT** data partition
@@ -348,7 +372,14 @@ disk sprawl down to one live drive + two cold copies; nothing to landfill):
   would have been trivial.
 
 
-- **muppet shared-power fault — power-feed solder still OPEN.** The 2026-07-15
+- **muppet shared-power fault — ✅ SOLDER DONE (2026-08-10). CLOSED.** The 12V
+  power feed **is now soldered** (solder + heatshrink, per the Decisions rule —
+  not Wago). This was the root cause of the 2026-07-15 event and it is fixed;
+  the lesson is learnt and codified. Consequence for the powered-hub question
+  above: **the disks have their own soldered 12V feed**, so a hub would carry
+  only the camera and reintroduces **no** shared-feed risk. History below kept
+  for the failure signature.
+  The 2026-07-15
   power event dropped bigdisk (sdc) *and* photodisk (sdb) off the USB bus at
   once — shared power-feed fault, not disk failure. **Data side is now fully
   recovered (2026-07-16):** muppet was powered off for maintenance, rebooted;
@@ -411,6 +442,69 @@ disk sprawl down to one live drive + two cold copies; nothing to landfill):
 
 ## Decisions
 
+- **muppet's condition: INTERFACES worn, compute/storage HEALTHY (2026-08-10).**
+  Measured this session, against a "muppet is worn out, only worth £100"
+  hypothesis — the evidence **does not support** retiring the machine:
+  - Internal NVMe (SKHynix 256G): **Power On Hours 31,601** (~3.6 yr), **134
+    power cycles**, **Percentage Used 2%**, Available Spare 100%, 24.7 TB
+    written. Decades of write endurance left. *(Caveat: this is the drive's
+    hours; it would carry over if the NVMe were ever moved between machines —
+    134 cycles for a mostly-on laptop makes it plausible as muppet's own.)*
+  - **Unsafe Shutdowns 56 of 134 — but all HISTORIC.** Last shutdown was
+    textbook clean (`Syncing filesystems` → SIGTERM → `poweroff.target` →
+    journal stopped in order). The XFS recoveries at 2026-07-15 19:07 were the
+    *external* sdc disks replaying after the power event — **host clean,
+    external disks dirty**, which is exactly the distinction that matters.
+  - Uptime 24 days; **zero sleep/hibernate events in 7 days**;
+    `mem_sleep=[s2idle]` only (no `deep`), `HibernateDelaySec=60` — harmless on
+    an always-on headless box, but the hibernate path is effectively untested
+    here. **Keyboard is in good condition.**
+  - **Conclusion: muppet's failures are exclusively at the PHYSICAL INTERFACES**
+    — USB socket (worn), backlight (dead half, won't-fix), power feed (now
+    soldered). Not the silicon, not the storage, not the software discipline.
+  - **The operative judgement is not "worn out" but "past the point where its
+    interfaces can be trusted with something that must not fail silently."**
+    The astro tether is exactly such a thing. So: keep muppet as headless
+    NFS/compute (a role needing neither screen nor pristine sockets), but stop
+    letting it be a **single silent point of failure** for time-critical
+    capture — hence the powered hub, and the open host question above.
+- **Spend priority follows from the above (2026-08-10).** The fleet's real gap
+  is **no longer capacity or storage** — bigstore is migrated and earning
+  £90/TB, photodisk is retired, the solder is done. Remaining, cheapest first:
+  **(1) the IcyBox shuck (£0)** — 1.4 TB currently SMART-blind; **(2) powered
+  hub (~£15)**; **(3) durability** — bigstore is a **single copy** of 1.4 TB,
+  and that, not capacity, is the genuine cloud case. If taken: **Cloudflare R2**
+  ($0.015/GB-mo, **egress free** ≈ $21/mo for 1.4 TB) over **S3** ($0.09/GB
+  egress makes read-back punitive). Whether it's worth it depends on how much
+  of the 1.4 TB is reproducible vs irreplaceable — **astro-storage's call.**
+  New-laptop thinking is unchanged and stays non-urgent (see below).
+- **REDUNDANCY IS THE REAL ON-PREM/CLOUD DIFFERENCE — and we currently have
+  NONE (2026-08-10, Peter's framing).** The £90/TB comparison above prices
+  **capacity**, where on-prem wins outright. It does **not** price
+  **durability**, where the two aren't comparable: S3 is 11 nines across three
+  AZs; **bigstore is one disk, one bridge, one USB socket, one house.** Peter's
+  position stated plainly: *can't achieve AWS levels, but currently has no
+  redundancy at all.* Three distinct exposures, only one of which is about the
+  disk:
+  1. **Single copy of 1.4 TB.** photodisk's retirement took the duplicated
+     nights with it; `old_backups*` on bigstore are only 5.4 G — not a second
+     copy of anything meaningful.
+  2. **SMART-blind** behind the Seagate bridge → **no early warning.** photodisk
+     gave weeks of notice via pending-sector creep; bigstore would give none.
+     First symptom = data loss.
+  3. **Correlated failure** — one host, one feed, one room. Theft/flood/fire
+     takes everything regardless of disk health.
+  - **Do NOT reflexively buy a second 6 TB disk.** A second disk on the same
+    machine addresses only (1) — now the *least* likely failure, with photodisk
+    gone and the 12V soldered — costs ~£200, and does nothing for (2) or (3).
+  - **The goal is not AWS parity; it is to stop being at ONE.** Two cheap moves
+    cover most of the gap: **the shuck (£0)** restores the *warning time*
+    (fixes 2), and **an offsite copy of the irreplaceable SUBSET** fixes (1)
+    and (3) together. Full 1.4 TB on R2 ≈ $21/mo, but if the keeper subset is
+    ~200 G that is **~$3/mo** for geographic redundancy — a different
+    proposition entirely. **Sizing that subset (irreplaceable vs reproducible
+    vs superseded) is astro-storage's call; hardware owns stating the
+    exposure.**
 - **muppet's dim screen: WON'T FIX — flogging a dead horse (2026-07-22).**
   Symptom is dim, worse on the *left-hand side* → classic backlight/LED-driver
   (edge-lit panel not propagating light across), not GPU (no artefacts) and not
