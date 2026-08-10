@@ -40,10 +40,13 @@ which holds the full design.
 
 ## Status / where to look
 
-POC built and liked (2026-08-03). Scripts live in this strand's `poc/`:
-- `aifabric-pane/poc/aifabric-tmux-poc.sh` — builds the 3-zone pane from outside
+POC built and liked (2026-08-03). **Code lives in the aifabric repo at
+`~/aifabric/tmux-deck/`** (moved there 2026-08-10 — it used to be this strand's
+`poc/`; the strand keeps curation + data only: `mondrians/`, `colour`, `SCORE`):
+- `aifabric/tmux-deck/aifabric-tmux-poc.sh` — builds the 3-zone pane from outside
   via the tmux CLI (never attaches). `tmux attach -t plane` to view.
-- `aifabric-pane/poc/aifabric-tmux-overview.sh` — the summary readout.
+- `aifabric/tmux-deck/aifabric-tmux-overview.sh` — the summary readout.
+- `aifabric/tmux-deck/restart-deck.sh` — rebuild the live deck from a mondrian.
 Full design + open questions: `aifabric/ideas/20260803T144642Z-ZAMrik`.
 
 ## Session ritual

@@ -376,6 +376,31 @@ the driver pane puppeteering real keepers via the tmux CLI:
   terminal's border tinted from its strand's `colour` file; text labels dropped
   (prompt says what it is). Colour source decided = the strand `colour` file.
   (Transparency per-pane tint / terminal-fork still parked.)
-- Where do the POC scripts finally live — promote from `aifabric-pane/poc/` into
-  `~/aifabric/bin/` once past POC. The curses overview `.py` is the graduation
-  candidate.
+- ~~Where do the POC scripts finally live~~ DONE 2026-08-10: all 9 moved from
+  `aifabric-pane/poc/` (strands repo) to **`~/aifabric/tmux-deck/`** (aifabric
+  repo). Named `tmux-deck` not `poc` — "poc" says nothing about the subject, and
+  tmux-driving is the distinctive thing; it also dates the prototype era honestly
+  so the browser compositor gets a clean sibling dir later.
+  - The strand keeps CURATION + DATA only: `mondrians/`, `colour`, `SCORE`,
+    `.overview-rows`. Scripts still resolve those under `~/strands/aifabric-pane`
+    by absolute path — data did NOT follow the code, deliberately.
+  - Scripts find each other via `dirname "$0"`, so they travelled unchanged.
+  - Still open: whether the curses overview `.py` graduates further into
+    `aifabric/bin/` (i.e. onto `$PATH`). `pane-conductor-helpers.sh` never should
+    — it is sourced, not run.
+
+## From aifabric-pane-driver (mail received 2026-08-10, not yet acted on)
+
+Scope split agreed with Peter: **aifabric-pane keeps the DESIGN** (layout,
+compositor, thumbnail strip, terms, vocabulary, overview); **aifabric-pane-driver
+owns the DRIVER COMPONENT only**.
+
+- **NAMING scrub outstanding.** Peter prefers "driver"; "conductor" is retired
+  like "cockpit" was. Still says conductor: this `STATE.md`, `CLAUDE.md`, and
+  `poc/pane-conductor-helpers.sh` (filename + "the conductor" throughout).
+  See memory `driver-not-conductor`, `no-cockpit-naming`.
+- **Overview stays OURS and stays SEPARATE from the driver.** Decided: it must
+  stay truthful while the driver is busy/asleep/dead, so it keeps its own
+  no-agent refresh path. Designed so they CAN merge later — not merged.
+- **They are BLOCKED on our browser-compositor spike** before rewriting the verb
+  backend against the DOM. See "DIRECTION DECIDED 2026-08-10" above.
