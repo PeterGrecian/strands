@@ -5,7 +5,7 @@
 ## What this is
 
 An **aifabric-pane**: one agent-driven surface replacing scattered strand
-terminal-emulator windows. This strand is the conductor. Split out of
+terminal-emulator windows. This strand is the driver. Split out of
 [[aifabric]] on 2026-08-03; full design in `aifabric/ideas/20260803T144642Z-ZAMrik`.
 
 ## DIRECTION DECIDED 2026-08-10 — browser compositor (read this first)
@@ -36,7 +36,7 @@ no jump AND it can hold a browser.
 - **Thumbnail strip on the RIGHT** = the navigator: small LIVE previews of each
   term; glance right for all-strands state, click to bring one into the main area.
   The taskbar done right — replaces BOTH the overview AND get-lost-between-pages.
-- **Driver agent** = the conductor you talk to, now a first-class web-app
+- **Driver agent** = the driver you talk to, now a first-class web-app
   component (cleaner than Claude-in-a-tmux-pane).
 
 Wrong turns corrected: forkchat/strandchat (chat was the wrong shape); deck as
@@ -85,7 +85,7 @@ see DIRECTION DECIDED above.*
 
 ## Session 6b (2026-08-09) — standard layout, live rearranging, two bugs found
 
-Drove the live deck hands-on with Peter (attached-conductor). Outcomes:
+Drove the live deck hands-on with Peter (attached-driver). Outcomes:
 
 - **STANDARD LAYOUT defined + saved** (`mondrians/standard.mondrian`): 3 cols × 2
   rows, DIAGONAL CORNER SYMMETRY — overview top-left SHORT, driver bottom-right
@@ -121,7 +121,7 @@ Drove the live deck hands-on with Peter (attached-conductor). Outcomes:
 
 ## Session 6 (2026-08-09) — deterministic verbs, border fix, design cluster
 
-Attached-conductor session (this session drove the live deck from the driver
+Attached-driver session (this session drove the live deck from the driver
 term, %6). Fixes + a coherent design cluster spooled (9 ideas). Kept working
 because the deck was mid-use: astro-storage backfilling, ubersitrep done-for-now.
 
@@ -154,8 +154,8 @@ because the deck was mid-use: astro-storage backfilling, ubersitrep done-for-now
 
 **`poc/pane` — deterministic deck verbs (NEW, working):**
 - Principle Peter set: deck MECHANICS = deterministic tools, NOT natural-language-
-  to-the-conductor. Predictable, instant, free, self-documenting; LLM reserved for
-  judgement, and even the conductor CALLS these verbs rather than driving tmux
+  to-the-driver. Predictable, instant, free, self-documenting; LLM reserved for
+  judgement, and even the driver CALLS these verbs rather than driving tmux
   ad-hoc. Supersedes any "just say it to the driver" option.
 - Verbs (all deck-aware, keep PANE_KEEPER registry consistent; wrap the existing
   helpers): `list` (with `[ribbon]` mark) · `up` · `drop` · `grow` · `even` ·
@@ -200,8 +200,8 @@ Deck is now a one-command cold start Peter likes. Two scripts in `poc/`:
      de-dupe ("already live", prints "launch another with: aicli --new") and
      dropped to a shell, leaving panes empty. Fix: `aicli --new <strand>`
      everywhere. (Peter: "-N is fine I'll be careful" re: duplicate sessions.)
-  2. **Driver pane now runs the conductor** — `driver` slot launches
-     `aicli --new aifabric-pane` (the strand that IS the conductor), not a bare
+  2. **Driver pane now runs the driver** — `driver` slot launches
+     `aicli --new aifabric-pane` (the strand that IS the driver), not a bare
      shell. Sets `PANE_DRIVER` env.
   3. **Per-strand coloured borders, NO text labels** — dropped
      `pane-border-status`/`pane-border-format` (the `--- 3: ansible ---` labels).
@@ -227,14 +227,14 @@ Deck is now a one-command cold start Peter likes. Two scripts in `poc/`:
   name in the roster is tinted with that strand's kinship hex (init_color when
   truecolour, else nearest ANSI), matching its terminal.
 - **Overview auto-fits its height.** Curses can't resize its own pane, so it
-  PUBLISHES needed rows to `aifabric-pane/.overview-rows`; a conductor watcher
+  PUBLISHES needed rows to `aifabric-pane/.overview-rows`; a driver watcher
   (`pane_fit_overview_watch` in the helpers) resizes the pane to match — "just
   tall enough", grows/shrinks as the roster changes.
 - **Terminals show their strand name (clobber-proof).** Set a per-pane `@strand`
   option (Claude can't rewrite it, unlike the title) + `pane-border-status top`
   with a border-format reading `@strand`. Survives `swap-pane` (labels travel
   with the pane). TWO identity stores now: `PANE_KEEPER_*` (deck env, for the
-  conductor to FIND) + `@strand` (per-pane, for the border to SHOW).
+  driver to FIND) + `@strand` (per-pane, for the border to SHOW).
 - **MONDRIANS — saved page layouts** (`poc/mondrian.sh`, `mondrians/*.mondrian`).
   A "mondrian" = one storable/loadable page arrangement (grid of strand
   rectangles; the Windows-8/Metro tile look is the same De Stijl lineage). File =
@@ -252,7 +252,7 @@ Deck is now a one-command cold start Peter likes. Two scripts in `poc/`:
   A page strip renders in the status bar. **GOTCHA:** the strip was invisible
   because `status` was **off on the attached client** (global said on) — `tmux
   set-option -t <deck> status on` fixed it (costs 1 row). Human flips pages with
-  `Ctrl-b 0/1/n/p/w` (the one place you DO touch the prefix); conductor drives
+  `Ctrl-b 0/1/n/p/w` (the one place you DO touch the prefix); driver drives
   pages prefix-free.
 - **Cross-page terminal move proven:** swapped the live ubersitrep keeper out of
   page 0 into its own page via `join-pane` across windows; the empty page's
@@ -262,10 +262,10 @@ Deck is now a one-command cold start Peter likes. Two scripts in `poc/`:
   and "single pane of glass"; ladder is an aifabric-pane → deck → page →
   terminal. HyperCard page-stack direction spooled.
 
-## WENT LIVE 2026-08-03 (session 2) — real keepers, conductor-driven, Peter 5/5
+## WENT LIVE 2026-08-03 (session 2) — real keepers, driver-driven, Peter 5/5
 
 The whole design ran live and Peter loves it ("this is *so* cool", scored the
-driver pane 5/5). Live `pane` tmux session with the conductor (this session) in
+driver pane 5/5). Live `pane` tmux session with the driver (this session) in
 the driver pane puppeteering real keepers via the tmux CLI:
 
 - **Real `aicli` keepers spawned live** into the middle via `pane_spawn_keeper`:
@@ -305,15 +305,15 @@ the driver pane puppeteering real keepers via the tmux CLI:
 
 ## Decisions
 
-- **Conductor is a tmux-CLI puppeteer that LIVES IN the driver pane** (decided
+- **Driver is a tmux-CLI puppeteer that LIVES IN the driver pane** (decided
   2026-08-03, resolves the self-hosting question). It runs as a plain process in
   plane's bottom driver pane and arranges the sibling panes above it with plain
   `tmux split-window / send-keys / select-pane`. The real invariant is NOT "stay
   outside" — it's **never NEST tmux and never re-`attach`**: a process *in* a
   pane is not a tmux client, so there's ONE server, ONE prefix (yours), no
   nesting trap. You attach to plane once (the human client); you talk to the
-  conductor in the driver pane; you never touch Ctrl-b.
-- **Adding a keeper needs NO special machinery** — the conductor just does what a
+  driver in the driver pane; you never touch Ctrl-b.
+- **Adding a keeper needs NO special machinery** — the driver just does what a
   human would: `tmux split-window -t plane …` then `send-keys 'aicli <keeper>'
   C-m` into the new pane. No `--tmux`, no `--pane` flag, no orphan logic; the
   keeper is a plain `aicli` Claude session in the pane.
@@ -329,21 +329,21 @@ the driver pane puppeteering real keepers via the tmux CLI:
 - ~~Read aicli's existing `--tmux` flag~~ DONE (2026-08-03): `--tmux` is
   UNRELATED — it wraps ONE session in its own tmux for stable scrollback (a
   single-session convenience). It is NOT the pane-of-glass and does NOT help the
-  conductor; using it on the conductor risks the tmux-in-tmux nesting the design
-  forbids. Correct topology (confirmed live): conductor session launches PLAIN
+  driver; using it on the driver agent risks the tmux-in-tmux nesting the design
+  forbids. Correct topology (confirmed live): driver session launches PLAIN
   (outside tmux) and drives the SEPARATE `plane` tmux session from the CLI. Two
-  distinct tmux things: `aifabric-pane` (the conductor session) vs `plane` (the
+  distinct tmux things: `aifabric-pane` (the driver session) vs `plane` (the
   surface it arranges, which you attach to full-screen).
-- ~~"self-hosting": does the conductor's driver live INSIDE plane?~~ DECIDED
-  2026-08-03: YES. Conductor runs in plane's driver pane and puppeteers via the
+- ~~"self-hosting": does the driver agent live INSIDE plane?~~ DECIDED
+  2026-08-03: YES. It runs in plane's driver pane and puppeteers via the
   tmux CLI. Safe because "in a pane" ≠ "attached client" — no nesting (see
   Decisions).
 - Put REAL `aicli <keeper>` sessions in the panes. BUILT + VERIFIED 2026-08-03
   (mechanism only, no live Claude burned). New POC files in `poc/`:
   - `aifabric-pane-selfhosted.sh` — self-hosting bootstrap: builds the frame,
-    launches the conductor as `aicli aifabric-pane` INTO the driver pane, starts
+    launches the driver as `aicli aifabric-pane` INTO the driver pane, starts
     the strands row as one placeholder. Refuses to run inside tmux.
-  - `pane-conductor-helpers.sh` — the conductor's hands: `pane_spawn_keeper`,
+  - `pane-driver-helpers.sh` — the driver's hands: `pane_spawn_keeper`,
     `pane_drop_keeper`, `pane_list_keepers`. Sourced into the driver pane.
   Verified live: placeholder-reuse (1st keeper), split (2nd), idempotent respawn,
   registry list, drop, re-even, error paths. Frame stayed intact throughout.
@@ -355,9 +355,9 @@ the driver pane puppeteering real keepers via the tmux CLI:
      "✳ Claude Code" every turn (tmux twin of backend-clobbers-net-wm-name).
      Track keeper→pane_id in the tmux SESSION ENV (`PANE_KEEPER_<strand>`), prune
      stale entries on resolve. See memory `pane-title-clobbered-by-claude`.
-  ~~STILL UNTESTED: real `aicli` in a pane + conductor calling helpers.~~ DONE
+  ~~STILL UNTESTED: real `aicli` in a pane + driver calling helpers.~~ DONE
   live 2026-08-03 session 2 (see WENT LIVE above) — worked end to end.
-- **Dynamic pane-shaping (the next prize):** make the conductor COMPUTE an N×M
+- **Dynamic pane-shaping (the next prize):** make the driver COMPUTE an N×M
   grid from live keeper count + zone needs, instead of by-hand splits. The
   two-column frame we built by hand is the target shape to reproduce
   automatically. → idea `20260803T165701Z-3OUK4A`.
@@ -368,9 +368,9 @@ the driver pane puppeteering real keepers via the tmux CLI:
   - Per-keeper CONTEXT/TOKEN count — HARD (each keeper is its own Claude process;
     no local interface; only screen-scrape the statusline, clobber-prone). Parked
     as aspiration. → idea `20260803T165701Z-3v1Bli`.
-- Build the conductor agent (plain-language driver -> tmux CLI). Note: proven
+- Build the driver agent (plain-language driver -> tmux CLI). Note: proven
   this session that a plain Claude session in the driver pane, sourcing
-  `pane-conductor-helpers.sh`, IS the conductor — no separate agent needed yet.
+  `pane-driver-helpers.sh`, IS the driver — no separate agent needed yet.
 - Launcher menu on empty startup + live suggestions in the overview.
 - ~~Per-strand identity: coloured borders~~ DONE 2026-08-03 (session 5): each
   terminal's border tinted from its strand's `colour` file; text labels dropped
@@ -386,8 +386,24 @@ the driver pane puppeteering real keepers via the tmux CLI:
     by absolute path — data did NOT follow the code, deliberately.
   - Scripts find each other via `dirname "$0"`, so they travelled unchanged.
   - Still open: whether the curses overview `.py` graduates further into
-    `aifabric/bin/` (i.e. onto `$PATH`). `pane-conductor-helpers.sh` never should
+    `aifabric/bin/` (i.e. onto `$PATH`). `pane-driver-helpers.sh` never should
     — it is sourced, not run.
+
+## Session 7 (2026-08-10) — code moved to aifabric, conductor→driver scrub
+
+- **Code left this strand.** All 9 deck scripts → `~/aifabric/tmux-deck/`
+  (see the Pending entry above for the naming rationale and what stayed).
+- **"conductor" is gone** (32 refs in scripts, 38 in these docs; 0 remain).
+  `pane-conductor-helpers.sh` → `pane-driver-helpers.sh`. All 9 scripts pass
+  `bash -n`/`py_compile`; the 11 `pane_*` helpers still export.
+- **GOTCHA the rename exposed:** the old vocabulary used TWO words where we now
+  have one — "conductor" = the agent, "driver" = the pane it sits in. So a blind
+  swap produced "you talk to the driver in the driver pane" and "the driver's
+  driver". Fixed by hand: say **"the driver"** for the agent and **"the driver
+  pane"** (or "its pane") for the terminal. Worth keeping in mind — the ladder
+  has no distinct word for the agent's seat.
+- Live deck restarted twice against the new paths (fit-watcher + curses
+  overview); keepers left running throughout.
 
 ## From aifabric-pane-driver (mail received 2026-08-10, not yet acted on)
 
@@ -395,10 +411,10 @@ Scope split agreed with Peter: **aifabric-pane keeps the DESIGN** (layout,
 compositor, thumbnail strip, terms, vocabulary, overview); **aifabric-pane-driver
 owns the DRIVER COMPONENT only**.
 
-- **NAMING scrub outstanding.** Peter prefers "driver"; "conductor" is retired
-  like "cockpit" was. Still says conductor: this `STATE.md`, `CLAUDE.md`, and
-  `poc/pane-conductor-helpers.sh` (filename + "the conductor" throughout).
-  See memory `driver-not-conductor`, `no-cockpit-naming`.
+- **NAMING scrub outstanding.** Peter prefers "driver"; "driver" is retired
+  like "cockpit" was. Still says driver: this `STATE.md`, `CLAUDE.md`, and
+  `poc/pane-driver-helpers.sh` (filename + "the driver" throughout).
+  See memory `driver-not-driver`, `no-cockpit-naming`.
 - **Overview stays OURS and stays SEPARATE from the driver.** Decided: it must
   stay truthful while the driver is busy/asleep/dead, so it keeps its own
   no-agent refresh path. Designed so they CAN merge later — not merged.
