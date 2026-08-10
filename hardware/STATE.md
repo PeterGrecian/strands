@@ -41,6 +41,40 @@
   Ubuntu-2023 live installer on it was overwritten — that stick had migrated
   from puppy to pip). Physical flashing + install is the next bench session.
 
+- **pog** — **HP Compaq Elite 8300 Small Form Factor** (Ivy Bridge, ~2012, so
+  ~14 yr old; "old when I bought it"). **NOT on the LAN, not in ansible/ssp, and
+  currently INCOMPLETE — it is in jeopardy, not a spare machine** (Peter's word,
+  2026-08-10): *it still boots, except its SSD is now in eclipticam.* Treat it
+  as a machine-shaped hole plus a parts donor, never as available capacity.
+  - **RAM: 20 GiB** — deliberate mixed fill of **2 × 8 GiB + 2 × 2 GiB** across
+    4 slots (was 4 × 2 GiB DDR3-1333 Samsung M378B5673FH0-CH9). Half the slots
+    matched = full speed. **This is the only genuinely scarce thing about pog**
+    — the fleet's standing ceiling is ~7.5 GiB (see Decisions).
+  - **⚠ MEMORY VOLTAGE TRAP — already paid for once (Oct 2020).** DIMMs **must be
+    1.5V**, NOT 1.35V. **Crucial's compatibility site is WRONG** for this model:
+    it recommends DDR3L/DDR3U, but HP's manual states the 8300 does not support
+    DDR3U and it *"can cause physical damage to the DIMM or invoke system
+    malfunction."* Symptom was a general protection fault → GRUB rescue → reseat;
+    it **passed the BIOS memory test but failed under GRUB**. Don't re-buy on
+    Crucial's advice. Slots run white/black/white/black from the CPU — populate
+    **white, white** for max speed; one channel only = single-channel mode.
+    (Source: gdrive Google Docs "memory upgrade for pog" + "pog crash", 2020.)
+  - **Its SSD is in eclipticam** — Kingston **SVP200S3120G** 111.8 G (matches the
+    gdrive note exactly), now `/dev/sda` at **`/mnt/ssd`**, 22 G used / 82 G free.
+    Note eclipticam **boots from a 14.9 G Cruzer Blade USB stick** (root 52%
+    full), so reclaiming the SSD would not unboot it — it would cost it 22 G of
+    data plus its working space. Old (~2012) SandForce drive: the least
+    trustworthy part of this story.
+  - **Assessment (2026-08-10): pog is POOR value as an answer to the redundancy
+    gap.** Reviving it means taking working storage off a live capture Pi to run
+    an Ivy Bridge box that idles ~30-50 W (≈£40-80/yr always-on) and is well
+    below pip single-core — **not** a daily driver, **not** a compute upgrade.
+    The £0 shuck + a modest offsite subset beat it per pound.
+  - **Where it could still earn a place:** as a **storage host** its age barely
+    matters and it beats muppet structurally — **internal SATA (native SMART, no
+    USB bridge → the bigstore blindness problem simply doesn't exist)**, mains
+    power, replaceable sockets, real cooling. If ever taken up, **buy it a disk**
+    rather than borrowing eclipticam's back.
 - **deskpi** — a Pi **A+ (ARMv6, 32-bit)** per `templates/app-deskpi.conf` in
   cloud-init-init. **MUST be flashed armhf** (Trixie Lite armhf), NOT arm64 —
   the fleet default `trixie_lite_64bit` will not boot on it. 512 MB RAM total →
@@ -512,7 +546,11 @@ disk sprawl down to one live drive + two cold copies; nothing to landfill):
   (cheap-ish part, fiddly job). But muppet is **deliberately headless** (NFS/
   compute, driven over SSH) — a working screen adds nothing to its role. Decision
   stands: leave it headless, don't diagnose or swap the panel.
-- **Fleet ceiling is RAM, not cores (2026-07-22).** All three x86 boxes sit at
+- **Fleet ceiling is RAM, not cores (2026-07-22).** *(Amended 2026-08-10: **pog**
+  — HP Elite 8300 SFF — has **20 GiB**, nearly 3× this ceiling. It does NOT
+  change the conclusion: pog is incomplete (SSD in eclipticam), off-LAN, Ivy
+  Bridge, and ~30-50 W idle. Real capacity exists in a cupboard but is not
+  usable capacity — see "What exists".)* All three x86 boxes sit at
   ~7.5 GiB: pip (i5-8265U Whiskey Lake — the fleet's *slowest* CPU), muppet
   (8-core Tiger Lake), puppy (i5-1135G7 Tiger Lake, fastest clock). So demoting
   pip to a compute node buys little (weakest CPU; muppet+puppy already cover
