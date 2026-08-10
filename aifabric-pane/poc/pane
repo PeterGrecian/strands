@@ -13,6 +13,8 @@
 #
 # Usage:
 #   pane list                     what's up (keepers + ribbons), from the registry
+#   pane reconcile [--fix]        verify every tag against the RUNNING aicli, and
+#                                 with --fix rewrite tag+registry to match reality
 #   pane up    <strand>           spawn/focus a keeper term (= pane_spawn_keeper)
 #   pane drop  <strand>           close a keeper term, prune registry, re-even row
 #   pane ribbon  <strand>         shrink a keeper to a small VISIBLE strip (alive)
@@ -94,9 +96,42 @@ cmd_list() {
   (( any )) || echo '  (no keepers up)'
 }
 
+# cmd_reconcile — make the tags tell the truth. For every term on the deck,
+# compare what the registry/@strand SAY against what `aicli` is actually running
+# (ground truth from argv). Report drift; with --fix, rewrite tag + registry to
+# match the process. Never touches the running sessions themselves — a divergence
+# means our BOOKKEEPING is wrong, not the term.
+cmd_reconcile() {
+  local fix=0; [[ "${1:-}" == "--fix" ]] && fix=1
+  local p tag actual drift=0 var
+  while IFS= read -r p; do
+    tag="$(tmux display-message -pt "$p" '#{@strand}' 2>/dev/null)"
+    actual="$(_pane_term_strand "$p")"
+    [[ -n "$actual" ]] || continue                  # bare shell / booting: unproven
+    [[ "$actual" == "$tag" ]] && continue
+    # ROLE SLOTS are tagged by role, not strand: the driver term legitimately runs
+    # `aicli aifabric-pane-driver` while tagged `driver`. That is correct, not drift.
+    case "$tag" in driver|overview) continue ;; esac
+    drift=1
+    printf '  %s  tagged %-16s running %s\n' "$p" "${tag:-<untagged>}" "$actual"
+    (( fix )) || continue
+    [[ -n "$tag" ]] && tmux set-environment -t "$_pane_session" -u "$(_pane_keeper_var "$tag")"
+    tmux set-option -pt "$p" @strand "$actual"
+    tmux set-environment -t "$_pane_session" "$(_pane_keeper_var "$actual")" "$p"
+    printf '    -> fixed: %s is now %s\n' "$p" "$actual"
+  done < <(tmux list-panes -t "$_pane_session" -F '#{pane_id}')
+  if (( drift )); then
+    (( fix )) && { _redraw; echo "reconciled."; } \
+              || echo "run 'pane reconcile --fix' to correct the bookkeeping."
+  else
+    echo "all terms verified: tags match the running processes."
+  fi
+}
+
 verb="${1:-}"; shift || true
 case "$verb" in
-  list)    cmd_list ;;
+  list)      cmd_list ;;
+  reconcile) cmd_reconcile "$@" ;;
   up)      pane_spawn_keeper "$@" >/dev/null && { _redraw; echo "up: $*"; } ;;
   drop)    pane_drop_keeper "$@" && { _redraw; echo "dropped: $*"; } ;;
   ribbon)  cmd_ribbon "$@" ;;

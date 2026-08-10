@@ -31,16 +31,65 @@ _pane_env() {  # var -> value from the session environment
 # '-' to '_' (astro-canon -> PANE_KEEPER_astro_canon).
 _pane_keeper_var() { printf 'PANE_KEEPER_%s' "${1//-/_}"; }
 
+# _pane_term_strand <pane_id> — what strand is ACTUALLY running in this term?
+# Reads the term's tty and finds the `aicli <strand>` in its process group. This
+# is GROUND TRUTH: argv cannot be clobbered by the app the way a title can, and
+# unlike the registry it is re-read live rather than written once at spawn.
+# Echoes the strand name, or nothing if no aicli is running there (bare shell).
+_pane_term_strand() {
+  local pid="$1" tty
+  tty="$(tmux display-message -pt "$pid" '#{pane_tty}' 2>/dev/null)" || return 1
+  [[ -n "$tty" ]] || return 1
+  # last aicli wins: if someone ran `aicli hardware` over an old session, the
+  # newest is what's in front of you. Skip flags (--new etc) to find the strand.
+  ps -t "$tty" -o args= 2>/dev/null | awk '
+    /\/aicli( |$)/ {
+      for (i = 1; i <= NF; i++)
+        if ($i ~ /aicli$/) {
+          for (j = i + 1; j <= NF; j++)
+            if ($j !~ /^-/) { found = $j; break }
+          break
+        }
+    }
+    END { if (found != "") print found }'
+}
+
+# _pane_verify <strand> <pane_id> — does the term actually run this strand?
+# Returns 0 if it matches (or if we cannot tell — a bare shell is not proof of
+# drift, e.g. the keeper is still booting). Returns 1 ONLY on a real mismatch,
+# with the truth on stdout, so callers can refuse rather than act on the wrong term.
+_pane_verify() {
+  local strand="$1" pid="$2" actual
+  actual="$(_pane_term_strand "$pid")"
+  [[ -n "$actual" ]] || return 0            # nothing running: unproven, not wrong
+  [[ "$actual" == "$strand" ]] && return 0
+  echo "$actual"; return 1
+}
+
 # _pane_keeper_pane <strand> — resolve a keeper's live pane id from the registry,
 # validating it still exists (the human may have killed the pane by hand, leaving
 # a stale entry). Echoes the pane id, or nothing if not up. Prunes stale entries.
+#
+# IDENTITY DIVERGENCE GUARD (added 2026-08-10, second occurrence of the bug).
+# The registry says WHERE a term is; it is written once at spawn and says nothing
+# about what runs there NOW. Type `aicli hardware` into a live term's shell and
+# the tag still reads the strand it was spawned with — silently, for a whole
+# session (2026-08-09: we believed astro-storage was backfilling; it was
+# home-automation. 2026-08-10: %5 tagged home-automation was running hardware and
+# a resize nearly hit the wrong strand). So: VERIFY AGAINST THE PROCESS, REFUSE ON
+# MISMATCH. Never act on a term whose identity we know to be wrong.
 _pane_keeper_pane() {
-  local strand="$1" var pid
+  local strand="$1" var pid actual
   var="$(_pane_keeper_var "$strand")"
   pid="$(_pane_env "$var")"
   [[ -n "$pid" ]] || return 1
   if tmux list-panes -t "$_pane_session" -F '#{pane_id}' | grep -qxF "$pid"; then
-    echo "$pid"; return 0
+    if actual="$(_pane_verify "$strand" "$pid")"; then
+      echo "$pid"; return 0
+    fi
+    echo "pane: IDENTITY DIVERGENCE — registry says '$strand' is $pid, but $pid is running '$actual'." >&2
+    echo "pane: refusing to act on the wrong term. Fix with: pane reconcile" >&2
+    return 3
   fi
   tmux set-environment -u -t "$_pane_session" "$var"   # prune stale registry entry
   return 1
