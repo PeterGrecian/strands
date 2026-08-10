@@ -91,6 +91,25 @@
 
 ## Pending / loose ends
 
+**Priority order as of 2026-08-10** (the session that closed the migration and
+solder items, so the old "disk emergency" framing is gone):
+
+1. **rackinabox — PRIORITISED by Peter.** The *structural* fix for the interface/
+   power/thermal failures this strand keeps rediscovering. Owned by the
+   `rackinabox` strand; hardware's view of the coupling is in `IDEAS.md`.
+   **Must be paired with the offsite subset — it is consolidation, not
+   redundancy.**
+2. **IcyBox shuck (£0)** — 1.4 TB of astro data is SMART-blind. Do it
+   before/during the rack build, when disks are handled anyway.
+3. **Offsite copy of the irreplaceable subset** (R2, free egress) — waiting on
+   astro-storage to size it. Mailed 2026-08-10.
+4. **Powered hub (~£15)** for the tether — site it in the rack.
+
+*Closed this session:* 6 TB migration ✅, photodisk retired ✅, 12V solder ✅.
+*Settled:* pog is a liability, and out on physical grounds (doesn't fit an
+enclosure specced for laptops).
+
+
 - **muppet USB socket wear — one socket confirmed worn, rest verified sound
   (2026-08-10).** Found via astro-canon: the Canon EOS 2000D's escalating PTP
   wedges (0x2019 / -110) were **mechanical, not firmware** — the USB2 socket had
