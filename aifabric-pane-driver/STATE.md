@@ -186,9 +186,18 @@ the driver either way:
 - **The driver and overview are FURNITURE, not work** — exempt from decay. The
   driver in particular must stay findable at a constant place and a readable
   size; that is the whole point of the standard layout's diagonal corners.
-- **Attention ≠ activity.** A term doing unattended work has output but no
-  keystrokes; a term being READ has neither and most deserves the space. If the
-  driver ever supplies the signal, it must not conflate them.
+- **OUTPUT IS THE PRIMARY SIGNAL** (Peter 2026-08-11: *"output is activity —
+  arguably more important than input"*, correcting my first recommendation).
+  I had proposed human presence driving size and output driving only a mark.
+  Backwards: on a surface for watching MANY strands, the human can only be
+  present at one, so presence-drives-size leaves every other term permanently
+  small however hard it is working — the scatter problem again in miniature.
+  Output is the signal that SCALES TO PARALLELISM, and it is what "the strand is
+  doing its job" looks like while you are elsewhere. Input mostly marks where you
+  already are, and you know where you are.
+- **Input's real job is a HOLD, not growth.** A term you are silently reading
+  emits neither output nor keystrokes and must not shrink under you. Presence
+  suspends decay where you are; it does not drive size.
 - **Builders must not be silently squeezed.** Keepers are idempotent and safe to
   shrink; a builder mid-trajectory is not. `splay-tweaks` is on the deck now and
   is builder-shaped — the registry calls it a keeper, which is already slightly
