@@ -41,7 +41,69 @@
   Ubuntu-2023 live installer on it was overwritten — that stick had migrated
   from puppy to pip). Physical flashing + install is the next bench session.
 
+- **deskpi** — a Pi **A+ (ARMv6, 32-bit)** per `templates/app-deskpi.conf` in
+  cloud-init-init. **MUST be flashed armhf** (Trixie Lite armhf), NOT arm64 —
+  the fleet default `trixie_lite_64bit` will not boot on it. 512 MB RAM total →
+  `gpu_mem=16`. Role: SD-card writing station + armhf build-host helper, cycling
+  old Pis one card at a time to triage keep-vs-recycle. Last seen on subnet
+  **192.168.4.x** (stale pi-fleet entry, currently down). See
+  [[armv6-camera-v4l2-not-rpicam]] for the wider ARMv6 constraints.
+- **starcam** (verified 2026-07-30) — the Pi formerly used as skycam/gardencam,
+  now the **SD-card writing station** (USB card reader appears as `/dev/sda`).
+  **Dual-homed:** eth0 `192.168.0.52` (default route) *and* wlan0
+  `192.168.0.59` live simultaneously. Its local `Berrylands/cloud-init-init`
+  clone was **stale** (configure-sd-card.sh dated May 30 vs pip's Jun 5) with
+  **no `--armhf` support** → `git pull` before writing armhf cards for deskpi.
+
 ## Pending / loose ends
+
+- **muppet USB socket wear — one socket confirmed worn, rest verified sound
+  (2026-08-10).** Found via astro-canon: the Canon EOS 2000D's escalating PTP
+  wedges (0x2019 / -110) were **mechanical, not firmware** — the USB2 socket had
+  gone physically loose from heavy insert/remove cycles. Moving the camera to a
+  USB-C port via adapter + USB3 hub fixed it: enumerates at 480M, config write
+  stuck first time. See [[eos-wedges-were-a-worn-usb-socket]].
+  - **Audit done this session — the wear is CONFINED to one port.** Over 7 days
+    of muppet's kernel log, **every** USB error is on **port `3-7`** (7 ×
+    `device descriptor read/64, error -71`, plus "device not accepting address"
+    / "not responding to setup address") and **no other port has logged a single
+    error**. That is the worn socket, now vacated — the camera sits on `3-5`
+    behind the Genesys hub at 480M. Leave 3-7 empty, or treat it as
+    keyboard/mouse-only; do not put anything that matters on it.
+  - **The disks are NOT affected — checked, clean.** Both live disks are on
+    **Bus 4** (USB3), a different controller path from the worn Bus-3 socket:
+    bigstore (5.5T Expansion, `0bc2:2038`, uas, 5000M) and sdc (ST31000528AS via
+    ASMedia ASM1051 `174c:5106`, 5000M). No UAS resets or IO errors in 11 days
+    (the only hits, Jul 27/29, are the known 6 TB inspection replug + photodisk).
+    **sdc SMART: PASSED, 0 realloc / 0 pending / `UDMA_CRC_Error_Count = 0`,
+    8602 POH.** Zero CRC errors is the specific negative signal for a marginal
+    cable/socket — so the bigstore data risk the idea raised is real in principle
+    but **not currently materialising**. bigstore itself stays SMART-blind until
+    the shuck (see 6 TB runbook / [[seagate-expansion-blocks-sat]]).
+  - **Standing check, cheap to repeat:** `lsusb -t` (disks must read **5000M**,
+    camera **480M** — a worn path silently drops to 12M) and
+    `UDMA_CRC_Error_Count` on any SMART-visible disk. Re-run when anything on
+    muppet's USB misbehaves, *before* building a software theory.
+  - **Open question — powered hub as sacrificial front-end.** Put a £15 powered
+    hub in front of everything so insert/remove wear lands on a replaceable part
+    instead of soldered-on laptop sockets. That is effectively what the camera
+    now has. Cheap insurance; **decide next bench session.** Caveat: it adds a
+    shared power feed, and a shared feed is exactly what caused the 2026-07-15
+    disk drop — so if adopted, disks keep their **own** feeds and the hub carries
+    only the low-power tether devices.
+  - **Open question — is muppet the right astro tether host at all?** It's
+    flagged in GLOBAL.md as "spare, difficult-to-use screen", is deliberately
+    headless, and is an old laptop in daily service. Not urgent (the rig is
+    healthy again), but it belongs in the new-laptop capacity thinking under
+    Decisions rather than being answered on its own.
+  - **DIAGNOSTIC LESSON — keep.** This presented as firmware for two weeks and
+    every theory was a software theory. Two habits would have caught it: (1)
+    check `lsusb -t` link speed and suspect the **physical path** before
+    theorising about firmware; (2) distinguish **yield from rate** — frames/night
+    stayed flat (96-135) the whole time the rig degraded because the recovery
+    ladder clawed nights back, while the real damage showed in frames/**hour**
+    (38-44 → 26-35) and nights starting 00:22-00:51 instead of 22:30. **Flat
+    totals hid a live fault.**
 
 - **muppet photodisk (sdb, ST3360320AS 360G) is FAILING — retire on 6 TB arrival
   (2026-07-25).** Not the 2026-07-15 power event this time — the drive itself is
