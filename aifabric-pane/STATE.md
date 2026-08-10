@@ -402,19 +402,44 @@ the driver pane puppeteering real keepers via the tmux CLI:
   driver". Fixed by hand: say **"the driver"** for the agent and **"the driver
   pane"** (or "its pane") for the terminal. Worth keeping in mind — the ladder
   has no distinct word for the agent's seat.
+  **Second-order bite:** prose *about* the rename gets mangled too. The bullet
+  recording "Peter prefers driver over conductor" became "prefers driver;
+  driver is retired", and the memory link `driver-not-conductor` became
+  `driver-not-conductor`→`driver-not-driver` (a dead link). When scrubbing a
+  word, exempt the sentences that DISCUSS the word — or re-read them after.
 - Live deck restarted twice against the new paths (fit-watcher + curses
   overview); keepers left running throughout.
+- **DESIGN SIDE DOCUMENTED** in `aifabric/method/panes.md` (aifabric `bcd12d6`),
+  new section "The design strand and what its files carry" — the parallel to the
+  driver's own subsection. Note `panes.md` was already in better shape than the
+  driver's mail implied (vocabulary, pivot, split, findings all present and
+  good), so the real gap was only the file-level parallel, not a fresh design
+  write-up. The organising distinction, worth keeping: **the driver records how
+  to be driven; this strand records what was decided and why the alternatives
+  lost.** Includes a table of decisions a cold session must not re-litigate.
+- **LADDER = ASPIRATION, NOT ENFORCEMENT** (Peter, 2026-08-10): *"sort of — I'll
+  get it wrong from time to time but it's a good idea"*. Both halves are the
+  policy. Keep the ladder in the WRITING (docs consistent, driver verbs
+  unambiguous); understand "window"/"pane"/"term" alike when he speaks; never
+  correct him. The driver's instinct — "a jargon nobody speaks is a spec" — was
+  right; a jargon only the machine enforces is worse.
+- **"STATUS.md" was a slip of the tongue**, not a divergence — it IS STATE.md.
+  The driver had flagged it as possible evidence the ladder wasn't spoken; it
+  isn't. (Real evidence remains: "window" for a term.)
+- Replied to `aifabric-pane-driver` with both answers + the moved paths and the
+  rename gotcha, so they don't hold stale references.
 
-## From aifabric-pane-driver (mail received 2026-08-10, not yet acted on)
+## From aifabric-pane-driver (mail received 2026-08-10 — ACTED ON, see Session 7)
 
 Scope split agreed with Peter: **aifabric-pane keeps the DESIGN** (layout,
 compositor, thumbnail strip, terms, vocabulary, overview); **aifabric-pane-driver
 owns the DRIVER COMPONENT only**.
 
-- **NAMING scrub outstanding.** Peter prefers "driver"; "driver" is retired
-  like "cockpit" was. Still says driver: this `STATE.md`, `CLAUDE.md`, and
-  `poc/pane-driver-helpers.sh` (filename + "the driver" throughout).
-  See memory `driver-not-driver`, `no-cockpit-naming`.
+- ~~**NAMING scrub outstanding.**~~ DONE (Session 7). Peter prefers "driver";
+  "conductor" is retired like "cockpit" was. Scrubbed from `STATE.md`,
+  `CLAUDE.md` and all 9 scripts; `pane-conductor-helpers.sh` →
+  `pane-driver-helpers.sh`. See memory `driver-not-conductor`,
+  `no-cockpit-naming`, `driver-agent-vs-driver-pane`.
 - **Overview stays OURS and stays SEPARATE from the driver.** Decided: it must
   stay truthful while the driver is busy/asleep/dead, so it keeps its own
   no-agent refresh path. Designed so they CAN merge later — not merged.
