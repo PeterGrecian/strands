@@ -4,10 +4,46 @@
 
 ## What this is
 
-An **aifabric-pane**: one agent-driven surface (overview + keeper terminals +
-driver) replacing scattered strand terminal-emulator windows. This strand is the
-conductor. Split out of [[aifabric]] on 2026-08-03; full design in
-`aifabric/ideas/20260803T144642Z-ZAMrik`.
+An **aifabric-pane**: one agent-driven surface replacing scattered strand
+terminal-emulator windows. This strand is the conductor. Split out of
+[[aifabric]] on 2026-08-03; full design in `aifabric/ideas/20260803T144642Z-ZAMrik`.
+
+## DIRECTION DECIDED 2026-08-10 — browser compositor (read this first)
+
+**The tmux deck was a PROTOTYPE, not the destination.** It proved the
+pane-of-glass concept with real sessions; its frictions (page-jumps, can't share
+the screen with a browser, a tmux pane can't leave the deck window) were the
+prototype showing tmux's limits as a compositor. Everything below the "Sessions"
+line is prototype-era — reinterpret it under this model, don't build further on
+tmux.
+
+**Origin → destination (the through-line: never let the window manager place
+things).** forkterm/strandterm spawned each strand as its own OS window → manual
+placement chaos, hunting in the taskbar (worsened by
+[[backend-clobbers-net-wm-name]]: windows wouldn't stay identifiable or raisable).
+The tmux deck put them on ONE surface (cured the scatter, rigid compositor). The
+cure: **the browser as compositor** — YOU own the layout (CSS), so one surface AND
+no jump AND it can hold a browser.
+
+**The product model:**
+- **Terms in a browser** (xterm.js — production-grade, powers VS Code/Codespaces;
+  `ttyd`/`wetty` serve a shell or `tmux attach` over websocket). tmux may still run
+  *inside* each term for persistence, or each term is a direct ttyd→aicli.
+- **Main working area EXPANDS DOWNWARD**, not sideways — a tall vertical SCROLL,
+  not a wide grid. This is the NO-JUMP answer (vertical scroll is continuous +
+  natural; every web page/chat reads this way). A term / web view / QR picture are
+  all just content in the main area.
+- **Thumbnail strip on the RIGHT** = the navigator: small LIVE previews of each
+  term; glance right for all-strands state, click to bring one into the main area.
+  The taskbar done right — replaces BOTH the overview AND get-lost-between-pages.
+- **Driver agent** = the conductor you talk to, now a first-class web-app
+  component (cleaner than Claude-in-a-tmux-pane).
+
+Wrong turns corrected: forkchat/strandchat (chat was the wrong shape); deck as
+destination (it was scaffolding). Ideas: product model `20260810T082947Z-cziQvD`,
+origin `20260810T083137Z-3ID15i`, pivot assessment `20260810T082517Z-fDffQO`.
+**Next: a spike** — `ttyd` + 2 iframes (one a keeper, one an image) + CSS grid, to
+feel the no-jump downward scroll and test copy/paste + keybinding friction.
 
 ## VOCABULARY (settled 2026-08-03 session 3 — use these words, not tmux's)
 
@@ -37,6 +73,15 @@ Peter's HyperCard recall (Mac 1987, Atkinson — stack of index cards). Pages =
 cards: a page-tab should be a little CARD with a headline + a few summary lines
 (keeper count, unread mail, what's live), not tmux's cryptic `n:name`. Buildable
 in the curses overview surface we already own.
+
+---
+
+## PROTOTYPE-ERA (tmux deck) — history below this line
+
+*The sessions below built and refined the tmux-deck prototype. Kept for the
+findings (many transfer: identity-by-registry, the no-jump requirement, the
+thumbnail/overview instinct, deterministic verbs). Do not build further on tmux —
+see DIRECTION DECIDED above.*
 
 ## Session 6b (2026-08-09) — standard layout, live rearranging, two bugs found
 
