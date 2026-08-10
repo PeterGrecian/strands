@@ -263,11 +263,19 @@ The output end of the science: where results become visible.
     delivery layer**. The adapter is the *seam* — consumes capture's output, never
     reaches into it. Untouched capture files (`eos-focus-cycle`, `eos-power`) were
     left staged-but-uncommitted by their own strand.
-  - **PENDING**: run `canon-nightly` on a **dense fixed-d7 night** (tonight is the
-    first, Peter babysitting) → measure & write back real pedestal + scs; only
-    THEN install a systemd timer (post-dawn) for hands-off nightly delivery.
-    Later refinements: occlusion mask (foreground foliage in frame), pole solve →
-    enable derot. Website Lambda **deploy still pending** (outward-facing).
+  - **PENDING**: run `canon-nightly` on a **dense fixed-d7 night** → measure &
+    write back real pedestal + scs; only THEN install a systemd timer (post-dawn)
+    for hands-off nightly delivery. Later refinements: occlusion mask (foreground
+    foliage in frame), pole solve → enable derot.
+  - **HELD 2026-08-09/10: website deploy waits until the camera produces a real
+    working night.** The first fixed-d7 attempt (night of 08-09, Peter babysitting)
+    **failed at capture** — a *capture-side* problem (the astro-canon wedge/plug
+    saga), NOT a delivery-pipeline issue. Decision: don't deploy `/astro/canon`
+    publicly on the thin 8-frame 08-08 subset; hold the Lambda deploy until a good
+    night lands. **The delivery pipeline is proven and idle — waiting on capture.**
+    When a working night arrives: `canon-nightly --night <n>` → measure pedestal/scs
+    → `cd ~/mywebsite && ./deploy` (the only outward step; code already committed
+    `6eb8ca1`).
 - **The catalogue AS the headline deliverable** (Peter, 2026-08-03; design
   `astro/design/catalogue-deliverable.md`). The local star catalogue isn't just
   an internal table — it's the public face of the science, a **forever-growing
