@@ -16,6 +16,19 @@ curation files. See memory `project_splay_lab.md` for splay's role.
   and before `sc = self.scope()`, so the auto-reload jump-to-newest also
   picks up the freshly selected frames.
 
+- **Auto-reload survives the IPC handoff** (splay `cd24f70`). `splay ./`
+  against an already-running instance hands the path off over IPC rather
+  than building a fresh `Splay`, so it never picked up the launch-time
+  `auto_reload = bool(source_dirs)` default — the dir landed in
+  `source_dirs` but the run loop's 1 Hz scan is gated on `auto_reload`.
+  New frames therefore never appeared; manual `r` still worked (it calls
+  `reload_changed` directly), which made it look intermittent. A directory
+  arriving over IPC now enables auto-reload the same way the command line
+  does. `_abs()` also moved from an `__init__` closure to module level and
+  is applied to IPC paths, so `source_dirs` is absolute from both entry
+  points — `reload_changed`'s `x not in existing` test needs loaded paths
+  and scanned dir entries normalised alike.
+
 ## Pending / loose ends
 
 - **Uncommitted in the splay working tree (not this strand's work):** the
