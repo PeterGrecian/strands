@@ -11,6 +11,12 @@ compound task. One per deck, alongside one overview. Split from [[aifabric-pane]
 thumbnails, terms); this one owns the driver component only. Domain is the deck
 and its terms, not the whole fabric. Mission in `CLAUDE.md`.
 
+**Written up for work** in `aifabric/method/`: `panes.md` (the surface, the
+driver's two-layer model, and a section on why the driver is itself a strand —
+what these two files carry and why they outlive the compositor) and
+`identity-verification.md` (the stale-label bug and its fix). Keep those in
+sync when the mission or the jargon model changes.
+
 ## Jargon (grows from use — the live artefact)
 
 The control vocabulary, curated as it emerges rather than designed up front.
@@ -27,6 +33,17 @@ Observed in Peter's own speech (2026-08-10, first live driving):
 - **"make X smaller and Y bigger"** → one utterance, one compound: a relative
   reallocation between two terms, not two independent resizes. When they share
   a column this is a single `resize-pane`.
+- **"use idea to tell <strand> about X"** → compose a house tool at a named
+  peer. Note he named the TOOL (`idea`) — the vocabulary reaches past deck
+  geometry into fabric plumbing, which is a nudge that the deck-only scope may
+  be too narrow.
+- **"yes do that"** → a genuine ambiguity signal, not an instruction. It followed
+  two proposals; the right move was to do BOTH rather than guess, since they were
+  complementary. Treat a bare assent after a menu as "all of it" unless the items
+  conflict.
+- **"STATUS.md"** (2026-08-10) → he means `STATE.md`. No STATUS.md exists
+  anywhere in the house. Recorded because a driver should map the human's word
+  onto the real file silently, not correct him mid-flow.
 
 Candidates inherited from the prototype, NOT yet heard from Peter:
 **ribbon** (shrink-but-live, reversible) · **up** / **drop** · **even** ·
