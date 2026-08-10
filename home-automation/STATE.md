@@ -41,11 +41,23 @@
   memory. Surfaced kit this STATE never recorded: the **Sonoff ZBDongle-E
   Zigbee coordinator** on `ttyUSB0` (4 ZHA devices — 2 appliance plugs, 2
   temp/humidity sensors), 13 Cast endpoints, the eero, and the Octopus-linked
-  utility meters. Also notes **no Thread border router** exists, so Matter kit
-  must be Wi-Fi. Flags that `docs/home-assistant.md`'s "four Sonoff plugs" is
-  **stale** — only the two Zigbee plugs exist; `light.lights_east` is a
-  `switch_as_x` helper over the *Matter* plug, not a Sonoff. That older doc is
-  left uncorrected on purpose; fixing it properly is a separate call.
+  utility meters. **Two claims in the first draft were wrong and are corrected
+  below — don't cite this entry without them:**
+  - "No Thread border router" — **wrong.** The three **Google Nest Hubs are
+    Thread border routers**; only the Home Minis / Google Home are not. Thread
+    is available; what's missing is `thread_credentials_set` on the
+    matter-server, which is why Matter-over-**Wi-Fi** is still the easy path.
+  - "`docs/home-assistant.md`'s four Sonoff plugs is stale" — **wrong, and the
+    correction was the error.** The Wi-Fi plugs are **real** (air shower fans +
+    2 × lab lighting); they are deliberately outside HA per
+    `docs/ecosystem-map.md`, so nothing derived from the HA registry can see
+    them. Lesson: **HA's registry is not the estate** — an inventory built from
+    it silently under-reports whatever bypasses HA by design.
+  - `light.lights_east` wrapped **`switch.tumble_dryer`**, not the Matter plug
+    and not a Sonoff. See the laundry entry below — it was a live fault, now
+    fixed.
+  `docs/hardware-inventory.md` carries a scope caveat and the Wi-Fi plugs; the
+  "four Sonoff plugs" table in `docs/home-assistant.md` is still uncorrected.
 
 - **`eos-power cycle` now VERIFIES the rail dropped** (Peter, 2026-08-09,
   commit `a778bfd` in `astro`). Smart plugs here have proved unreliable enough
@@ -73,6 +85,48 @@
     matter-server uses anyway.
   - `homepi.local` mDNS resolution intermittently fails from pip
     (`gaierror -2`); use the IP (`192.168.0.53`) for commissioning runs.
+
+- **Laundry plugs are MEASURE-ONLY — three unwanted power-control paths closed
+  (2026-08-10).** The S60ZBTPG plugs exist to detect the end-of-cycle power
+  drop; they must never switch the appliance. Peter's symptom was the opposite
+  of what was first diagnosed: it wasn't "the plug fails to come back", it was
+  **unwanted switching happening at all** (so far only between washes; mid-wash
+  would kill a load). Three live paths, now all shut:
+  1. `light.lights_east` — a `switch_as_x` helper wrapping
+     `switch.tumble_dryer` and exposing it in the **light** domain, so Google
+     "turn off the east light" cut the dryer's mains. **Helper deleted.**
+     This also explains the "unreliable Zigbee plug" — the plug was innocent.
+  2. **Status dashboard tiles** bound to the *switch* entities are tappable,
+     so a mis-tap cut mains — the only path that could reach the **washing
+     machine**. Now read-only power tiles (`tap_action: none`), fixed in
+     **ansible** (`8594d5f`, the dashboard is templated).
+  3. Dryer `start_up_behaviour` was **Off** (washing machine was On), so any
+     stray off *persisted* across a mains blip. Set to **On** — a safety net,
+     not the fix.
+  Design change: both `*_finished` automations now have `conditions: []` (was
+  gated on the switch being on), so the power drop alone fires the
+  announcement and **the plug never needs switching to arm a wash**.
+  `automations.yaml` is **UI-managed, not in git** — changed in place on
+  homepi, backed up to `automations.yaml.bak-20260810-085506`.
+
+- **Voice control: decided NOT to bridge HA↔Google (2026-08-09).** Verified no
+  `google_assistant` and no `cloud` integration exists, and
+  `homeassistant.exposed_entities` is `{"assistants": {}}` — **zero HA
+  entities reach any assistant.** That is the design, not a fault. Google Home
+  owns voice (the three Wi-Fi plugs publish via Smart Life/eWeLink, bypassing
+  HA); HA owns logic, history and alerting. Nabu Casa (~£6.50/mo) and the
+  manual GCP/OAuth route both cost more than the usage justifies. Written up in
+  `docs/integration-policy.md`, which also answers the old `TODO.md` question
+  and "why are the fans reliable when everything else barfs" (chain length).
+
+- **Lab lighting buttons → use Matter, not Zigbee (decided 2026-08-09, not yet
+  bought).** Peter wants a physical button for the lab late at night *and*
+  keeps voice. Zigbee would pull lab lighting into HA and **lose** its Google
+  voice; a Matter plug joins Google Home **and** HA simultaneously
+  (multi-admin), giving both with no bridge. Buy **Matter-over-Wi-Fi**, not
+  Thread: `thread_credentials_set` is `False`, whereas Wi-Fi Matter works today
+  (node 7 proves it). Three Nest Hubs are Thread border routers if that changes.
+  NB the Home Minis / Google Home are **not** border routers — only the Hubs.
 
 ## Pending / loose ends
 
