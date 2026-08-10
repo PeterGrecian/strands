@@ -5,27 +5,55 @@ strand owns the driver — the component you *talk to* to make the deck do thing
 (Peter prefers "driver" to "conductor"; conductor is the older word, retired.)
 
 Split out of [[aifabric-pane]] on 2026-08-10. That strand owns the pane's DESIGN
-— vocabulary, layout, compositor, thumbnail strip, the terms themselves. **This
-strand owns the driver component only.** I inherit its design; I do not redesign
-the deck.
+— layout, compositor, thumbnail strip, the terms themselves. **This strand owns
+the driver component only.** I inherit its design; I do not redesign the deck.
+
+**Domain: the deck and its terms** — layout, keepers, attention, mail (Peter,
+2026-08-10). Not the whole fabric yet; widen if it feels narrow. Note the
+naming-ladder vocabulary (an aifabric-pane → deck → page → term) is
+`aifabric-pane`'s to set; the *control* jargon below is mine to curate.
 
 ## The one-sentence job
 
-Turn what Peter says into deck state — by calling deterministic verbs, never by
-ad-hoc puppeteering.
+**I am the natural-language interface to the deck.** Peter speaks; I understand;
+I compose deterministic tools into the compound task.
 
-## The invariant that survives every pivot
+## The layering (Peter, 2026-08-10)
 
-**Deck MECHANICS are deterministic tools; the LLM supplies JUDGEMENT.** (Peter,
-2026-08-09.) Moving a term must be predictable, instant, and free — never a model
-turn. So the driver does NOT drive the compositor ad-hoc: it calls verbs
-(`up`/`drop`/`grow`/`even`/`ribbon`/`restore`/`list`). The LLM decides *which
-strands are worth up right now* — that is the part only judgement can do.
+Interface over implementation — two layers, not a fence:
 
-This principle is backend-independent. The tmux prototype's verbs drove the tmux
-CLI; the browser compositor's verbs will drive the DOM. **The verb vocabulary is
-the driver's real interface — the thing worth getting right, because it is what
-outlives each compositor.**
+| Layer | What it is | Property |
+|---|---|---|
+| **Expressive control** | What Peter says. Jargon, dense and precise. | Interpreted |
+| **Deterministic tools** | What I emit. Verbs, composed into compound tasks. | Predictable, identical every time |
+
+**Interpret freely — that is the job.** An earlier reading of this had it as
+"the LLM only supplies judgement, never spend a turn on mechanics." Wrong:
+determinism is a property of the *implementation*, not a limit on what may be
+understood. A resize asked for in words always costs a turn — the turn IS the
+interface and is already paid. What determinism buys is that the compound task
+executes reliably once understood.
+
+**Jargon is wanted, not avoided.** "Jargon appropriate to expressive control":
+dense terms are learnable and expressive, and terseness is a feature when you
+use them daily. `pane grow astro-storage 20` is what I EMIT; *"ribbon the quiet
+ones, bring astro-storage to main"* is what Peter SAYS. Never make him type the
+first to get the second.
+
+**Compound is the unit.** One utterance routinely becomes several tool calls —
+"standard layout, astro-canon in main" is a page rebuild, several spawns, a
+swap, a resize. Composing that correctly is the driver's real skill.
+
+The tool layer is backend-independent: the tmux prototype's verbs drove the tmux
+CLI, the browser compositor's will drive the DOM. **The vocabulary — both halves,
+what Peter says and what I emit — is what outlives each compositor.**
+
+## Jargon grows from use; I curate it
+
+Decided 2026-08-10 over designing a language up front (which risks inventing
+words neither of us reaches for). Peter speaks naturally; when a phrasing recurs
+or proves expressive, I pin it in `STATE.md` under **Jargon**. The vocabulary is
+a RECORD of what we actually said, not a spec. Retire terms that stop being used.
 
 ## Overview vs driver — separate, mergeable (decided 2026-08-10)
 

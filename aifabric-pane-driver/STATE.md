@@ -4,10 +4,22 @@
 
 ## What this is
 
-The **driver**: the component you talk to that turns speech into deck state.
-One per deck, alongside one overview. Split from [[aifabric-pane]] 2026-08-10 —
-that strand keeps the pane's design (layout, compositor, thumbnails, terms);
-this one owns the driver component only. Mission in `CLAUDE.md`.
+The **driver**: the natural-language interface to the deck. Peter speaks
+expressively; the driver understands and composes deterministic tools into the
+compound task. One per deck, alongside one overview. Split from [[aifabric-pane]]
+2026-08-10 — that strand keeps the pane's design (layout, compositor,
+thumbnails, terms); this one owns the driver component only. Domain is the deck
+and its terms, not the whole fabric. Mission in `CLAUDE.md`.
+
+## Jargon (grows from use — the live artefact)
+
+The control vocabulary, curated as it emerges rather than designed up front.
+Each entry: what Peter SAYS → what it MEANS → the tools it composes to.
+Nothing pinned yet — this fills as we actually drive a deck. Candidates
+inherited from the prototype, not yet confirmed in Peter's own speech:
+**ribbon** (shrink-but-live, reversible) · **up** / **drop** a strand ·
+**even** · **main** (the term you're working in). Watch for what he reaches
+for unprompted; that is the real vocabulary.
 
 ## What exists
 
@@ -29,9 +41,14 @@ strand's own code):
 
 - **Driver, not conductor.** Peter's preferred word; "conductor" is retired
   (as "cockpit" was). Older docs still say conductor — read it as driver.
-- **Mechanics deterministic, judgement LLM** (2026-08-09). Verbs move terms;
-  the model decides *which* strands deserve to be up. Never spend a model turn
-  on a resize. Backend-independent — survives tmux→browser.
+- **Natural-language interface over deterministic implementation** (2026-08-10,
+  Peter — supersedes the narrower "mechanics deterministic, judgement LLM"
+  reading of 08-09). The driver interprets freely; deterministic tools implement
+  the compound tasks it composes. Determinism is an implementation property, not
+  a limit on interpretation. Backend-independent — survives tmux→browser.
+- **Jargon is wanted and grows from USE** (2026-08-10). Dense expressive terms,
+  curated into the Jargon section as they recur — not a language designed up
+  front. Peter never types the tool syntax to get the effect.
 - **Overview and driver stay SEPARATE, designed to merge** (2026-08-10, Peter).
   The overview must stay truthful while the driver is busy/asleep/dead, so it
   keeps its own no-agent refresh path. Merge seam kept open, not taken.
@@ -42,12 +59,17 @@ strand's own code):
 
 ## Pending / loose ends
 
-- **Verb vocabulary is the prize.** Re-derive the verb set for a compositor
-  where terms are DOM cells, not tmux panes. Which verbs are backend-independent
-  (`up`/`drop`/`list`) vs tmux-shaped (`even`, `grow <cells>`, `ribbon` — all
-  assume a row of fixed-width panes, which the downward-scroll model discards)?
-  A `focus`/`bring-to-main` verb is implied by the thumbnail strip and has no
-  tmux ancestor.
+- **The vocabulary is the prize — BOTH halves.** (a) *Expressive* : the jargon
+  Peter speaks, grown from use (see Jargon above). (b) *Tools* : what the driver
+  emits. Re-derive the tool set for a compositor where terms are DOM cells, not
+  tmux panes — which are backend-independent (`up`/`drop`/`list`) vs tmux-shaped
+  (`even`, `grow <cells>`, `ribbon` all assume a row of fixed-width panes, which
+  the downward-scroll model discards)? A `focus`/`bring-to-main` tool is implied
+  by the thumbnail strip and has no tmux ancestor. **The two halves need not map
+  1:1** — one utterance should routinely compose several tools.
+- **Compound tasks are the unit of work.** "Standard layout, astro-canon in
+  main" = page rebuild + several spawns + swap + resize. Worth naming the
+  recurring compounds as they appear; they are the jargon's natural referents.
 - **Driver's own address space.** `pane_index` renumbers on kill; the prototype
   wanted a stable `@slot`. In the DOM this is free (`data-strand`, unclobberable
   — unlike `_NET_WM_NAME`/pane_title). Carry the *requirement*, drop the hack.
