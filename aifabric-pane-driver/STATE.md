@@ -41,6 +41,13 @@ Observed in Peter's own speech (2026-08-10, first live driving):
   peer. Note he named the TOOL (`idea`) — the vocabulary reaches past deck
   geometry into fabric plumbing, which is a nudge that the deck-only scope may
   be too narrow.
+- **"expand as they are used"** / **"quiescent ones shrink over time"**
+  (2026-08-11) → attention-driven reflow, stated as a STANDING PREFERENCE about
+  how the deck should behave, not a command to execute now. Peter states desired
+  behaviour in the present tense; hearing it as an instruction would have me
+  hand-resizing terms forever. **Distinguish standing preference from
+  instruction** — the former goes to the strand that owns the mechanism, the
+  latter gets executed. First clear instance of this mood in his speech.
 - **"yes do that"** → a genuine ambiguity signal, not an instruction. It followed
   two proposals; the right move was to do BOTH rather than guess, since they were
   complementary. Treat a bare assent after a menu as "all of it" unless the items
@@ -164,6 +171,28 @@ strand's own code):
   currently cover the deck Peter actually runs — the verbs assume a shape the
   layout has moved past. Fix belongs with the deck scripts ([[aifabric-pane]]),
   but it blocks the driver, so worth raising rather than working around again.
+
+## Attention-driven reflow — the driver's obligations (raised 2026-08-11)
+
+Peter's standing preference: *"panes should expand as they are used, and
+quiescent ones should shrink over time."* The MECHANISM is [[aifabric-pane]]'s
+(spooled `20260810T230105Z-Lbu97i`, extending their `…bz8bYS`). What lands on
+the driver either way:
+
+- **A hand-set size must PIN the term and suspend its decay.** If Peter asks me
+  for a size and the deck quietly undoes it, the surface feels broken and every
+  later request is untrustworthy. Any reflow I drive has to respect an explicit
+  size as an override, not a suggestion.
+- **The driver and overview are FURNITURE, not work** — exempt from decay. The
+  driver in particular must stay findable at a constant place and a readable
+  size; that is the whole point of the standard layout's diagonal corners.
+- **Attention ≠ activity.** A term doing unattended work has output but no
+  keystrokes; a term being READ has neither and most deserves the space. If the
+  driver ever supplies the signal, it must not conflate them.
+- **Builders must not be silently squeezed.** Keepers are idempotent and safe to
+  shrink; a builder mid-trajectory is not. `splay-tweaks` is on the deck now and
+  is builder-shaped — the registry calls it a keeper, which is already slightly
+  a lie.
 
 ## Waiting on
 
