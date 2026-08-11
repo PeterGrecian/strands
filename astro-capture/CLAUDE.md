@@ -20,6 +20,17 @@ capture path that every instrument feeds. Device-specific hardware concerns
 (cooling / dark-current / enclosure for a *particular* camera) belong in that
 camera's keeper, not here — this strand is what's common across all of them.
 
+**How the unification works** (Peter, 2026-08-11): *"astro-\<camera\> has the
+camera-specific work; capture has the pipeline, unified using the former —
+wrapped tools maybe; astro-science does the deliverables."* The pipeline is
+built **from** the per-camera work by **wrapping** it, not by absorbing it —
+the device-specific parts legitimately stay in their keepers. So what this
+strand actually unifies is the **conventions** (run-tagged stems, one capture =
+one frame, night/session structure, frame naming, hand-off to storage), which
+bind every instrument, rather than forcing a single code path onto cameras whose
+mechanisms genuinely differ (gphoto2/USB DSLR vs picamera2/CSI Pi). *Share the
+conventions, not the code path.* See STATE.md.
+
 ## Session ritual
 
 1. Import spooled ideas with `idea --import`, then read

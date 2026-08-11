@@ -70,6 +70,64 @@ This is *why* the strand exists: three capture codebases that are 90% the same
 drift independently and bugfixes get ported by hand (the design doc's own
 opening argument), so a fix found on one camera never reaches the others.
 
+## How unification works — the pipeline is built FROM the camera work (Peter, 2026-08-11)
+
+**"Share the conventions, not the code path."** Peter's framing, and it settles
+the architecture of the whole strand — not just the EOS question:
+
+> astro-\<camera\> has the camera-specific work; capture has the pipeline,
+> **unified using the former — wrapped tools maybe**; astro-science does the
+> deliverables.
+
+**This inverts the direction of the original design.** `capture-unification.md`
+reads bottom-up-by-absorption: write one generic engine, then *migrate* each
+camera into it until the per-camera dirs hold "only camera.json". Peter's model
+is the other way round: the per-camera work is **legitimately, permanently
+camera-specific and stays put**; the unified pipeline is assembled **from** those
+parts — **wrapping** them rather than absorbing them. Unification is a *layer
+over* the device work, not a solvent that dissolves it.
+
+Consequences, in order of how much they change:
+
+1. **The EOS is not an awkward exception — it is the normal case seen clearly.**
+   Under absorption, gphoto2/USB vs picamera2/CSI is an architectural embarrassment
+   that has to be either forced in or excluded. Under wrapping it is unremarkable:
+   the EOS has its own capture mechanism, like every camera does, and the pipeline
+   wraps it. The reason it *looked* exceptional is that two Pi cameras happen to
+   share a mechanism (`streaming.py`) and that coincidence got mistaken for the
+   architecture.
+2. **`streaming.py` is demoted from "the engine" to "one shared implementation."**
+   It is what astrocam and eclipticam v3w happen to have in common — genuinely
+   worth sharing, verified picamera2-shaped throughout (`cam_idx`, libcamera
+   `bayer_format` strings, `lens_position` as a VCM dioptre, `rotation_180`
+   mirroring an `rpicam-still` flag). None of that is meaningful for a DSLR. It
+   should stay the Pi cameras' shared path and stop being the thing everything
+   else is measured against.
+3. **The unified layer's real substance is the CONVENTIONS**, which are exactly
+   the things the canon bugs proved are cross-camera: run-tagged stems (never
+   silently overwrite a re-run), one capture = one frame, night/session
+   structure, frame naming, hand-off to storage. Those bind the EOS and the Pi
+   cameras equally — and none of them require a shared code path. **Work unit 1
+   (the run-tag audit) is therefore not a warm-up: it is the first real piece of
+   the unified layer.**
+4. **The migration ladder is re-read, not abandoned.** eclipticam v1 and skycam
+   still want to move onto `streaming.py` — but now because *they are Pi cameras
+   that would genuinely share that mechanism*, not because "everything must end
+   up in the module". That is a better reason and it survives contact with the
+   EOS. The design's target shape (`uploader/modes/host/__main__`) still stands,
+   with the caveat that it is a wrapper layer, not an absorber.
+5. **"Wrapped tools maybe" is the open bit.** What the wrapper *is* — a thin
+   uniform CLI (`capture --camera <name>`) over per-camera implementations, a
+   Python interface, or just a shared convention plus a scheduler — is
+   undecided, deliberately. Per the design's own instruction it should
+   crystallise **through use**. First honest test: a wrapper that can start a
+   night on the EOS *and* on astrocam without either caring which it is.
+
+**TODO: fold this into `astro/design/capture-unification.md`** — that doc still
+describes the absorption model in its "Target shape" and "Migration order"
+sections, and it is the strand's adopted backlog, so it should carry the
+corrected direction rather than contradicting STATE.
+
 ## Owned code — the EOS capture tools (Peter, 2026-08-11)
 
 **astro-capture owns the EOS capture tools.** Settled by Peter. Note this means
@@ -167,11 +225,9 @@ already done and for starcam's retirement):
   use**, per the design's own instruction — not up front.
 
 **Open questions:**
-- **Does the EOS ever join the unified capture module?** gphoto2/USB vs
-  picamera2/CSI is a real architectural gap, and forcing it in may cost more than
-  it buys. But the run-tag lesson shows the *conventions* (naming, session
-  structure, one-capture-one-frame) should be shared even if the *mechanism*
-  cannot be. Provisional lean: share the conventions, not the code path.
+- ~~Does the EOS ever join the unified capture module?~~ **SETTLED 2026-08-11
+  (Peter): share the conventions, not the code path.** See "How unification
+  works" below — this is the strand's architecture, not just an EOS ruling.
 - ~~Who owns the canon's capture-side code?~~ **SETTLED 2026-08-11 (Peter):
   astro-capture owns the EOS capture tools.** See the ownership section below.
 - Design doc's own opens, still open: `host.json` per-host or fleet-level;

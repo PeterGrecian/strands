@@ -77,9 +77,47 @@ future body or re-seated lens gets characterised, and it is where `RUN_TAG`
 lives — but to be marked calibration-only so it is not mistaken for the nightly
 path (`eos-capture --no-focus`).
 
-**Still open for Peter:** does the EOS ever join the unified capture *module*
-(gphoto2/USB vs picamera2/CSI)? Ownership is settled; mechanism-sharing is not.
-Provisional lean stands: share the *conventions*, not the code path.
+**Then settled too (Peter, same session) — and it is the bigger of the two.**
+*"Share the conventions, not the code path"*, expanded: **astro-\<camera\> has
+the camera-specific work; capture has the pipeline, unified using the former —
+wrapped tools maybe; astro-science does the deliverables.**
+
+**This inverts the direction of `capture-unification.md`.** That design reads
+bottom-up-by-absorption — write one generic engine, migrate each camera in until
+the per-camera dirs hold "only camera.json". Peter's model is the reverse: the
+per-camera work is legitimately and permanently camera-specific and **stays
+put**; the unified pipeline is assembled **from** those parts by **wrapping**
+them. Unification is a layer *over* the device work, not a solvent that
+dissolves it. Consequences:
+
+- **The EOS stops being an awkward exception and becomes the normal case seen
+  clearly.** Under absorption, gphoto2/USB vs picamera2/CSI is an embarrassment
+  to be forced in or excluded; under wrapping it is unremarkable. What made it
+  *look* exceptional is that two Pi cameras happen to share `streaming.py`, and
+  that coincidence got mistaken for the architecture.
+- **`streaming.py` is demoted** from "the engine" to "one shared implementation
+  that the Pi cameras happen to have in common". Verified picamera2-shaped
+  throughout (`cam_idx`, libcamera bayer strings, VCM dioptre `lens_position`,
+  `rotation_180` mirroring an `rpicam-still` flag) — none of it meaningful for a
+  DSLR.
+- **The unified layer's real substance is the conventions** — run-tagged stems,
+  one capture = one frame, session structure, naming, storage hand-off. Exactly
+  what the canon bugs proved is cross-camera, and none of it needs a shared code
+  path. So **work unit 1 (the run-tag audit) is not a warm-up — it is the first
+  real piece of the unified layer.**
+- **The migration ladder survives, re-read**: eclipticam v1 and skycam still move
+  onto `streaming.py`, but because they are Pi cameras that genuinely share that
+  mechanism — not because everything must end up in the module. A better reason,
+  and one that survives contact with the EOS.
+- **"Wrapped tools maybe" is deliberately the open bit** — thin uniform CLI vs
+  Python interface vs convention-plus-scheduler, to crystallise through use.
+  First honest test: start a night on the EOS *and* on astrocam without the
+  wrapper caring which.
+
+Recorded in astro-capture's STATE + mission + blurb. **TODO there:**
+`capture-unification.md` still describes the absorption model in its "Target
+shape" and "Migration order" sections and needs the corrected direction, since
+it is that strand's adopted backlog.
 
 ## astro three-layer split — astro-capture defined + blurbed (2026-08-09)
 
