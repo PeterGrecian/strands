@@ -752,10 +752,18 @@ and the rest of the portfolio list in super/GLOBAL.md.
   strand should triage its own at next visit (not ubersitrep's job to drain).
 - **`splay-grid` unmerged branch** (`splay-grid-mode` worktree, since 07-11) —
   decide merge-or-drop at its backlog visit.
-- **Awaiting astro-science's reply** to the 08-11 canon greenlight — whether
-  `canon-nightly --night 2026-08-10` ran clean, the measured pedestal + scs, and
-  whether `/astro/canon` deployed. If it surfaces a *capture*-side problem it
-  bounces to astro-canon / astro-capture, not back here.
+- **astro-science is working the canon greenlight** (confirmed by Peter,
+  08-11). Awaiting: did `canon-nightly --night 2026-08-10` run clean, the
+  measured pedestal + scs, and did `/astro/canon` deploy. A *capture*-side
+  failure bounces to astro-canon / astro-capture, not back here.
+  **Follow-up sent** correcting my own framing: I had made the deploy the last
+  step after the measurements, but **we always deploy** — deploy is the default
+  final step, not a decision point, and imperfect data is not a reason to hold.
+  Named the four non-reasons explicitly (unsolved pole/derot disabled,
+  provisional pedestal, unset scs, no occlusion mask) so they don't become a
+  fresh hold. The original 08-09 HOLD was right at the time and for a different
+  reason — there was no real night, only a thin 8-frame defocused subset — and
+  is **discharged by events**, not still standing.
 - **Two ownership questions for Peter** (from the astro-capture founding): does
   the **EOS join the unified capture module** at all (gphoto2/USB vs
   picamera2/CSI — lean: share conventions, not code path), and **who owns the EOS
