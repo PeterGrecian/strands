@@ -4,6 +4,68 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## ★ /astro/canon IS LIVE — the three-layer split closed a loop (2026-08-11)
+
+**Done same day.** astro-science ran the chain and deployed. Verified
+independently from here: `/astro` and `/astro/canon` both return 200;
+`canon/camera.json` carries `position_index: 2`, `sky_clear_max_stops: 11.5`,
+`pedestal: 2048` (astro `1432642`, `90cd3b4`).
+
+- **460 CR2 → FITS, 0 failed. 432/460 stacked in 488 s, verdict=clear.** max.jpg
+  is hundreds of thin crisp concentric trails from a 6.6 h fixed urban DSLR —
+  the marker-0 by-eye focus visually vindicated, no fat blurred bands. Retiring
+  `d` was right.
+- The raw S3 URL 403s **by design** (private bucket, presigned URLs) — not a
+  failed upload.
+
+**The order held end to end:** capture (astro-canon) → the seam → delivery
+(astro-science) → public. Both my messages were acted on correctly; the
+we-always-deploy follow-up landed *after* the fact and no fresh hold was
+invented, so it cost nothing but was not needed.
+
+**Measured, and a new trap found.** `sky_clear_max_stops` turns out to carry a
+**second duty**: beyond gating the clear/cloudy verdict it derives
+`sky_clear_hi` and **clamps the ±30% stack band**. Measured on this night: scs
+9.5 stacks only 36% of frames, 10.0 stacks 77%, ≥11.0 stacks the full 92.3%. So
+**too low a ceiling silently discards good frames** — a sharper version of the
+pedestal double-duty trap ([[astrocam-pedestal-double-duty]]), and the same
+shape: one number quietly anchoring two unrelated things. Pedestal itself was
+**confirmed unchanged** at 2048 (darkest frame mean 2706.5 sits well clear of
+the black level, so the log axis never floors).
+
+**Two cross-strand items it handed back — both genuinely ubersitrep's:**
+
+1. **POSINDEX 1 → 2** (Peter's call), on the reasoning I flagged this morning:
+   the focus *mechanism* changing is a calibration boundary, so epoch-1 `d7`
+   frames and epoch-2 marker-0 frames are never co-solved. Epoch 1 retired in
+   the registry with its withdrawal reason. **The gotcha is the estate-shaped
+   one:** muppet's `canon/camera.json` was a **stale untracked epoch-1 copy**,
+   and the adapter stamps POSINDEX from *whichever host it runs on* — so running
+   before syncing would have branded all 460 frames epoch 1. **Config must be
+   synced to the executing host, not merely committed on pip.** That is a
+   config-distribution hole, not a canon quirk; any host-split tool has it.
+2. **`verdict` is a TROUGH-FINDER, not a night-quality metric.** 08-10 reads
+   "clear" but has visible cloud and a bouncing hourly profile (2908 / 2774 /
+   2724 at the anchor trough, then 3086, 3131 spikes, 3487 at dawn). The anchor
+   only ever proved *the darkest 10 minutes* were clear. So **scs 11.5 is
+   bounded from below only** — calibrating the ceiling needs a genuinely cloudy
+   canon night. Noted, not fixed, and worth remembering before anyone reads
+   "clear" as "good night".
+
+**Also fixed, and it generalises:** canon processing now runs **entirely on
+muppet**. `camera.json` had claimed neither host could do both halves (muppet
+rawpy-no-matplotlib, pip the reverse) — **false**: the whole matplotlib
+dependency was one module (`astro/process/brightness.py`, the chart) and one apt
+install killed the split. The performance case is the real lesson: pip read
+frames over NFS at **4.9 MB/s**, I/O-starved, ETA ~100 min; muppet on local NVMe
+ran **34 MB/s at 90% CPU, 488 s**. **Compute follows the data** — and a claimed
+host constraint was one package deep. Both now memories
+([[compute-follows-the-data]]).
+
+**Still open on the canon line** (astro-science's, not mine): the post-dawn
+systemd timer for hands-off delivery; pole solve → enable derot; occlusion mask
+for the foreground foliage; and a cloudy night to bound scs from above.
+
 ## Canon delivers → the astro three-layer split goes live (2026-08-11)
 
 The three-layer split (below, 08-09) stopped being a taxonomy and started doing
@@ -631,7 +693,7 @@ first reviewed.
 | astro-canon | **2026-08-11** | high | ★ BEST NIGHT YET (08-10: 460 frames, 6.6 h, 0 wedges, 0 restarts). Focus solved by eye = "marker 0", `d` apparatus RETIRED, 3 bugs fixed. Root cause of the wedge saga was a worn USB socket |
 | astro-capture | **2026-08-11** | high | ★ FOUNDED — STATE written, declared **development**, adopted `capture-unification.md` as backlog, migration frontier corrected (astrocam already migrated, starcam moot). Work unit 1 = cross-camera run-tag audit |
 | astro-polecam | **2026-08-02** | high | camera keeper (renamed ← astro-v3s); sidereal theory → astro-science; **device** still `astrocam` (rename pending). Hardware ideas spooled 08-11 |
-| astro-science | **2026-08-11** | high | ★ GREENLIT by mail — canon delivery chain built + idle since 08-09, now has its real night. Run `canon-nightly --night 2026-08-10` (NOT `--only-d 7`), measure pedestal/scs, deploy `/astro/canon`. Awaiting its reply |
+| astro-science | **2026-08-11** | high | ★ **DONE — `/astro/canon` IS LIVE** (verified 200). 460 CR2→FITS 0 failed, 432 stacked, verdict=clear. pedestal 2048 confirmed, scs=11.5, POSINDEX→2. Found scs's second duty (clamps the stack band). Open: post-dawn timer, pole solve→derot, occlusion mask, a cloudy night |
 | ~~astro-storage-discussion~~ | 2026-08-02 | — | **ARCHIVED** — theory → astro-science, engineering → astro-storage |
 | ~~astro-speaker-dither~~ | 2026-08-02 | — | **ARCHIVED** — folded into **electronics** (rig PoC) + astro-science (why/calibration) |
 | astro-storage | **2026-07-22** | **URGENT** | S3 growing, finalize starcam ≈1 GB/day — see "URGENT NOW" above; STATE mtime 07-20 but discussion-strand carrying the live work |
@@ -752,18 +814,20 @@ and the rest of the portfolio list in super/GLOBAL.md.
   strand should triage its own at next visit (not ubersitrep's job to drain).
 - **`splay-grid` unmerged branch** (`splay-grid-mode` worktree, since 07-11) —
   decide merge-or-drop at its backlog visit.
-- **astro-science is working the canon greenlight** (confirmed by Peter,
-  08-11). Awaiting: did `canon-nightly --night 2026-08-10` run clean, the
-  measured pedestal + scs, and did `/astro/canon` deploy. A *capture*-side
-  failure bounces to astro-canon / astro-capture, not back here.
-  **Follow-up sent** correcting my own framing: I had made the deploy the last
-  step after the measurements, but **we always deploy** — deploy is the default
-  final step, not a decision point, and imperfect data is not a reason to hold.
-  Named the four non-reasons explicitly (unsolved pole/derot disabled,
-  provisional pedestal, unset scs, no occlusion mask) so they don't become a
-  fresh hold. The original 08-09 HOLD was right at the time and for a different
-  reason — there was no real night, only a thin 8-frame defocused subset — and
-  is **discharged by events**, not still standing.
+- ~~Awaiting astro-science on the canon greenlight~~ — **CLOSED 2026-08-11,
+  `/astro/canon` is live.** See the top block. Nothing pending from here.
+- **Config distribution is a hole, estate-wide** (surfaced by the POSINDEX
+  near-miss): `canon/camera.json` was stale-and-untracked on muppet while
+  correct on pip, and the adapter stamps calibration epoch from **whichever host
+  runs it**. Committing on pip is not deploying. Any host-split tool has this
+  shape — worth a deliberate look at which configs the fleet reads locally vs
+  from git. Not assigned to a strand yet; candidates are ansible (it is a
+  distribution problem) or astro-storage. **Raise with Peter before spawning
+  work.**
+- **`verdict` reads a 10-minute trough, not the night.** Recorded here because
+  it is a *reader-beware* that spans strands: anything downstream treating
+  `verdict=clear` as "good night" is over-reading it. astro-science owns fixing
+  it if it ever needs fixing.
 - **Two ownership questions for Peter** (from the astro-capture founding): does
   the **EOS join the unified capture module** at all (gphoto2/USB vs
   picamera2/CSI — lean: share conventions, not code path), and **who owns the EOS
