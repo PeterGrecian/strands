@@ -332,6 +332,36 @@ The output end of the science: where results become visible.
       in: a *ceiling* that also silently gates the *stack*.
     - Written back in `astro 1432642`; `reference_nights` now names 2026-08-10
       as the canonical dark/clear marker-0 baseline.
+### FIXED 2026-08-11: canon processing moved to muppet — compute follows the data
+
+**The host split was a false constraint, and it cost real time.** `camera.json`
+asserted "muppet has rawpy but not matplotlib; pip has matplotlib but not rawpy
+— neither host can do both halves, so the split is load-bearing, not
+incidental." That was **wrong**. The entire matplotlib dependency is **one
+module** — `astro/process/brightness.py`, which draws the brightness *chart* —
+and muppet was one `apt install python3-matplotlib` away from doing the whole
+job locally. (`darkest_anchor`, which the stack genuinely needs, happens to live
+in that same module.)
+
+Believing the constraint put the heavy pass on the wrong side of the wire:
+nightly-cam ran on **pip**, dragging all 460 frames (~15 GB) over NFS — **twice**,
+since `stack_and_measure` measures then accumulates.
+
+- **Measured penalty:** pip read at **4.9 MB/s**, I/O-starved in `D` state at
+  40–50 % CPU, **ETA ~100 minutes**. The same job on muppet reads local NVMe at
+  **~34 MB/s at 90 % CPU** — 7× the throughput, and actually computing.
+- **Peter's correction (the rule that already existed):** *"pip on wifi is not a
+  compute node. it's my interface to all this. **compute follows the data** is a
+  rule set months ago."* This was a rule to apply, not a finding to rediscover —
+  the session burned ~100 min of wifi grind re-deriving it.
+- **Fix:** `apt install python3-matplotlib` on muppet (3.6.3). muppet now has
+  rawpy + numpy 1.26.4 + astropy 6.0.0 + matplotlib — **the whole toolchain, no
+  split at all**. `processing.host` → `muppet`; `frames_root` already resolves
+  per-host to muppet's local `~/canon-frames`, so nothing else changed.
+- **Generalisable:** if a future host ever lacks matplotlib, make the
+  brightness-chart import **lazy** — never move the heavy pass across a network
+  to reach a plotting library. And check whether a claimed host constraint is
+  one package deep before designing around it.
   - **PENDING**: run the stack + review `max.jpg`, then the deploy, then a
     systemd timer (post-dawn) for hands-off nightly delivery. **scs stays
     provisional until a genuinely CLOUDY canon night is logged** — 08-10 gives
@@ -339,6 +369,31 @@ The output end of the science: where results become visible.
     but not calibrated from above (astrocam's ceiling was set from both).
     Later refinements: occlusion mask (foreground foliage in frame), pole solve →
     enable derot.
+  - **STACKED + DEPLOYED 2026-08-11.** `nightly-cam` on **muppet** (local disk):
+    **432/460 frames stacked in 488 s** (~8 min; the same job on pip over wifi
+    was ETA ~100 min). `verdict=clear`, anchor `per_s=5.640` — matching the
+    77-frame sample's 5.641 to four significant figures, and band [3.948,
+    7.332] exactly as predicted, confirming **scs 11.5 leaves the band
+    uncapped**. 28 frames out of band (dawn), 0 saturated. badpix hot=1928.
+    `no pole prior; skipping derot` — the designed graceful degradation.
+    **The `max.jpg` is a real result**: hundreds of thin, crisp concentric
+    star-trail arcs about the pole (off frame, upper left) from 6.6 h of a
+    fixed urban camera — the by-eye marker-0 focus is **visually vindicated**,
+    no fat blurred bands. Trails are *dashed* (30 s subs, ~51 s cadence ⇒ ~21 s
+    dead time per cycle) — expected for this mode, and now the public look.
+    Aircraft trails cross the lower right (the outlier-rejection design exists
+    but is not built).
+  - **`verdict` is a trough-finder, not a night-quality metric** (found on this
+    night). `max.jpg` shows real cloud billows lit by skyglow, and the hourly
+    mean_brightness **bounces** rather than falling smoothly to a trough:
+    2908 → 2774 → **2724 (trough, 23h — where the anchor sat)** → **3086** →
+    2810 → **3131** → 3487 (dawn). The 00h and 02h spikes are cloud drifting
+    through. So `verdict=clear` is defensible *per frame* — the ±30 % band did
+    its job — but it only ever proved **the darkest 10 minutes were clear**,
+    and it flatters the night as a whole. This is the concrete case behind the
+    "scs bounds the ceiling from below only" caveat. A whole-night quality
+    measure (fraction-of-frames-in-band, or hourly variance) would make "clear"
+    mean what a reader assumes. **Not built** — noted, not fixed.
   - **The hold is RELEASED — a real working night landed 2026-08-10.** The hold
     condition ("don't deploy `/astro/canon` on the thin 8-frame 08-08 subset;
     wait for a real working night") is met: **460 frames, 22:03→04:37 (6.6 h),
