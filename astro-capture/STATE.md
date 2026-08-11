@@ -70,6 +70,59 @@ This is *why* the strand exists: three capture codebases that are 90% the same
 drift independently and bugfixes get ported by hand (the design doc's own
 opening argument), so a fix found on one camera never reaches the others.
 
+## Owned code — the EOS capture tools (Peter, 2026-08-11)
+
+**astro-capture owns the EOS capture tools.** Settled by Peter. Note this means
+the strand owns real code from day one, and that its first-owned code is the
+camera *outside* the picamera2 unification — which sharpens rather than muddies
+the charter: the strand is the acquisition layer for **every** instrument, not
+just the Pi ones.
+
+Surveyed `astro/bin/eos-*` (13 tools) 2026-08-11 and classified by layer. The
+`eos-` prefix is not a reliable guide — three of them are not capture:
+
+**OURS — capture / acquisition (9):**
+
+| Tool | What it is |
+|---|---|
+| `eos-capture` | the core: capture frames over gphoto2 with a sane workflow |
+| `eos-sequence` | long-exposure star sequence over gphoto2/USB |
+| `eos-bulb-run` | long-exposure (bulb) capture run |
+| `eos-focus-cycle` | blind focus-experiment capture on stars — **holds `RUN_TAG`**, the only place in the estate it exists (see work unit 1) |
+| `eos-focus-sweep` | star-focus sweep over gphoto2/USB |
+| `eos-focus-tonight` | arms tonight's focus-cycle run, detached + logged (scheduling) |
+| `eos-night-watch` | overnight "can we see stars yet?" ritual (session structure) |
+| `eos-star-watch` | wait for a cloud gap, then run the sweep (scheduling/gating) |
+| `eos-psf-dither` | night PSF / focus-dither **capture** tool |
+
+Plus `services/eos-focus.service` (the systemd unit arming the above).
+
+**NOT ours — leave with the current owner (4):**
+
+| Tool | Layer | Owner |
+|---|---|---|
+| `eos-cr2-to-fits` | the CR2→FITS **adapter** — the delivery seam itself | astro-science |
+| `eos-star-psf` | offline per-`d` PSF **measurement** (next-day analysis) | astro-science / astro-canon |
+| `eos-psf-view` | renders PSF heat maps from the above | astro-science / astro-canon |
+| `eos-power` | 12V dummy-battery feed off/on/cycle — **device hardware** | astro-canon (with [[electronics]] for the DC switch) |
+
+`eos-power` is the interesting boundary case: capture *calls* it (the recovery
+ladder power-cycles a wedged body), but powering a specific camera is device
+specifics, and the 90s-not-10s rail-down rule is astro-canon's hard-won
+knowledge. **Ruling: astro-canon owns it, astro-capture is a consumer.** The
+recovery *policy* (when to escalate) is capture's; the *mechanism* is the
+keeper's.
+
+**Consequence for the focus regime:** the `d`-schedule machinery
+(`eos-focus-cycle`, `eos-focus-sweep`, `eos-focus-tonight`, `eos-star-watch`) is
+now **ours and largely dormant** — astro-canon retired the `d` apparatus on
+08-10 (focus by eye at "marker 0", lens on MF, nights run `--no-focus`), having
+established that `d` tracked nothing. Do **not** delete these: the sweep tooling
+is how a *future* body or a re-seated lens would be re-characterised, and
+`eos-focus-cycle` is where `RUN_TAG` lives. But they should be clearly marked
+dormant/calibration-only so nobody mistakes them for the nightly path. The live
+nightly capture path is `eos-capture` + `--no-focus`.
+
 ## Pending / loose ends
 
 **Work unit 1 — the frame-naming / run-tag audit across all cameras** (do this
@@ -79,6 +132,23 @@ can `astrocam_v3_night_daemon` / `v3w_night_daemon` restart mid-night, and if so
 do their stems collide? Is there a shared naming convention or three? Outcome
 should be a stated **pipeline rule** (run-tagged stems; one capture = one
 frame), owned here, applied everywhere — not three local fixes.
+
+**Work unit 1b — take delivery of the EOS tools** (falls out of the 08-11
+ownership ruling, and pairs naturally with the run-tag audit since `RUN_TAG`
+lives in one of them):
+- **Mark the `d`-schedule tools dormant/calibration-only** in their own headers
+  (`eos-focus-cycle`, `eos-focus-sweep`, `eos-focus-tonight`, `eos-star-watch`)
+  so the retired regime cannot be mistaken for the nightly path. Keep them.
+- **Check for stale `Immediate` usage across all 9 owned tools.** `eos-focus-sweep`
+  had it (fixed 08-10, astro `c7132b9`) and it *wedges this body*; the fix was
+  applied where the bug bit, not swept. Same class as the run-tag gap.
+- **`eos-capture --no-focus` is the live nightly path** — confirm nothing else is
+  still armed to drive focus (see [[eos-focus-by-viewfinder-marker-0]]).
+- ~~astro-canon left `eos-focus-cycle` / `eos-power` staged-but-uncommitted~~ —
+  **checked 2026-08-11: both committed and clean.** astro-science's 08-09 note
+  about "untouched capture files left staged by their own strand" was overtaken
+  by `c7132b9` the next day. Nothing to rescue; noted so the stale claim does not
+  get re-inherited.
 
 **Then, the shortened migration ladder** (design's order, corrected for what is
 already done and for starcam's retirement):
@@ -102,11 +172,8 @@ already done and for starcam's retirement):
   it buys. But the run-tag lesson shows the *conventions* (naming, session
   structure, one-capture-one-frame) should be shared even if the *mechanism*
   cannot be. Provisional lean: share the conventions, not the code path.
-- **Who owns the canon's capture-side code?** `canon-nightly` is explicitly
-  DELIVERY (astro-science) and says so in its header; astro-canon is the device
-  keeper. The EOS capture tools (`eos-capture`, `eos-focus-cycle`, `eos-sequence`,
-  `eos-night-watch`) are the *capture* half and by the three-layer split belong
-  here — but are not currently claimed by anyone. Settle with Peter.
+- ~~Who owns the canon's capture-side code?~~ **SETTLED 2026-08-11 (Peter):
+  astro-capture owns the EOS capture tools.** See the ownership section below.
 - Design doc's own opens, still open: `host.json` per-host or fleet-level;
   mode-trigger DSL (string expr vs structured — design leans structured); where
   the sun-altitude calc lives (probably a new `astro.location`).

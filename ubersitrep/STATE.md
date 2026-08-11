@@ -57,12 +57,29 @@ inbox of misfiled hardware ideas. Written up this session:
 - Hardware ideas (cooling/dark-current/Peltier/shroud/servo-cover) redirected via
   `idea` to astro-canon + astro-polecam; inbox cleared.
 
-**Open, for Peter:** does the EOS ever join the unified capture module at all
-(gphoto2/USB vs picamera2/CSI — provisional lean: share the *conventions*, not
-the code path), and **who owns the EOS capture tools**? `canon-nightly` says in
-its own header it is delivery (astro-science); astro-canon is the device keeper;
-so `eos-capture`/`eos-focus-cycle`/`eos-sequence`/`eos-night-watch` belong to
-astro-capture by the split — but nobody has claimed them.
+**SETTLED same session (Peter): astro-capture owns the EOS capture tools.** So
+the strand owns real code from day one — and notably its first-owned code is the
+camera *outside* the picamera2 unification, which sharpens the charter: it is
+the acquisition layer for **every** instrument, not just the Pi ones. Surveyed
+the 13 `astro/bin/eos-*` and split them by layer, because the `eos-` prefix
+misleads: **9 are capture** (`eos-capture`, `eos-sequence`, `eos-bulb-run`, the
+four `d`-schedule/scheduling tools, `eos-night-watch`, `eos-psf-dither`) and go
+to astro-capture; **4 are not** — `eos-cr2-to-fits` is the delivery seam itself
+and `eos-star-psf`/`eos-psf-view` are next-day analysis (astro-science), while
+`eos-power` is device hardware (astro-canon). `eos-power` is the boundary case
+worth naming: capture *calls* it to power-cycle a wedged body, but the mechanism
+— and the 90s-not-10s rail-down rule — is the keeper's. Ruling: **recovery
+policy is capture's, the mechanism is the keeper's.**
+
+Consequence: the whole `d`-schedule apparatus is now astro-capture's *and
+dormant*, since canon retired `d` on 08-10. Not to be deleted — it is how a
+future body or re-seated lens gets characterised, and it is where `RUN_TAG`
+lives — but to be marked calibration-only so it is not mistaken for the nightly
+path (`eos-capture --no-focus`).
+
+**Still open for Peter:** does the EOS ever join the unified capture *module*
+(gphoto2/USB vs picamera2/CSI)? Ownership is settled; mechanism-sharing is not.
+Provisional lean stands: share the *conventions*, not the code path.
 
 ## astro three-layer split — astro-capture defined + blurbed (2026-08-09)
 
