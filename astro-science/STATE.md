@@ -405,6 +405,41 @@ since `stack_and_measure` measures then accumulates.
     NB the raw S3 URL 403s by design (bucket is private; the site serves images
     via **presigned URLs**) — don't mistake that for a broken upload.
     The in-progress `lambda/cv.html` rewrite shipped with it, at Peter's call.
+  - **The timelapses were silently MISSING from the first deploy — two ffmpeg
+    bugs** (Peter asked "I was hoping for timelapse videos like the other
+    cameras"; fixed `astro 23c16fd`). The first publish wrote a **0-byte
+    `sweep.mp4`**, logged `FAILED; continuing without it` for *both* sweeps, and
+    still printed `=== done ===` — so only max.jpg/brightness.png/summary.json
+    reached S3 and the deploy was reported complete on a partial artefact set.
+    1. **Odd sensor height.** libx264 requires EVEN dimensions. Every Pi sensor
+       is even, but the **EOS 2000D is 6020×4015** — odd rows — so its half-size
+       web render is 3010×**2007** and the encoder refuses outright (`height not
+       divisible by 2`). Fix: `-vf scale=trunc(iw/2)*2:trunc(ih/2)*2` (no-op
+       when already even). Applied to `window-stack-sweep`, `diff-sweep` **and**
+       `sum-sweep` — all three build their own ffmpeg call, so all three had it
+       latent. `detrans-sweep` already crops odd rows in numpy: the constraint
+       was *known*, just not applied consistently.
+    2. **Numbering gaps.** `window-stack-sweep` fed `frame_%05d.jpg`, which
+       stops dead at the first gap — and gaps are NORMAL (a window with no
+       frames is skipped). This night has a **real capture gap at 01:27–01:37
+       UTC** (frames 207–215; why 01h holds 56 frames vs 79–80 elsewhere),
+       which truncated the encode to 207 of 329 frames. Fix: `pattern_type
+       glob`, as `diff-sweep` already did.
+    - Re-published clean (**zero** FAILED lines): `sweep-colour.mp4` 181.6 MB,
+      `sweep-diff.mp4` 132.1 MB, both `-web` variants, both posters, thumb.jpg.
+    - **Lesson: a publish that loses its main video must not report success.**
+      Verify the artefact set matches what the other cameras produce, rather
+      than checking only the files that did upload.
+  - **The site serves FULL-SIZE video and never the `-web.mp4` variants**
+    (found 2026-08-11, **not fixed** — site-wide, Peter's call). `lambda/routes/
+    astro.py:148` hardcodes `sweep-colour.mp4`; `-web.mp4` appears nowhere in the
+    Lambda, so the pipeline builds 4.8 MB web-optimised videos that nothing
+    uses. Visitors pull **181 MB** for a 5.5 s canon clip, and with no
+    `-movflags +faststart` the `moov` atom sits at the END, so playback can't
+    start until the whole file lands (verified: a 1 MB range request returns 206
+    but `moov atom not found`). Affects all four cameras; bites canon hardest
+    because its frames are much larger. One-line change to prefer `-web.mp4`,
+    but it changes playback for every camera.
   - **The hold is RELEASED — a real working night landed 2026-08-10.** The hold
     condition ("don't deploy `/astro/canon` on the thin 8-frame 08-08 subset;
     wait for a real working night") is met: **460 frames, 22:03→04:37 (6.6 h),
