@@ -305,8 +305,38 @@ The output end of the science: where results become visible.
     '2026-08-10')` returns **460 frames, 21:03:59→03:37:20 UTC, 6.56 h span,
     70.2/h** — matching capture's report exactly (their times were BST).
     So never judge a canon night's completeness by `ls` on one day dir.
-  - **PENDING**: measure & write back real pedestal + scs from the 08-10 night;
-    only THEN install a systemd timer (post-dawn) for hands-off nightly delivery.
+  - **Pedestal + scs MEASURED off 2026-08-10** (77-frame sample across the
+    night; same statistic nightly-cam uses — `per_s = mean/(EXPTIME*GAIN)`,
+    anchor = median per_s over the darkest 10-min window):
+    - frame mean **min 2706.5 / median 2806.8 / max 5918.7 ADU**; darkest at
+      23:16 UTC, brightest 03:35 (dawn twilight). per_s 5.639…12.331.
+    - **anchor: per_s 5.641, mean 2707.5 ADU, window 23:12–23:21 UTC.**
+    - **pedestal 2048 CONFIRMED, not merely provisional**: the darkest frame
+      mean (2706.5) sits comfortably above the ~2048 black level, so the
+      log2 axis never floors. No change needed.
+    - On that axis the **anchor is 9.37 stops** and the brightest frame 11.92 —
+      only a **2.5-stop whole-night spread**, and both far above astrocam's
+      numbers (pedestal 50 / scs 8), confirming nothing could have been copied.
+      Canon sits in the *high-pedestal* family with eclipticam-v3w (4380 / 10.0).
+    - **scs has an unforeseen SECOND duty — it also caps the stack band.**
+      Beyond gating the verdict (`anchor_stops > scs ⇒ cloudy`), nightly-cam
+      derives `sky_clear_hi = (pedestal + 2**scs)/(EXPTIME*GAIN)` and **clamps
+      the ±30% acceptance band with it**. So scs must clear *two* thresholds:
+      **>9.37** or this clear night reads cloudy, and **≥~11.0** or the cap cuts
+      into the band and silently drops good frames from the stack. Measured on
+      this night: **scs 9.5 stacks only 36 % of frames, 10.0 stacks 77 %,
+      ≥11.0 stacks the full uncapped 92.3 %** (the 3 rejected are dawn frames,
+      correctly excluded by the band itself, not the ceiling). **Set to 11.5**
+      (Peter, 2026-08-11): ≈2.1 stops of verdict margin, band fully uncapped.
+      A sharper form of the pedestal double-duty trap — same lesson one level
+      in: a *ceiling* that also silently gates the *stack*.
+    - Written back in `astro 1432642`; `reference_nights` now names 2026-08-10
+      as the canonical dark/clear marker-0 baseline.
+  - **PENDING**: run the stack + review `max.jpg`, then the deploy, then a
+    systemd timer (post-dawn) for hands-off nightly delivery. **scs stays
+    provisional until a genuinely CLOUDY canon night is logged** — 08-10 gives
+    only the clear side of the population, so the ceiling is bounded from below
+    but not calibrated from above (astrocam's ceiling was set from both).
     Later refinements: occlusion mask (foreground foliage in frame), pole solve →
     enable derot.
   - **The hold is RELEASED — a real working night landed 2026-08-10.** The hold
