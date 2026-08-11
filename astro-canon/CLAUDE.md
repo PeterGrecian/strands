@@ -18,6 +18,12 @@ into the astro FITS pipeline, deliverables to mywebsite.
 The camera's many tether quirks are recorded in STATE.md — read them
 before touching gphoto2; each one cost real debugging time.
 
+**Focus is MANUAL and must not be driven.** The lens is on MF, focused by
+hand through the viewfinder ("marker 0", 2026-08-10) — that beat every
+automated method by 3x. The night runs `--no-focus`: no rack, no drive,
+not even after a power cycle. The `d` coordinate never tracked focus and
+is retired. Do not "improve" this by reinstating a focus sweep.
+
 ## Session ritual
 
 1. Read `STATE.md` (current state, decisions) and `IDEAS.md` (inbox).

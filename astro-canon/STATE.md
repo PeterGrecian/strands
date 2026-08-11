@@ -2,92 +2,88 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
-## ⚠ CAMERA OFF THE BUS — first thing to fix next session (2026-08-09 late)
+## ★★★ BEST NIGHT YET — 460 frames, zero wedges (2026-08-10 → 11)
 
-**The EOS is not enumerating at all.** `lsusb` shows the Genesys hub but no
-`04a9:32e1`; `eos-power on` returns rc=0 and it still does not appear.
-`eos-focus.service` is **STOPPED** (deliberately, so nothing grabs the device).
+**The camera worked all night, unattended, for the first time.**
 
-This is NOT the firmware wedge — a wedged camera still enumerates and answers
-`--summary`. Vanishing from the bus entirely is a **power or cable fault**.
-Sequence: after three failed first-exposures the mini-B was reseated at the
-camera end, and the camera has not come back since. The 12V/dummy-battery
-connections were **soldered + heatshrunk earlier that day**, so a nudged barrel
-connector or dummy-battery lead is the prime suspect, ahead of the USB cable.
+| | 2026-08-10 | previous fortnight |
+|---|---|---|
+| frames | **460** | 96–135 |
+| span | 22:03 → 04:37 (6.6 h) | 3.0–5.3 h |
+| rate | **70/h** | 26–44/h |
+| wedges / recoveries | **0** | routine |
+| restarts | **0** (one run tag) | frequent |
+| focus drift | none — FWHM 2.25–2.63 px, first frame to last | unmeasurable |
 
-**Next session, in order:** is the camera's own power light/screen ON?
-- **Dark** → 12V feed. Reseat the barrel connector and the dummy-battery lead.
-- **Lit** → USB. Try the muppet end of the mini-B, or a different hub port.
-Then `lsusb -t` should show Imaging at **480M**, a config write must stick, and
-only then `sudo systemctl start eos-focus.service`.
+15 GB, RAW to `eos-frames/2026-08-10/`, JPEGs to `eos-frames-live/2026-08-10/jpeg/`.
+The recovery ladder never fired, so the plug remains UNTESTED in anger.
 
-## ✗ ZERO FRAMES — fixed-focus night failed (2026-08-09)
+## ★★★ FOCUS SOLVED — by eye, through the viewfinder (2026-08-10)
 
-Aim was a full night parked at one focus. **Nothing was captured.** Dark began
-22:04 BST; by 22:49 there were three first-exposure failures and then the
-camera left the bus. The d7 park itself worked perfectly every time — the
-failure is downstream of focus.
+**Peter set focus by hand with the lens on MF, looking through the optical
+viewfinder.** That datum is **"marker 0"**. It beat every automated method
+outright:
 
-```
-22:06:27  parked at d7 (12x Far-3 + 7x Near-2)  -> 22:08 busy -> NO FILE
-22:39:46  parked at d7                          -> 22:41 busy -> power cycle
-22:45:27  post-cycle: RECOVERED
-22:46:59  re-parked at d7 after reset           -> 22:48 NO FILE
-```
+| method | edge/std |
+|---|---|
+| driven `d`-schedule, all day | 0.035 |
+| best metric-guided ring bracket | 0.055 |
+| **viewfinder by eye** | **0.151** |
 
-**Three for three, always on the FIRST exposure after a park** — including once
-straight after a *successful* verified power cycle and a fresh re-park. That is
-systematic, not bad luck. Leading hypothesis (UNTESTED): fixed-focus runs ~19
-drives back-to-back with no capture between them, where the hunt schedule
-interleaves drive-and-capture constantly; this camera is fussy about live-view
-state around drives, and the wedge lands on the first capture after that long
-uninterrupted drive burst. **Do not run another fixed-focus night before
-testing that** — a single park followed by one capture, in daylight, would
-settle it cheaply.
+Confirmed on stars that night: median star FWHM 2.25–2.63 px across 6.6 h.
+A distant-treeline focus DID transfer to true infinity — no nudge needed.
 
-**Two self-inflicted wedges earlier the same evening**: `pkill -f gphoto2` to
-clean up a test killed a process mid-capture with the shutter held — exactly
-what the "NEVER pkill -9 gphoto2 mid-capture" rule below warns against, and it
-also killed the ssh running it (the pattern was too broad). Stop test runs with
-`systemctl stop`, or let `--passes 1` finish.
+**Do not drive focus on this body.** The lens stays on MF; the ring stays put.
+The night runs with `--no-focus`, which never racks and never drives — *not even
+after a power cycle*, since a rail-drop cannot move a mechanical ring. That is
+also what makes leaving recovery armed safe: a reset can no longer cost the focus.
 
-### What DID prove out (all committed, astro `9b57762`)
+### `d` never tracked focus at all
+The whole `d` apparatus was measuring nothing. Sharpness on 2026-08-08 split by
+**pass** (p2/p3 ≈ 205, p1/p4 ≈ 53–73), not by `d` — every `d` from 5 to 15
+averaged the same, with within-`d` spread larger than any between-`d` difference.
+All V-curve/peak conclusions in the older sections below are WITHDRAWN.
 
-- **Fixed-focus mode works mechanically.** `[focus] parked at d7 (12x Far-3
-  rack + 7x Near-2)` printed exactly once per run, and `[focus] re-parked at d7
-  after reset` fired after the power cycle — the rack-once logic and its
-  invalidation-on-reset are correct.
-- **The recovery ladder works end-to-end**, once its timeout was fixed:
-  gentle release → grace window → 12V cycle → `post-cycle: RECOVERED`.
-- **Live JPEG delivery works.** `--jpeg-dir` put the boosted JPEGs on the
-  NFS-exported bigstore (`/mnt/bigstore/astro-data/eos-frames-live/<night>/
-  jpeg`, i.e. `/mnt/muppet/bigstore/...` from pip) — splayable with no rsync.
-  Untested against real frames only because none were captured.
+## ★★★ THREE BUGS FIXED (2026-08-10, astro `c7132b9`)
 
-### ★ POWER-CYCLE DURATION: 10s is NOT enough (supersedes the 2026-07-26 note)
+1. **Burst firing — the big one.** Drive mode is Continuous Shooting, so a held
+   full press fires continuously. The old capture held the press for the WHOLE
+   download window (30s+ at night); a 2s hold measured **~20 frames**, a 1s hold
+   3 — and exactly ONE was ever downloaded. The rest was pure shutter wear on a
+   body rated ~100k actuations. Now: press, release after **0.2s**, then
+   download. One frame per capture. (~460 actuations last night, not ~9,000.)
+2. **Restart stem collision** — pass numbering restarts at 1 after an abort, so
+   a re-run silently overwrote the previous run. Stems now carry a per-run UTC
+   `RUN_TAG`; verified two runs into one dir grow it. This bug destroyed ~1,000
+   frames on 07-28 and, on 08-10, the only frames containing an aircraft.
+3. **`eos-focus-sweep` used `Immediate`** (which wedges this body) paired with a
+   mismatched `Release Full`. Now Press/Release Full + burst-tolerant handling.
 
-**A new USB Dev number does NOT prove the wedge cleared.** Measured on a real
-`0x2019`/`-110` wedge: pulls of **10s, 25s and 30s each re-enumerated the
-camera and each left config writes still rejected**; **90s cleared it**, and a
-later wedge the same evening needed **180s**. The dummy-battery adapter's caps
-hold the logic rail up long after the USB interface drops.
+Also `splay` (`2ea92bc`): the probe line now records `RES=` and
+`VIEW=<zoom>+<panx>,<pany>`, and the help states that x/y are **native
+full-res source pixels which must NOT be rescaled** — that was true before but
+undocumented, and cost a long detour hunting a plane at x=6562 in a 6000-wide frame.
 
-- `CYCLE_SECS` **10 → 90**; the recovery ladder now retries once at **180s**
-  before declaring failure.
-- This probably explains historical `post-cycle: STILL WEDGED` results
-  (including 08-08's two aborts) — they may simply have been too-short pulls.
-- Corollary: the Dev-number verification added earlier that day proves *mains
-  fell*, not that the camera reset. Necessary, not sufficient.
+## ✔ CAMERA BACK — it was a worn USB socket (2026-08-10)
 
-### The regression that cost ~30 min of dark
+The "camera off the bus" and the escalating wedges were **mechanical**: muppet's
+USB2 socket had gone loose from heavy use. Peter moved the camera to a **USB-C
+port via an adapter + USB3 hub**; it enumerated at 480M and a config write stuck
+first time. Mechanical wear ramps continuously, which is exactly the
+rare→constant shape a software change never would have.
 
-`_eos_power()` had **`t=60`** while `CYCLE_SECS` had just been raised to 90 — so
-every power cycle was killed mid-pull, and the helper returns `None` on timeout,
-which the caller printed as **"power-cycle command FAILED (not found)"**. That
-message sent the search to paths and permissions; the binary was fine. Fixed:
-`t=420`, and the message now reads "not found / timed out". **Lesson: raising a
-subprocess's duration means raising its call timeout too — and never let one
-error string cover both "missing" and "timed out".**
+**The measurement that cracked it:** frames/night were FLAT (96–135) while the
+rig degraded — a dying camera gives falling yield. What actually decayed was
+frames/HOUR (38–44 → 26–35) and night start time (22:30 → 00:22–00:51). The
+recovery ladder was working and hiding the fault from the frame count.
+Check `lsusb -t` link speed (must be 480M) and suspect the PHYSICAL path before
+building firmware theories.
+
+**Still open:** the Matter smart plug is unreliable (found switched OFF mid-day
+2026-08-10, which produced a fake "wedge + failed recovery" cascade). A Zigbee
+replacement is on order (~2026-08-13). Recovery stays ARMED meanwhile — an
+intermittent reset beats none, and `eos-power` verifies by USB Dev number so a
+lying plug reports rc=3 rather than being mistaken for a camera fault.
 
 ## ★★★ PLUG REPLACED + power-cycles now VERIFIED (2026-08-09)
 
@@ -155,7 +151,7 @@ switching clears a *genuine* Class-B wedge is STILL unproven on this plug —
 today's test cycled a **healthy** camera, which proves the mechanism, not the
 cure. Only a live wedge settles it.
 
-## ★★★ FOCUS: `d` IS REAL, and the METRIC is what's broken (2026-08-09, by eye)
+## ~~FOCUS: `d` IS REAL~~ — WITHDRAWN 2026-08-10 (`d` never tracked focus)
 
 **Peter reviewed frames 1–119 of the 07-28 night by eye (d-major order) and
 marked the sharp ones. That verdict, not `eos-star-psf`, is now the reference.**
@@ -240,7 +236,7 @@ zero-byte files).
   `${a[@]:(-N)}` when N > len), i.e. the exact inverse of the flag's promise,
   most dangerous when someone passes a big --keep to be safe. Now clamped.
 
-## PEAK HUNT INCONCLUSIVE — clouded, d9 re-confirmed, no turning point (2026-07-31 → 08-02)
+## ~~PEAK HUNT~~ — SUPERSEDED 2026-08-10 (focus is manual now; `d` is meaningless)
 
 Ran the d5–d15 peak-hunt schedule (2026-07-31 night, 105 frames, clean
 autonomous run — **no wedges**, 21:44→03:18 UTC). Analysed with
@@ -274,7 +270,7 @@ salvages last night AND makes every future partly-cloudy night usable.
 Recommended next step (Peter leaning yes, not yet greenlit): harden the
 detector, re-run 07-31, then a clear night confirms.
 
-## ★★★ FOCUS MEASURED — d8 sharpest on a flat d5–d9 shelf (2026-07-29/30)
+## ~~FOCUS MEASURED — d8 sharpest~~ — WITHDRAWN 2026-08-10 (metric measured cloud/blob size)
 
 The pending "full-res CR2 PSF analysis" is **built and run** — the designed
 next-day pipeline is now two real tools (astro `1246766`), and the answer is in.
