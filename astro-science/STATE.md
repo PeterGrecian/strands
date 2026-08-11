@@ -230,24 +230,31 @@ The output end of the science: where results become visible.
   precomputed `<camera>/index.json`, built nightly by `build-calendar-index`).
 - **EOS 2000D (canon) is now a first-class deliverables camera** (BUILT
   2026-08-09). The Canon DSLR — long the astro-canon focus/wedge/plug saga —
-  landed its **focus (pinned d7**, Peter: "we found the focus at last") and got
-  wired into the nights pipeline. **Approach: a CR2→FITS adapter**, not a bespoke
+  landed its **focus** and got wired into the nights pipeline. *(Focus was
+  originally recorded here as "pinned d7"; that regime was RETIRED 2026-08-10 —
+  see "Focus regime changed" below. Focus is now by-eye MF at "marker 0".)* **Approach: a CR2→FITS adapter**, not a bespoke
   builder, so canon flows through the *existing* `nightly-cam` /
   `publish-night-cam` / `build-calendar-index` unchanged — every downstream gain
   (derot, drizzle, accumulator, catalogue) applies to it for free. Pieces (astro
   `2130b14`, mywebsite `6eb8ca1`):
   - `canon/camera.json`: `flat` night layout, **GBRG** bayer (decoded from a real
-    CR2 — *not* RGGB, don't assume), 6020×4015, focus d7. plate_scale/pole
+    CR2 — *not* RGGB, don't assume), 6020×4015. plate_scale/pole
     **UNSOLVED** → derot disabled; nightly-cam degrades gracefully (prints "no
     pole prior; skipping derot", still writes max.jpg + brightness + summary).
     pedestal (2048) + sky_clear_max_stops (null) are **PROVISIONAL** — the canon
     black level is ~2048 (14-bit) vs imx708's ~62, so nothing could be copied
-    from astrocam; **re-derive both from the first real fixed-d7 night** (the
+    from astrocam; **re-derive both from the first real dense night** (the
     pedestal double-duty trap: this axis anchors the cloud verdict too).
   - `bin/eos-cr2-to-fits` (**muppet**, needs rawpy): CR2 → one `.fits.fz`
     (undemosaiced Bayer in HDU 1, DATE-OBS/EXPTIME/GAIN=**ISO/100**/BAYERPAT/
     POSINDEX). Time/exposure/ISO from the night's `manifest.csv` (authoritative,
-    no exiftool). Idempotent; `--only-d 7` filters sweep nights.
+    no exiftool). Idempotent. `--only-d` filtered the old sweep nights —
+    **never pass it now**: epoch-2 frames are all `_d00`, so `--only-d 7` would
+    filter out every frame. Its `--src` default (`~/tmp/canon-focus-nightly/`)
+    is **stale** — capture now writes to muppet's
+    `/mnt/bigstore/astro-data/eos-frames/<night>/` (pip:
+    `/mnt/muppet/bigstore/eos-frames/`), so pass `--src` explicitly until the
+    default is fixed.
   - `bin/canon-nightly` (**pip**): the DELIVERY chain (adapt on muppet → stack+
     publish on pip → refresh index). **Host split is load-bearing**: muppet has
     rawpy not matplotlib, pip has matplotlib not rawpy — neither does both halves.
@@ -263,18 +270,53 @@ The output end of the science: where results become visible.
     delivery layer**. The adapter is the *seam* — consumes capture's output, never
     reaches into it. Untouched capture files (`eos-focus-cycle`, `eos-power`) were
     left staged-but-uncommitted by their own strand.
-  - **PENDING**: run `canon-nightly` on a **dense fixed-d7 night** → measure &
-    write back real pedestal + scs; only THEN install a systemd timer (post-dawn)
-    for hands-off nightly delivery. Later refinements: occlusion mask (foreground
-    foliage in frame), pole solve → enable derot.
-  - **HELD 2026-08-09/10: website deploy waits until the camera produces a real
-    working night.** The first fixed-d7 attempt (night of 08-09, Peter babysitting)
-    **failed at capture** — a *capture-side* problem (the astro-canon wedge/plug
-    saga), NOT a delivery-pipeline issue. Decision: don't deploy `/astro/canon`
-    publicly on the thin 8-frame 08-08 subset; hold the Lambda deploy until a good
-    night lands. **The delivery pipeline is proven and idle — waiting on capture.**
-    When a working night arrives: `canon-nightly --night <n>` → measure pedestal/scs
-    → `cd ~/mywebsite && ./deploy` (the only outward step; code already committed
+  - **Focus regime changed — POSINDEX incremented to epoch 2** (2026-08-11, via
+    a GREENLIGHT from [[ubersitrep]]). astro-canon **retired the whole `d`
+    apparatus** on 2026-08-10: focus is now set **by eye through the optical
+    viewfinder, lens on MF, datum "marker 0"**, and nights run `--no-focus` so
+    the ring is never driven (a rail drop cannot move a mechanical ring). By-eye
+    beat every driven method outright (edge/std 0.151 vs 0.055 best metric-guided
+    bracket vs 0.035 all-day d-schedule), and — the load-bearing part — **`d` was
+    tracking NOTHING all along**: 08-08 sharpness split by capture PASS, not by
+    d, so the old V-curve/peak/"focus is d7" conclusions are **WITHDRAWN**.
+    Decision (Peter): this is a genuine calibration boundary, so
+    `position_index` **1 → 2** deliberately under the "increment whenever the
+    camera, lens or mounting changes" rule — the mechanism by which focus is set
+    changed, so epoch-1 d7 frames and epoch-2 marker-0 frames are never
+    co-solved. Epoch 1 is retired in the registry (its only real data = the thin
+    8-frame 08-08 bring-up subset). `focus_dial_d` → null; `_d00` in frame stems
+    is a **null placeholder, not a dial position**.
+    - **Gotcha found while doing it:** muppet's `~/astro` checkout is behind
+      (`ab6619f`) and its `canon/camera.json` was **untracked** — a stale
+      epoch-1 copy. Since the adapter runs *there* and stamps POSINDEX from the
+      local config, running before syncing would have stamped all 460 frames
+      epoch 1. Config copied to muppet (old one kept as
+      `camera.json.pre-epoch2.bak`); verified POSINDEX=2 on a real frame before
+      the bulk run. **The host split means camera.json must be synced to muppet,
+      not just committed on pip.**
+  - **Night dirs split at UTC midnight — by design, not a bug** (verified
+    2026-08-11). The adapter files each frame under its DATE-OBS *calendar
+    date*, so the 08-10 night landed as **207 frames in `2026-08-10/` (hours
+    21-23) + 253 in `2026-08-11/` (hours 00-03)**. Alarming at first glance
+    (the adapter reported "459 written" while the 08-10 dir held 207), but
+    correct: `astro/frames.py` `list_night_frames` in the **`flat`** branch
+    globs *both* the window's start and end day dirs and filters by
+    `night_window` (noon→noon). Confirmed on real data: `list_night_frames(cfg,
+    '2026-08-10')` returns **460 frames, 21:03:59→03:37:20 UTC, 6.56 h span,
+    70.2/h** — matching capture's report exactly (their times were BST).
+    So never judge a canon night's completeness by `ls` on one day dir.
+  - **PENDING**: measure & write back real pedestal + scs from the 08-10 night;
+    only THEN install a systemd timer (post-dawn) for hands-off nightly delivery.
+    Later refinements: occlusion mask (foreground foliage in frame), pole solve →
+    enable derot.
+  - **The hold is RELEASED — a real working night landed 2026-08-10.** The hold
+    condition ("don't deploy `/astro/canon` on the thin 8-frame 08-08 subset;
+    wait for a real working night") is met: **460 frames, 22:03→04:37 (6.6 h),
+    70/h, ZERO wedges, ZERO restarts, one run tag, focus stable end-to-end**
+    (median star FWHM 2.25–2.63 px, first frame to last), 15 GB. The earlier
+    08-09 failure was capture-side (astro-canon wedge/plug saga), never a
+    delivery fault — the pipeline was proven and idle, exactly as recorded.
+    Remaining outward step: `cd ~/mywebsite && ./deploy` (code already committed
     `6eb8ca1`).
 - **The catalogue AS the headline deliverable** (Peter, 2026-08-03; design
   `astro/design/catalogue-deliverable.md`). The local star catalogue isn't just
