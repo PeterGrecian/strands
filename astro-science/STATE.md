@@ -430,16 +430,30 @@ since `stack_and_measure` measures then accumulates.
     - **Lesson: a publish that loses its main video must not report success.**
       Verify the artefact set matches what the other cameras produce, rather
       than checking only the files that did upload.
-  - **The site serves FULL-SIZE video and never the `-web.mp4` variants**
-    (found 2026-08-11, **not fixed** — site-wide, Peter's call). `lambda/routes/
-    astro.py:148` hardcodes `sweep-colour.mp4`; `-web.mp4` appears nowhere in the
-    Lambda, so the pipeline builds 4.8 MB web-optimised videos that nothing
-    uses. Visitors pull **181 MB** for a 5.5 s canon clip, and with no
-    `-movflags +faststart` the `moov` atom sits at the END, so playback can't
-    start until the whole file lands (verified: a 1 MB range request returns 206
-    but `moov atom not found`). Affects all four cameras; bites canon hardest
-    because its frames are much larger. One-line change to prefer `-web.mp4`,
-    but it changes playback for every camera.
+  - **FIXED 2026-08-11: the site now serves the `-web.mp4` variants**
+    (`mywebsite 13bc058`; Peter: *"the website should use the -web videos. I
+    don't know why we generate 4k ones"*). `publish-night-cam` has **always**
+    built them and states the intent outright — *"the website serves
+    `sweep-<name>-web.mp4`; the full-res mp4 stays as the high-quality/download
+    copy"* (1280-wide, denoised, **`+movflags faststart`**). The Lambda simply
+    never implemented its half, so the `-web` files were encoded and uploaded
+    every night and **never used**: visitors got the masters (**181.6 MB** for a
+    5.5 s canon colour sweep, 132.1 MB for the diff) and, with the `moov` atom
+    at the END, playback couldn't start until the whole file downloaded.
+    - **Two changes were needed, not one** — the trap worth remembering: the
+      route fix alone would have silently done nothing, because
+      `lambda/mywebsite.py:~4059` presigns from an **allowlist of basenames**
+      that contained no `-web.mp4`, so `urls.get(web_key)` would miss and fall
+      through to full-res every time. Fixed in both places.
+    - Route prefers `-web`, **falls back to full-res** for older nights that
+      predate the web encode, and offers the master as a "full-res" caption
+      link (`.dl` style added) so the archive copy stays reachable.
+    - Canon night page: **~314 MB → ~11 MB** of video, and it starts instantly.
+      Verified live: ffprobe reads 1280×854 / 5.48 s from the **first 256 KB**
+      of the served file. Applies to all four cameras.
+    - So the answer to "why do we generate 4k ones": deliberately, as the
+      high-quality master/download copy. Keep building them — just don't serve
+      them.
   - **The hold is RELEASED — a real working night landed 2026-08-10.** The hold
     condition ("don't deploy `/astro/canon` on the thin 8-frame 08-08 subset;
     wait for a real working night") is met: **460 frames, 22:03→04:37 (6.6 h),
