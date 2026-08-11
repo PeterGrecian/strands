@@ -29,6 +29,14 @@ curation files. See memory `project_splay_lab.md` for splay's role.
   points — `reload_changed`'s `x not in existing` test needs loaded paths
   and scanned dir entries normalised alike.
 
+  Caveat on provenance: this is a real defect, found and fixed on its own
+  merits, but it was probably **not** what prompted the report. The actual
+  launch was `splay ./d*`, and bash history shows the habitual form is a
+  glob over *files* (`splay *`, `splay */001.jpg`, `splay *1.f*`). The
+  shell expands those before splay runs, so `dirs` is empty, `source_dirs`
+  is empty, and auto-reload is correctly off — no directory was ever handed
+  over. See the spooled idea on inferring watch intent from a file list.
+
 ## Pending / loose ends
 
 - **Uncommitted in the splay working tree (not this strand's work):** the

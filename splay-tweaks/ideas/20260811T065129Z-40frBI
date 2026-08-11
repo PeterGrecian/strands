@@ -1,0 +1,5 @@
+Watch intent from a file-list argument: splay *.fits.fz / splay */001.jpg expands in the SHELL to a file list, so gather_paths returns empty dirs, source_dirs is empty and auto-reload is off by design. But in a capture dir that invocation almost always means 'show me this dir as it fills' — and the mismatch reads as a bug (2026-08-10: reported as an auto-reload regression; bash history shows the habitual form is file globs, not dirs).
+
+Options: (a) derive source_dirs from the common parent(s) of the file arguments, so a file glob watches too; (b) add an explicit -w/--watch flag; (c) leave semantics alone (file list = snapshot, directory = watch) and just make the mode obvious at launch — the HUD already shows 'auto-reload: ON/off' (splay:2433) but the launch print does not.
+
+Behaviour change, not a bug fix — needs a call from Peter. Note (a) is subtle for splay */001.jpg, where the common parent is the tree root and watching it would pull in far more than intended. Distinct from the handoff bug already fixed in splay cd24f70.
