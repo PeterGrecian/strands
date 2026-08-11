@@ -394,6 +394,17 @@ since `stack_and_measure` measures then accumulates.
     "scs bounds the ceiling from below only" caveat. A whole-night quality
     measure (fraction-of-frames-in-band, or hourly variance) would make "clear"
     mean what a reader assumes. **Not built** — noted, not fixed.
+  - **DEPLOYED 2026-08-11 — `/astro/canon` is LIVE.** The hold that stood since
+    08-09 is discharged. `publish-night-cam` on muppet → S3
+    (`canon/nights/2026-08-10/`: max.jpg, brightness.png, summary.json) →
+    `canon/index.json` rebuilt (2 nights, both with thumbnails) → `./deploy`
+    (Lambda CodeSize 200621, Cloudflare cache purged). Verified live: `/astro`
+    hub shows the "EOS Camera" card; `/astro/canon` renders **2026-08-10, 460
+    frames, 432 stacked, clear**; the night page returns 200 and the thumbnail
+    serves 1,690,998 bytes of image/jpeg — byte-identical to muppet's max.jpg.
+    NB the raw S3 URL 403s by design (bucket is private; the site serves images
+    via **presigned URLs**) — don't mistake that for a broken upload.
+    The in-progress `lambda/cv.html` rewrite shipped with it, at Peter's call.
   - **The hold is RELEASED — a real working night landed 2026-08-10.** The hold
     condition ("don't deploy `/astro/canon` on the thin 8-frame 08-08 subset;
     wait for a real working night") is met: **460 frames, 22:03→04:37 (6.6 h),
