@@ -4,6 +4,93 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## Canon delivers → the astro three-layer split goes live (2026-08-11)
+
+The three-layer split (below, 08-09) stopped being a taxonomy and started doing
+work, because **astro-canon finally produced a real night**: 460 frames, 6.6 h
+unattended, zero wedges, zero restarts, focus stable end-to-end (FWHM 2.25–2.63
+px). Verified on disk: 460 CR2 + manifest in `eos-frames/2026-08-10/`, 460 JPEG
+in `eos-frames-live/`. This session pushed the consequence out to the two layers
+either side of it.
+
+**→ astro-science: greenlit** (mailboxed). Its deliverables work was already
+BUILT and idle — its own STATE says "the delivery pipeline is proven and idle —
+waiting on capture", with the website deploy HELD since 08-09 because the only
+canon night was a thin 8-frame defocused subset. So the ask was never "build
+deliverables"; it was **run the chain you already built on the night that
+finally deserves it**, then measure back the provisional pedestal / unset
+sky_clear_max_stops and deploy `/astro/canon`.
+
+**The catch worth recording** (this is the connective-tissue bit): astro-science
+is waiting for a "dense **fixed-d7** night", and all 460 frames are **`d00`**.
+Not a bad night — astro-canon **retired the whole `d` apparatus** on 08-10.
+Focus is now set by eye through the viewfinder, lens on MF, datum "marker 0";
+`d` turned out to have been tracking *nothing* (08-08 sharpness split by pass,
+not by `d`, so the V-curve conclusions are withdrawn), and nights run
+`--no-focus`. `d00` is a null placeholder. Consequences relayed: don't pass
+`--only-d 7` (it would filter out all 460 frames), and `canon/camera.json` still
+asserts focus "PINNED at d7" in three places — factually wrong now, and arguably
+a **new calibration epoch** (the focus *mechanism* changed), so POSINDEX should
+be incremented deliberately rather than by default. A keeper changing its
+regime silently invalidated a downstream strand's stated precondition — exactly
+the cross-strand break ubersitrep is for.
+
+**→ astro-capture: founded.** It had a mission (08-09) but an empty STATE and an
+inbox of misfiled hardware ideas. Written up this session:
+- **Declared DEVELOPMENT**, not keeper (the 08-09 note left this open) — a real
+  build backlog with a moving frontier. Revisit when the migration settles.
+- **Adopted `astro/design/capture-unification.md`** (214 lines, written, unowned)
+  as its backlog — the doc *is* its charter: three Pi capture codebases 90%
+  identical, drifting, bugfixes hand-ported.
+- **Corrected the frontier.** The design's status line is stale: astrocam is
+  **already** on the shared streaming module (its migration "step 1" is done),
+  starcam's step is **moot** (camera retired), so the remaining ladder is
+  eclipticam v1 (the multi-camera-host case) then skycam, and `uploader/modes/
+  host/__main__` are still unwritten.
+- **Its founding lesson is canon's.** Two of the three 08-10 bugs are
+  capture-layer, not device-layer: the restart **stem collision** (silent
+  overwrite; destroyed ~1,000 frames on 07-28) and **burst firing** (one capture
+  ≠ one frame). Verified `RUN_TAG` exists *only* in `bin/eos-focus-cycle` — the
+  Pi daemons have no equivalent and are **unaudited**. So work unit 1 is a
+  cross-camera frame-naming/run-tag audit: cheap, proves the strand reads across
+  devices, and cashes in a fix that would otherwise never leave the canon.
+- Hardware ideas (cooling/dark-current/Peltier/shroud/servo-cover) redirected via
+  `idea` to astro-canon + astro-polecam; inbox cleared.
+
+**Open, for Peter:** does the EOS ever join the unified capture module at all
+(gphoto2/USB vs picamera2/CSI — provisional lean: share the *conventions*, not
+the code path), and **who owns the EOS capture tools**? `canon-nightly` says in
+its own header it is delivery (astro-science); astro-canon is the device keeper;
+so `eos-capture`/`eos-focus-cycle`/`eos-sequence`/`eos-night-watch` belong to
+astro-capture by the split — but nobody has claimed them.
+
+## astro three-layer split — astro-capture defined + blurbed (2026-08-09)
+
+astro-capture was scaffolded 2026-08-03 but left undefined (template mission, no
+blurb, empty STATE). Peter named the **three-layer split** that fixes its place —
+a middle layer the 08-02 re-org (which only had keepers + astro-science) didn't
+have:
+
+- **astro-\<camera\>** (astro-canon, astro-polecam, astro-eclipticam) — *device
+  specifics* of each individual instrument.
+- **astro-capture** — the ***unified* capture pipeline**: shared acquisition
+  machinery (scheduling, night/session structure, frame naming, hand-off to
+  storage) common across all cameras, above any one device.
+- **astro-science** — the *subsequent pipeline and deliverables* (processing,
+  accumulation, catalogue, `/astro` publish).
+
+Wrote astro-capture's `blurb` + `CLAUDE.md` mission to this split. **Consequence
+for its IDEAS inbox**: the parked ideas (keep-camera-cold / dark-current /
+Peltier / shroud + servo cover + box) are **per-device hardware**, so by this
+taxonomy they belong in the relevant **astro-\<camera\>** keeper (astro-canon or
+astro-polecam), *not* astro-capture. Left a triage note in astro-capture/IDEAS.md
+to redirect them at its next session rather than promote to STATE.
+
+Estate-shape note: keeper tier is now **astro-\<camera\> keepers + astro-capture
++ astro-storage**; dev = astro-science. astro-capture's own keeper-vs-dev kind
+is unsettled (it's a pipeline — likely keeper once the pipeline is steady-state,
+but it may carry build work first); left for its first real session to declare.
+
 ## Blurb gap-fill + defect sweep — 2026-08-03
 
 Second pass over the estate's `blurb` files (the how-to is
@@ -486,9 +573,10 @@ first reviewed.
 
 | Subject | Last-reviewed | Pri | Status / note |
 |---|---|---|---|
-| astro-canon | **2026-07-26** | high | ✅ capture path FIXED (Press Full, not Immediate — no more AF-wedge); canon-as-temp-primary unblocked |
-| astro-polecam | **2026-08-02** | high | camera keeper (renamed ← astro-v3s); sidereal theory → astro-science; **device** still `astrocam` (rename pending) |
-| astro-science | **2026-08-02** | high | NEW — the science/development strand; consolidated subpixel+breathing+storage-discussion theory + sidereal + deliverables |
+| astro-canon | **2026-08-11** | high | ★ BEST NIGHT YET (08-10: 460 frames, 6.6 h, 0 wedges, 0 restarts). Focus solved by eye = "marker 0", `d` apparatus RETIRED, 3 bugs fixed. Root cause of the wedge saga was a worn USB socket |
+| astro-capture | **2026-08-11** | high | ★ FOUNDED — STATE written, declared **development**, adopted `capture-unification.md` as backlog, migration frontier corrected (astrocam already migrated, starcam moot). Work unit 1 = cross-camera run-tag audit |
+| astro-polecam | **2026-08-02** | high | camera keeper (renamed ← astro-v3s); sidereal theory → astro-science; **device** still `astrocam` (rename pending). Hardware ideas spooled 08-11 |
+| astro-science | **2026-08-11** | high | ★ GREENLIT by mail — canon delivery chain built + idle since 08-09, now has its real night. Run `canon-nightly --night 2026-08-10` (NOT `--only-d 7`), measure pedestal/scs, deploy `/astro/canon`. Awaiting its reply |
 | ~~astro-storage-discussion~~ | 2026-08-02 | — | **ARCHIVED** — theory → astro-science, engineering → astro-storage |
 | ~~astro-speaker-dither~~ | 2026-08-02 | — | **ARCHIVED** — folded into **electronics** (rig PoC) + astro-science (why/calibration) |
 | astro-storage | **2026-07-22** | **URGENT** | S3 growing, finalize starcam ≈1 GB/day — see "URGENT NOW" above; STATE mtime 07-20 but discussion-strand carrying the live work |
@@ -609,6 +697,19 @@ and the rest of the portfolio list in super/GLOBAL.md.
   strand should triage its own at next visit (not ubersitrep's job to drain).
 - **`splay-grid` unmerged branch** (`splay-grid-mode` worktree, since 07-11) —
   decide merge-or-drop at its backlog visit.
+- **Awaiting astro-science's reply** to the 08-11 canon greenlight — whether
+  `canon-nightly --night 2026-08-10` ran clean, the measured pedestal + scs, and
+  whether `/astro/canon` deployed. If it surfaces a *capture*-side problem it
+  bounces to astro-canon / astro-capture, not back here.
+- **Two ownership questions for Peter** (from the astro-capture founding): does
+  the **EOS join the unified capture module** at all (gphoto2/USB vs
+  picamera2/CSI — lean: share conventions, not code path), and **who owns the EOS
+  capture tools** (`eos-capture`, `eos-focus-cycle`, `eos-sequence`,
+  `eos-night-watch`) — unclaimed today, astro-capture's by the split.
+- **`canon/camera.json` asserts focus "PINNED at d7" in three places** and it is
+  now false (marker-0 / MF / `--no-focus`). Flagged to astro-science with the
+  POSINDEX-increment question (focus mechanism changed ⇒ arguably a new
+  calibration epoch). Track that it actually gets corrected.
 - **bigstore "bs" → astro end-of-night, this-then-that** (2026-07-29): ansible
   NFS-**exports+mounts** `bs` (static transport) → *then* astro-storage's
   end-of-night **sync** writes onto that mount (dynamic). Ansible half first —
