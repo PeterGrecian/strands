@@ -138,6 +138,22 @@ observed passive-reporting floor) — Peter is considering it.
 `switch/turn_*` is re-read until the entity reports the wanted state, so a plug
 that ACKs without switching returns rc=2 rather than a false success.
 
+**SWAPPED AND PROVEN ON HARDWARE (2026-08-12).** Peter moved the DR-E10 adapter
+onto the Zigbee plug; the camera re-enumerated **Dev 062 → 064** on the replug.
+A live `eos-power cycle` on the new plug then returned **rc=0, verified — Dev
+064 → 065**, i.e. the ZHA plug genuinely cut mains, the 12V rail dropped, and
+the camera came back. Post-cycle health: `gphoto2 --summary` answers **Canon EOS
+2000D** (serial ff46c39b6894881) at **480M** — not the 12M worn-socket
+signature. This is the whole recovery path working with the camera attached,
+not a bare-socket test.
+
+**No ballast will be fitted** (Peter, 2026-08-12) — so power readings stay
+pinned near 0 W and **the wattage question is closed for good**: watts are not
+a signal for this camera, full stop. Do not reopen it. `summation_delivered`
+likewise stays 0.0 (~200 mW accumulates too slowly to register), so it is not
+a usable "is the camera drawing" check either. **USB re-enumeration is the only
+verification, permanently.**
+
 **Does the swap still stand, now the verification premise has gone?** Yes.
 `eos-power` only ever relied on the plug as a **switch**, and that half is
 verified good (3+ clean cycles here and at home-automation; `start_up_behaviour
