@@ -167,6 +167,12 @@
   the *camera* lost power, not merely that a socket went dead). Realwe fallback
   confirmed live: matter-server node 7 `available=True`, cleanly distinct from
   the node-4 Currys ghost; `PLUG_BACKEND='matter'` is a one-line revert.
+  **Proven on the real load 2026-08-12** (not a bench socket): the DR-E10
+  dummy-battery adapter moved onto this plug, and a live `eos-power cycle`
+  returned **rc=0 with a genuine re-enumeration, Dev 064 → 065** — mains cut,
+  12 V rail dropped, camera returned; `gphoto2 --summary` then answered Canon
+  EOS 2000D at 480M. **The switch half — the half we rely on — is verified
+  end-to-end on hardware.**
   **Two corrections to my own alarm** (recorded because the reasoning error is
   the reusable part): (1) I called this an inversion of my "Realwe remains the
   live path" note — but the swap was **Peter's instruction**, not astro-canon
@@ -219,11 +225,17 @@
   scheme the real load cannot support. **As a switch the plug is fine** (relay
   verified over 3+ clean cycles with two loads cycling on the meter); it is
   only the *measurement* that cannot see an EOS.
-  **Possible fix, not built:** a **~10 W resistive ballast in parallel on the
-  switched side** (10 W = the passive-reporting floor observed today; resistive,
-  not LED/SMPS, which meter poorly). Makes the meter report on the *rail*
-  rather than the camera. Costs ~£2/month continuous + heat — weigh against the
-  free USB proxy that already works.
+  **CLOSED BY DECISION 2026-08-12 — Peter declined the ballast.** The mooted
+  fix was a ~10 W resistive ballast in parallel on the switched side, to make
+  the meter report on the *rail* rather than the camera (~£2/month continuous
+  + heat, against a free USB proxy that already works). Not being built, so
+  **wattage is permanently unusable for the EOS** and `eos-power` reads none.
+  Reopen only if a ballast is ever fitted.
+  Confirmed from [[astro-canon]] with the camera **actually attached**: power
+  reads **0.0 W with the EOS running normally**, and `summation_delivered` is
+  still **0.0 kWh after a full power cycle** — so *energy accumulation is not a
+  workaround either*; ~200 mW accrues too slowly to register. That closes the
+  last "is it drawing?" proxy this plug could have offered.
   ~~Verification must FORCE a read via `homeassistant.update_entity`.~~
   **THAT WORKAROUND DOES NOT WORK** — measured by [[astro-canon]] 2026-08-12:
   `update_entity` returns **HTTP 200 without refreshing** (both `last_updated`
