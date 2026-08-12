@@ -123,10 +123,11 @@ Consequences, in order of how much they change:
    crystallise **through use**. First honest test: a wrapper that can start a
    night on the EOS *and* on astrocam without either caring which it is.
 
-**TODO: fold this into `astro/design/capture-unification.md`** — that doc still
-describes the absorption model in its "Target shape" and "Migration order"
-sections, and it is the strand's adopted backlog, so it should carry the
-corrected direction rather than contradicting STATE.
+**~~TODO: fold this into `astro/design/capture-unification.md`~~ DONE
+2026-08-12** (astro `bac34ba`). The doc now carries the corrected direction in
+its status block, and "Target shape" / "Migration order" each open with an
+admonition that they are written in the superseded absorption model. Its status
+table is also corrected (astrocam migrated, starcam decommissioned not pending).
 
 ## Owned code — the EOS capture tools (Peter, 2026-08-11)
 
@@ -171,6 +172,14 @@ knowledge. **Ruling: astro-canon owns it, astro-capture is a consumer.** The
 recovery *policy* (when to escalate) is capture's; the *mechanism* is the
 keeper's.
 
+**Correction (2026-08-12): the live nightly capture path is
+`eos-focus-cycle --no-focus`, NOT `eos-capture --no-focus`.** `eos-capture`
+has no such flag — the flag is on `eos-focus-cycle`, and
+`services/eos-focus.service` arms exactly that. `bin/canon-nightly` is the
+*delivery* chain (astro-science), not capture. This matters for the dormancy
+marking: `eos-focus-cycle` is **half dormant** — its focus-driving `d`-grid is
+retired, but the binary itself runs every night, so it must not be disarmed.
+
 **Consequence for the focus regime:** the `d`-schedule machinery
 (`eos-focus-cycle`, `eos-focus-sweep`, `eos-focus-tonight`, `eos-star-watch`) is
 now **ours and largely dormant** — astro-canon retired the `d` apparatus on
@@ -183,30 +192,49 @@ nightly capture path is `eos-capture` + `--no-focus`.
 
 ## Pending / loose ends
 
-**Work unit 1 — the frame-naming / run-tag audit across all cameras** (do this
-first). Cheap, cross-cutting, cashes in the canon lesson, and it proves the
-strand reads *across* devices before it tries to refactor daemons. Questions:
-can `astrocam_v3_night_daemon` / `v3w_night_daemon` restart mid-night, and if so
-do their stems collide? Is there a shared naming convention or three? Outcome
-should be a stated **pipeline rule** (run-tagged stems; one capture = one
-frame), owned here, applied everywhere — not three local fixes.
+**~~Work unit 1 — the frame-naming / run-tag audit~~ DONE 2026-08-12**
+(astro `bac34ba`). Answer: **the estate is sound on "a frame name is never
+reused"** — the canon's 08-10 restart-collision bug has **no latent twin** in
+the Pi daemons. But they satisfy the rule by three unrelated mechanisms:
 
-**Work unit 1b — take delivery of the EOS tools** (falls out of the 08-11
-ownership ruling, and pairs naturally with the run-tag audit since `RUN_TAG`
-lives in one of them):
-- **Mark the `d`-schedule tools dormant/calibration-only** in their own headers
-  (`eos-focus-cycle`, `eos-focus-sweep`, `eos-focus-tonight`, `eos-star-watch`)
-  so the retired regime cannot be mistaken for the nightly path. Keep them.
-- **Check for stale `Immediate` usage across all 9 owned tools.** `eos-focus-sweep`
-  had it (fixed 08-10, astro `c7132b9`) and it *wedges this body*; the fix was
-  applied where the bug bit, not swept. Same class as the run-tag gap.
-- **`eos-capture --no-focus` is the live nightly path** — confirm nothing else is
-  still armed to drive focus (see [[eos-focus-by-viewfinder-marker-0]]).
-- ~~astro-canon left `eos-focus-cycle` / `eos-power` staged-but-uncommitted~~ —
-  **checked 2026-08-11: both committed and clean.** astro-science's 08-09 note
-  about "untouched capture files left staged by their own strand" was overtaken
-  by `c7132b9` the next day. Nothing to rescue; noted so the stale claim does not
-  get re-inherited.
+| Camera | Naming | Mechanism |
+|---|---|---|
+| astrocam, eclipticam v3w | `<epoch_ms>.fits.fz` | monotonic wall clock (shared `streaming.py`) |
+| skycam | `<epoch_ms>.jpg` | **same convention, arrived at independently** in `Berrylands/gardencam` |
+| eclipticam v1 | `NNNN.fits.fz` | scans the hour dir for `max(seq)+1`, so a restart *continues* |
+| EOS 2000D | `<RUN_TAG>_pNN_iNN_dNN` | per-run UTC tag (gphoto2 pass numbering restarts; a clock doesn't) |
+
+Verified empirically on astrocam 2026-08-11: 426 frames, 426 distinct names,
+min gap 59.79 s vs 1 ms name resolution. `epoch_ms` is carried unchanged
+through the upload seam — no renumbering. **The finding is therefore a
+convention observation, not a bug list**, and it is written into
+`design/capture-unification.md` as the unified layer's first real content
+("The conventions — what actually binds every camera").
+
+*One theoretical hole recorded, deliberately not fixed:* `epoch_ms` collides
+if two frames land in the same millisecond, and the writer doesn't check. At
+~60 s cadence that's ~5 orders of margin. **Revisit before adding any burst
+mode**, or if NTP can step the clock backwards mid-night.
+
+**~~Work unit 1b — take delivery of the EOS tools~~ DONE 2026-08-12**
+(astro `bac34ba`):
+- **The `Immediate` sweep found three more, including the live path.**
+  `bin/eos-capture` had a *bare* `Immediate` with **no matching release** —
+  worse than the `eos-focus-sweep` case fixed on 08-10. `eos-sequence` and
+  `eos-star-watch` had the mismatched press-Immediate/release-Full pattern.
+  All now on Press Full / Release Full; no bare `Immediate` remains. This
+  vindicates the "fix applied where it bit, not swept" suspicion exactly.
+- **Dormancy marked, with a distinction that nearly went wrong:**
+  `eos-focus-cycle` is **half dormant** — its `d`-grid is retired but
+  `--no-focus` is the live nightly path armed by `eos-focus.service`. The
+  three wrappers are dormant outright. Nothing deleted.
+- ~~astro-canon left files staged-but-uncommitted~~ — checked, clean.
+
+**Next up (suggested):** eclipticam v1 → shared module, the multi-camera-per-host
+case. The audit gives a concrete reason to touch v1 anyway: its `max(seq)+1`
+directory scan is O(frames) per write and is the one naming scheme that would
+*not* survive two writers on the same hour dir — worth retiring in favour of
+the house `epoch_ms` convention when it migrates.
 
 **Then, the shortened migration ladder** (design's order, corrected for what is
 already done and for starcam's retirement):
