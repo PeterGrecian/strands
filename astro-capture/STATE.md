@@ -222,6 +222,42 @@ deploy step) — currently tracked nowhere.**
 (`~/astrocam-frames`) is an NFS automount onto muppet's bigstore (4.1 T free)
 and the tmpfs buffer had zero backlog. Worth watching, not fixing tonight.
 
+**Canon duty cycle FIXED 2026-08-12: 45.0s -> 38.2s period, 67% -> 78% duty**
+(astro `0e7bf03`, live before the Perseid peak). Peter asked whether the EOS
+double-buffers. It does not — it is a mechanical-shutter DSLR, so some dead
+time is real — but the dead time was almost entirely **software**:
+
+**`--wait-event-and-download=Ns` waits EXACTLY N seconds.** It does not return
+when the file lands. gphoto2(1): *"A `--wait-event=5s` will take exactly 5
+second."* So `wait = secs + 12` was not a timeout, it was 12 s of guaranteed
+idle per frame. Measured on real 30 s subs: window 33s -> 1/2, **34s -> 2/2**,
+36s -> 2/2, so readout+download is **~4 s** — the other ~8 s was pure waste.
+Cut to `secs + 6`. Verified through the real `capture()` path: **3/3 frames,
+38.2 s each, dead steady.**
+
+Margin is +6 not +4 deliberately: **a missing file is the WEDGE TELL** —
+`capture()` returning False escalates via `recover()` to a **12 V power cycle**.
+Trimming to the measured minimum would turn ordinary jitter into false wedges
+and cost the night. Do not cut further without re-measuring on this body; the
+figure is exposure-dependent.
+
+**Event-driven forms do NOT work on this body** (tested, all returned instantly
+with no file): `=FILEADDED`, `=CAPTURECOMPLETE`, and bare counts (`=3`). Bare
+`FILEADDED` with no timeout **blocks forever**. The timed window is the working
+mechanism — so the fix is to size it, not replace it.
+
+**59 s subs are NOT available.** 30 s is the max reliable *timed* exposure on
+the 2000D; beyond that needs bulb, which the code calls "an unsolved gphoto2
+rabbit hole". Peter's "59s on, 1s off" ideal is a picamera2 shape; the DSLR's
+realistic ceiling is ~78% at 30 s. Raising it further means solving bulb.
+
+*Testing gotcha that cost time:* with `capturetarget=Memory card` gphoto2 writes
+**`.CR2` uppercase**; a probe checking only `dt.cr2` reported false "NO FILE"
+and made a healthy camera look wedged. The real code's `_find()` already handles
+both cases. Camera was restored to as-found state (`capturetarget=Internal RAM`,
+30 s, ISO 1600, RAW) and `eos-focus.service` restarted 10:36Z so the running
+process carries the new margin.
+
 **Night-capture override: CONSIDERED AND DROPPED (Peter + analysis, 2026-08-12).**
 Peter asked for an override letting night-type capture run at any time, to use
 the eclipse as a darkening and catch Perseids/stars. Worked through, it fails on
