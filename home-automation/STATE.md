@@ -178,11 +178,24 @@
   not the prize — my message pitched wattage verification and the ~200 mW fact
   arrived after they had shipped.
 
-- **Entity-name collision is a live footgun (flagged by [[astro-canon]]).**
-  `sensor.sonoff_s60zbtpg_*` is the **TUMBLE DRYER** (107 kWh lifetime), same
-  model as the Canon plug. **Anything matching this model by *name* rather than
-  entity id will switch the dryer.** Same shape as the node-4 Sandstrom ghost
-  and the `light.lights_east` fault. Match on entity id (`canon_eos_power_*`).
+- **Entity-name collision — FIXED 2026-08-12 by renaming the dryer.** The
+  footgun (flagged by [[astro-canon]]): `sensor.sonoff_s60zbtpg_*` was the
+  **TUMBLE DRYER**, same model as the Canon plug, so **anything matching that
+  model by *name* rather than entity id would have switched the dryer** — same
+  shape as the `light.lights_east` fault and the node-4 Sandstrom ghost. All 7
+  dryer entities renamed `sonoff_s60zbtpg_*` → `tumble_dryer_*`; **all three
+  S60ZBTPGs now carry appliance names, no model-name ids remain.**
+  **Renaming entity ids does NOT update references** — that is the trap, since
+  HA leaves them pointing at the old id and they silently stop working. Four
+  sites swept: `automations.yaml` on homepi (dryer-finished trigger + the
+  **coordinator watchdog**, both live alerting paths; UI-managed and not in git,
+  so backed up to `automations.yaml.bak-20260812-103914`), the rendered
+  `dashboards/status.yaml`, the ansible template that generates it
+  (`42b8ab3`, `tap_action: none` preserved — the 2026-08-10 read-only guard),
+  and `home-automation/docs/home-assistant.md` (`04343be`). Automations
+  reloaded and verified `on`; sensors reporting live under the new ids; zero
+  orphaned ids. Note the washing machine already had a clean
+  `sensor.washing_machine_power` — only the dryer had been left generic.
 
 - **~~`eos-power` has no ZHA backend~~ — superseded above; it has one now.**
   `eos-power` drives the **matter-server WS API** and matches `MATTER_VENDOR =
