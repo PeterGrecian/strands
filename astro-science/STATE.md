@@ -505,6 +505,25 @@ since `stack_and_measure` measures then accumulates.
   enter-at-conf-0; confidence calibration against Gaia.
 - **moon-net**: `moon-extract`/`moon-overlay`/`moon-deliver` + `moon-drift.mp4`;
   **solver + star-ID still to build**.
+- **FIXED 2026-08-12: the advanced player 404'd for eclipticam** (`mywebsite
+  3913f7d`; was a spooled bug idea). *"no mp4s for this night yet"* on nights
+  that had **eight**. A **URL-namespace mismatch left by the camera split**: the
+  night page is addressed by the **logical** camera (`eclipticam`) and links to
+  `/astro/eclipticam/night/<n>/player`, but unify-cameras moved the data into
+  **physical** prefixes (`eclipticam-v3w` / `-v1`). The player listed
+  `eclipticam/nights/<n>/` — the **dead pre-split prefix**, last written
+  2026-06-16 with `v3w_`-prefixed filenames — and correctly found nothing. Fix:
+  resolve logical→physical with the same mapping the camera page uses, searching
+  every section so a night published by only one sub-camera still plays.
+  - **Second bug found while fixing it:** the player listed **both** the
+    full-res and `-web` copy of each sweep, so every clip appeared **twice** in
+    the ↑/↓ cycle, full-res first (162 MB, `moov` at the end ⇒ can't start until
+    fully downloaded). The night pages were fixed for this earlier; **the player
+    route has its own listing code and was missed** — the general lesson is that
+    `/astro` has more than one place that enumerates a night's mp4s.
+  - Not bugs, but noted: **`eclipticam-v1` stopped publishing nights
+    2026-06-24** (dormant, so its 404 is honest), and the bare `eclipticam/` S3
+    prefix is now **unread legacy** — a candidate for tidying.
 - **"Open in Splay"** flow (night player → `splay-launcher` daemon, port 8765).
 - **/astro/storage** page watches skycam raw growth (an astro-storage concern).
 - **Peter has a deliverables adjustment in mind spanning astro + mywebsite** —
