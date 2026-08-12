@@ -671,6 +671,45 @@ regime); the ceiling lifting where the catalogue thins is itself information.
   Perseid build-up. **Multi-camera is the prize** — all three cameras recorded
   meteors on 08-10, and two cameras on one event gives **altitude + speed by
   triangulation** (waits on canon's pole solve).
+- **CONTRAIL is a third class** (Peter, 2026-08-12: *"the meteor looks like a
+  contrail"* — right again). EOS 08-11 sweep frame 312/339: **absent** at 305/311,
+  **present** at 312/320, present but visibly **broadened** by 330. Crosses the
+  whole frame, diffuse soft edges, lit from below by dawn twilight. A meteor
+  lasts <1 s and is in ONE sub; this persists over minutes **and spreads**.
+  Currently scores `ends_touching=2` + `persists≫1` ⇒ lands as "satellite" —
+  correctly rejected as non-meteor but **wrongly labelled**. Proposed
+  discriminator: **width growth over time** (satellite = thin constant line;
+  contrail = broadens and softens). Also a **cloud-verdict** concern — a lit
+  linear cloud lifts the frame mean. Written up in `design/transients.md`
+  (`astro ba4c96a`).
+  - **Method refinement:** this was disproved by the **neighbouring sweep
+    frames**, no subs needed. Sharpens the earlier rule — "sweep frames cannot
+    classify" is about *sub-second* structure (ablation profile, exact timing);
+    a stack is the **right** tool for *"is it still there ten minutes later?"*
+- **2026-08-11: NO METEORS DETECTED** (Peter's call, checked and it holds).
+  A scan of all 339 sweep-diff frames for long thin streaks found **414
+  detections in 52 distinct features**, every one explained:
+  - frames 312–313 (len 311, ang 17.8°) — **the contrail**;
+  - frames 61–70 (len 2005 = full height, ang 56.9°, static) — persistent
+    linear feature, contrail or structure;
+  - frames 182–186 at y≈726 drifting x 234→275, constant length —
+    **satellite/aircraft** (NB my clustering faked a "90°" feature here: 0.4°
+    and 179.7° are the *same* horizontal direction, split by angle wraparound.
+    Watch for that in any future angle clustering);
+  - ~40 others at **154–179°, 140–177 px** — **star trails**, the field's own
+    direction, sitting just above the 140 px floor. Same overfitting trap as the
+    canon foliage run.
+  - Conditions do **not** explain the null: 08-11 was a *better* night than
+    08-10 — smooth fall to a flat dark trough (2619–2687 through 00–02h), no
+    cloud spikes, 461/477 stacked, verdict clear.
+  - **Honest form of the result: "no *detectable* meteors", not "no meteors".**
+    The confirmed 08-10 event was bright (237 px, saturated core); the floor is
+    140 px and the star-trail population reaches 177 px, so anything fainter or
+    shorter than the trails is invisible to the current scan. Exactly what
+    **median-subtraction** fixes — remove the static trail field and the floor
+    drops a long way. A zero-count night one day before Perseid maximum is
+    itself interesting, so this is a real data point with a known and
+    improvable sensitivity limit.
 - **Unresolved:** the 23:51:42 canon candidate (~54 px by hand) isn't recovered;
   the eclipticam pair Peter screengrabbed isn't yet located in the subs.
 
