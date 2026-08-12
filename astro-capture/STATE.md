@@ -222,6 +222,35 @@ deploy step) — currently tracked nowhere.**
 (`~/astrocam-frames`) is an NFS automount onto muppet's bigstore (4.1 T free)
 and the tmpfs buffer had zero backlog. Worth watching, not fixing tonight.
 
+**Night-capture override: CONSIDERED AND DROPPED (Peter + analysis, 2026-08-12).**
+Peter asked for an override letting night-type capture run at any time, to use
+the eclipse as a darkening and catch Perseids/stars. Worked through, it fails on
+two independent grounds and the second is the general lesson:
+
+1. **90% obscuration is only 3.3 stops** (~1 heavy cloud). At maximum the sky
+   equals an uneclipsed sun at **+1°** — sunset brightness, ~9 stops short of
+   stars. Totality is ~20 stops; essentially all the drama is in the last 1%,
+   which is why 1999 is not a guide to a 90% partial.
+2. **Duty cycle, not exposure, is what catches meteors** (Peter's correction —
+   the decisive point). A meteor is sub-second, so it is caught only if the
+   shutter is open when it happens. Night capture is 59.9 s at 59.9 s cadence
+   = ~100% duty. Any daylight-safe override exposure (~2 ms) gives ~3e-6% duty
+   — **effectively zero**. So an override would spend the eclipse shooting
+   frames that *cannot* catch the thing it was requested for. **Rule: judge a
+   capture change by duty cycle first; a short exposure is not a small meteor
+   loss, it is a total one.**
+
+Not built, deliberately. The eclipse window has no capture value for this goal.
+
+**The real prize tonight needs no override: a MOONLESS PERSEID PEAK.** A solar
+eclipse only occurs at new moon, so eclipse day *guarantees* zero lunar washout
+on the 12/13 Aug peak. Normal gating (astrocam/eclipticam 20:40Z, canon 20:57Z)
+covers the whole night. Measured duty cycles from 2026-08-11: **astrocam 100%
+(426 frames, 59.90 s median gap, zero dropouts >70 s, 20:44-03:48Z)** —
+the best meteor instrument here; **canon 67%** (30 s subs at 45 s cadence,
+477 frames, 21:01-03:39Z), losing 15 s/frame to USB download. If canon duty
+cycle is ever worth improving, that download gap is the target.
+
 **The eclipse is not capturable by this estate, and that is by design.**
 Real timings (Royal Observatory, London): first contact **17:17Z**, max ~90%
 **18:12Z**, last contact **19:06Z** — sun altitude +19.3° falling to +2.6°,
