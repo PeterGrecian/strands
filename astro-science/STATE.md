@@ -362,8 +362,28 @@ since `stack_and_measure` measures then accumulates.
   brightness-chart import **lazy** — never move the heavy pass across a network
   to reach a plotting library. And check whether a claimed host constraint is
   one package deep before designing around it.
-  - **PENDING**: run the stack + review `max.jpg`, then the deploy, then a
-    systemd timer (post-dawn) for hands-off nightly delivery. **scs stays
+  - **DELIVERY IS NOW AUTOMATED (2026-08-12, `astro 0c015e5`)** — the last
+    pending piece. **Prompted by a real miss:** 2026-08-11 captured **477
+    frames** and produced *nothing* on the website, because delivery had only
+    ever been run **by hand** (Peter: *"the delivery should be automated"*).
+    Capture was fine; there was simply no timer.
+    - `canon-nightly.timer` on **muppet**: `OnCalendar=06:00 Europe/London`,
+      **`Persistent=true`** (catches up if muppet was asleep — exactly the
+      failure that lost 08-11), `RandomizedDelaySec=600`. Units live in
+      `astro/services/canon-nightly.{service,timer}` + `-run.sh`, following the
+      house `combined-brightness` pattern.
+    - **`canon-nightly` rewritten to run ENTIRELY on muppet.** It was still
+      written for the retired split — ssh to muppet to adapt, then stack on pip
+      pulling ~15 GB back over wifi. All four stages now run where the frames
+      are. Also **drops `--only-d`** (with `d` retired every frame is `_d00`, so
+      `--only-d 7` would filter out a whole night) and passes `--src` explicitly
+      because the adapter's built-in default still points at the old capture
+      path.
+    - Designed so an unattended failure can't hide: **exits 0 when a night has
+      no capture** (cloudy nights are normal, the unit must not go red and train
+      you to ignore it), and every stage is idempotent so a re-run or catch-up
+      is safe.
+  - **PENDING**: **`sky_clear_max_stops` (11.5) stays
     provisional until a genuinely CLOUDY canon night is logged** — 08-10 gives
     only the clear side of the population, so the ceiling is bounded from below
     but not calibrated from above (astrocam's ceiling was set from both).
