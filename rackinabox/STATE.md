@@ -29,10 +29,48 @@
   downdraught fan, dual-chamber PSU thermal quarantine, carpet as acoustic sink,
   tool-less two-step teardown. Full detail in `~/rackinabox/DESIGN.md`.
 
+## SCOPE CHANGE — the rack is now a CASE, not a laptop shelf (2026-08-12)
+
+Peter is buying **nit**, a storage/compute server (Ryzen 5 5600, B550 mATX,
+2×16 GB DDR4, 512 GB NVMe accumulator + ~512 GB workspace, 3× 3.5" HDD, the
+already-earmarked ATX PSU). **He has ruled out buying a tower case — this
+enclosure is nit's case.** Full spec lives in the `hardware` strand's STATE.md.
+
+Why a tower was dropped: the locked design gives ~140 mm per shelf (steel tube
+rows at z=20/160, sized for laid-flat laptops); a tower is 350–450 mm. Same
+physical argument that already ruled pog out.
+
+**New geometry the panel set does not have — these gate the laser quote:**
+
+- **mATX board deck** — 244×244 mm, 9-hole standoff pattern. New geometry, not
+  a variation of the shelf rows.
+- **3.5" drive mounting** for 3 disks (+ possibly one 2.5" OS SSD) — side rails
+  or a bay bracket, with **decoupling grommets**: 3 spinning disks are the
+  noisiest thing in the box and would otherwise defeat the silent-enclosure goal.
+- **Rear I/O shield cutout** — standard mATX rectangle, new in the wall panels.
+- **Shelf heights re-derived** — a board deck + CPU cooler is a different
+  z-budget from a laptop. Feeds the existing "2 rows or 3" question.
+- **PSU divider** was already pending — now load-bearing, not optional.
+
+**Thermal must be re-derived.** The single 140 mm downdraught fan was specced
+for 3 idle laptops. The real load is an always-on 65 W CPU + 3 spinning disks +
+an NVMe under sustained tiled writeback for hours nightly (it will throttle if
+it bakes). Re-check the fan **before** quoting the panels.
+
+**Acoustics are load-bearing, not nice-to-have** — nit runs at *night*, which
+is exactly when the house is quiet and when the capture pipeline needs it.
+
+**⚠ Do not nest/quote the sheet layout until the board deck, drive mounts and
+I/O cutout are in `panels.py`** — otherwise the quote is for an obsolete set.
+
+**Coupling (unchanged):** this makes the rack *more* consolidated. The offsite
+subset is still required alongside — consolidation is not redundancy.
+
 ## Pending / loose ends
 
 - Shelf count/heights: currently 2 rows (z=20,160) hard-coded in panels.py —
-  confirm against real laptop heights, parametrise if 3.
+  **re-derive against nit's board deck + cooler height** (was: real laptop
+  heights), parametrise if 3.
 - PSU baffle + dual-chamber divider not yet in the flat panel set (only the
   outer shell + shelves are). Add divider panel + PSU cutout.
 - Leg sockets + dovetail rear cable panel not yet ported to panels.py DXF.

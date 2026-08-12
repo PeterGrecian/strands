@@ -75,6 +75,69 @@
     USB bridge → the bigstore blindness problem simply doesn't exist)**, mains
     power, replaceable sockets, real cooling. If ever taken up, **buy it a disk**
     rather than borrowing eclipticam's back.
+- **nit** (specced 2026-08-12, **NOT YET BOUGHT**) — the **renewal machine**:
+  a storage/compute server, and the first deliberate renewal purchase this
+  strand has made rather than a repair. Peter: *"the ancientness of my hardware
+  I think is a liability and I'm trying to renew it."* It has **no case** — it
+  goes in rackinabox as bare board + PSU + disks, which is what turned that
+  strand from a laptop shelf into a chassis project.
+
+  **Role.** Written to at night, processes the data, then ships it to muppet
+  for long-term storage — **muppet stays the archive of record.** Past data is
+  copied back and crunched (~an hour), and the whole dataset may be
+  re-examined roughly monthly. Ingest is **pipelined** (chunk N+1 ships while
+  chunk N crunches), so the monthly pass is compute-bound and **gigabit is
+  sufficient** — 2.5 GbE buys nothing.
+
+  **Spec.** Ryzen 5 5600 (6c/12t, 65 W) · B550 mATX · 2×16 GB DDR4-3200 (two
+  slots free; B550 takes 128 GB) · 512 GB TLC NVMe accumulator · ~512 GB SSD
+  workspace · 3× 3.5" SATA · the ATX PSU already earmarked for rackinabox.
+
+  - **DDR4 not DDR5 — the load-bearing decision.** Structural DRAM price
+    crisis: DDR5 spot +307% Sept–Nov 2025, no forecast relief before late 2027;
+    per-GB ~$16.20 DDR5 vs ~$7.64 DDR4. **32 GB of DDR4 costs less than 16 GB
+    of DDR5**, so this also retires the fleet's standing ~7.5 GiB RAM ceiling.
+    The AM5 counter-argument is CPU upgrade runway (Zen 6, support through
+    2027) — but this fleet doesn't re-CPU at mid-life, it runs machines until
+    the interfaces wear out (pog 2012, muppet X1 Gen 9, vole 2013). An upgrade
+    path we won't walk isn't worth 2× on memory. **Revisit only if serious
+    local LLM inference lands here** (that's a bandwidth workload).
+  - **B550 over X570 deliberately** — X570's chipset fan is a noise liability
+    in a silent enclosure. B550 also commonly gives 6 SATA vs ~4 on consumer
+    AM5: the "obsolete" platform is the better-provisioned one for a disk box.
+  - **⚠ OPEN BLOCKER — B550 lane sharing.** Two M.2 (accumulator + workspace)
+    plus 3× 3.5" SATA plus possibly an OS SSD sits right at B550's edge: many
+    B550s **disable two SATA ports when the second M.2 is populated**. Read the
+    specific board's **block diagram**, not the marketing page, before ordering.
+  - **The accumulation buffer defines the machine.** Subpixel sampling,
+    bucket-sorted by brightness so different qualities of data accumulate
+    separately: ~5 × 50k² × 3 int32 ≈ **150 GB, non-volatile**. Not a file
+    cache — a dense persistent accumulator. Work is **tiled** to fit RAM/L3, so
+    the access pattern is streaming read-modify-write, not random thrash.
+    (Algorithm belongs to the astro strands; recorded here only because it sets
+    the hardware.) **512 GB not the 256 GB first suggested**: 150 GB on a
+    256 GB part runs ~60% full, shrinking the dynamic SLC cache and leaving
+    little for wear-levelling, and small NVMe parts are slower on sustained
+    write (fewer dies to stripe).
+  - **Tiling vindicates 32 GB.** Because tiles fit RAM/L3, the "more RAM buys
+    crunch throughput" argument weakens — 2×16 is genuinely enough, with the
+    free slots as the cheap upgrade if that stops being true.
+  - **OS placement UNDECIDED.** The OS caches to RAM and is a once-per-boot
+    read, so performance barely cares. Options: partition the workspace SSD
+    (root ~50 G), a separate small SATA SSD, or a thumb drive with logs
+    written elsewhere (Peter's temptation). Argued against an *unpartitioned*
+    shared device — a full workspace wedging root on a headless box is the bad
+    failure mode. **Thumb-drive caution, from this fleet's own record:** the
+    Patriot 29G threw read errors booting an installer and rejects
+    `dd oflag=direct`; eclipticam boots from a 14.9 G Cruzer Blade at 52% full.
+    USB sticks have no real wear-levelling and fail without warning — a poor
+    boot device for a machine whose *purpose* is renewing ancient hardware. If
+    the stick wins anyway: logs to tmpfs/workspace, and keep a written image.
+  - **Coupling unchanged:** nit + rackinabox is consolidation, so the offsite
+    subset ([[redundancy-not-capacity]]) is still required alongside.
+  - Peter's closing note: *"the algorithm and hardware will evolve as
+    required"* — this is a starting position, not a frozen BOM.
+
 - **deskpi** — a Pi **A+ (ARMv6, 32-bit)** per `templates/app-deskpi.conf` in
   cloud-init-init. **MUST be flashed armhf** (Trixie Lite armhf), NOT arm64 —
   the fleet default `trixie_lite_64bit` will not boot on it. 512 MB RAM total →
@@ -94,18 +157,22 @@
 **Priority order as of 2026-08-10** (the session that closed the migration and
 solder items, so the old "disk emergency" framing is gone):
 
-1. **rackinabox — PRIORITISED by Peter.** The *structural* fix for the interface/
+1. **nit — buy the renewal machine** (specced 2026-08-12, see below). The one
+   open blocker is the **B550 block-diagram check** (M.2 ↔ SATA lane sharing);
+   OS placement is still undecided. Gates rackinabox, which is now its case.
+2. **rackinabox — PRIORITISED by Peter.** The *structural* fix for the interface/
    power/thermal failures this strand keeps rediscovering. Owned by the
    `rackinabox` strand; hardware's view of the coupling is in `IDEAS.md`.
    **Must be paired with the offsite subset — it is consolidation, not
-   redundancy.**
-2. **IcyBox shuck (£0)** — 1.4 TB of astro data is SMART-blind. Do it
+   redundancy.** Now also **nit's enclosure** — the panel set needs a board
+   deck, drive mounting and I/O cutout before any laser quote.
+3. **IcyBox shuck (£0)** — 1.4 TB of astro data is SMART-blind. Do it
    before/during the rack build, when disks are handled anyway.
-3. **Offsite copy of the irreplaceable subset** (R2, free egress) — waiting on
+4. **Offsite copy of the irreplaceable subset** (R2, free egress) — waiting on
    astro-storage to size it. Mailed 2026-08-10.
-4. **Powered hub (~£15)** for the tether — site it in the rack.
+5. **Powered hub (~£15)** for the tether — site it in the rack.
 
-*Closed this session:* 6 TB migration ✅, photodisk retired ✅, 12V solder ✅.
+*Closed 2026-08-10:* 6 TB migration ✅, photodisk retired ✅, 12V solder ✅.
 *Settled:* pog is a liability, and out on physical grounds (doesn't fit an
 enclosure specced for laptops).
 
