@@ -1423,6 +1423,16 @@ short ferrite'd known-good mini-B cable.
 
 ## Pending / loose ends
 
+- **RAINY DAY — thermal dark current + cooling.** Literally the rainy-day item:
+  do it when the sky is useless, never at the cost of a clear night. From the
+  2026-08-11 astro-capture redirect (triaged 2026-08-12, astro-canon OWNS it —
+  dark current is a property of *this* sensor, the enclosure is EOS-specific):
+  characterise dark current vs sensor temperature; consider a Peltier; build a
+  shroud/cover + new box, cover driven by a servo (shaft into the box, or servo
+  inside the shroud). The dark-current EXPERIMENT is explicitly cross-camera —
+  run it once and share the result with [[astro-polecam]] rather than twice.
+  Note the EOS has no temperature telemetry we read today; CR2 EXIF may carry a
+  sensor temp field — check before designing any measurement.
 - **CR2 → FITS / raw-domain analysis** — the decisive next step:
   install `rawpy` on pip, demosaic a few night-3 CR2s, and answer (a)
   how sharp step-8 focus really was, (b) whether stars are strong
