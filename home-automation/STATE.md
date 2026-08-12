@@ -169,6 +169,26 @@
   retiring the exit-code-3 "plug lied" guesswork — that check exists only
   because the Sandstrom ACKed without switching. Measuring the rail beats
   inferring it downstream.
+  **Verification must FORCE a read — passive reporting is blind at zero**
+  (established 2026-08-12 over ~40 min of bench testing). The power attribute
+  is **delta-driven and healthy**: it reported a spontaneous 22→21 W change
+  with no command sent. But it stays silent when there is no delta, which is
+  exactly the switched-off case — so **"no report" is ambiguous between *rail
+  down* and *nothing changed*.** A verifier that waits passively cannot tell
+  them apart; it must call `homeassistant.update_entity` and read the returned
+  sample. Not a blocker (an EOS draws far more than any plausible delta
+  threshold), but it is an implementation constraint on the `cycle` rewrite.
+  **Two wrong turns worth not repeating:** (1) a frozen `last_changed` was read
+  as a broken/lying plug — it was a correctly-silent delta-driven sensor, and
+  `off`-state samples were **stale values, not evidence of current flowing**;
+  never verdict on a sample whose timestamp predates the command. (2) A ~2 W
+  computer fan is **useless as a test load** — it sits under the reportable
+  delta and at the 0.01 A quantisation floor, so everything reads as a fault.
+  Test with a real load (a thermostatted glue gun at 20–40 W worked well; its
+  cycling is visible in the trace). One genuine oddity, seen once and not
+  reproduced: the switch entity read `off` while the relay was closed and only
+  corrected after `update_entity` — so prefer measured watts over switch state
+  regardless.
 
 - **Capture homepi's matter-server container in IaC** — **owned by
   [[astro-canon]]** (2026-07-26). The matter-server is a hand-run `docker run`
