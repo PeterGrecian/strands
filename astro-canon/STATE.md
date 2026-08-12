@@ -79,13 +79,58 @@ recovery ladder was working and hiding the fault from the frame count.
 Check `lsusb -t` link speed (must be 480M) and suspect the PHYSICAL path before
 building firmware theories.
 
-**Still open:** the Matter smart plug is unreliable (found switched OFF mid-day
-2026-08-10, which produced a fake "wedge + failed recovery" cascade). A Zigbee
-replacement is on order (~2026-08-13). Recovery stays ARMED meanwhile — an
-intermittent reset beats none, and `eos-power` verifies by USB Dev number so a
-lying plug reports rc=3 rather than being mistaken for a camera fault.
+**RESOLVED 2026-08-12 — the Zigbee plug is now the live path** (see below).
+Was: the Matter plug was unreliable (found switched OFF mid-day 2026-08-10,
+producing a fake "wedge + failed recovery" cascade).
 
-## ★★★ PLUG REPLACED + power-cycles now VERIFIED (2026-08-09)
+## ★★★ PLUG SWAPPED TO ZIGBEE (2026-08-12) — `eos-power` has a ZHA backend
+
+The **SONOFF S60ZBTPG "Canon EOS Power"** (paired to ZHA on homepi by
+[[home-automation]], commits `0042eba`/`d1a4f96`) replaces the Realwe Matter
+plug as the live EOS power path. `eos-power` grew a `PLUG_BACKEND` switch
+(astro `c6cae82`): `"zha"` is live, `"matter"` retained as fallback so a swap
+back needs no code archaeology. Deployed to muppet and verified there.
+
+**The wattage sensor did NOT replace the Dev-number check — it failed its own
+test first.** The metering was the whole reason the plug was offered (watch
+draw fall to ~0 instead of the USB re-enumeration proxy, potentially retiring
+rc=3). Measured on the bench plug BEFORE wiring, three ways:
+
+- `homeassistant.update_entity` returns **HTTP 200 but does not refresh the
+  sample** — `last_updated` *and* `last_reported` both stayed frozen across two
+  forced polls. (home-automation's caveat said to poll and read the returned
+  sample; on this sensor that poll does nothing.)
+- The voltage sensor sat at **238.02 V straight through a genuine off/on of its
+  own relay** — the meter did not witness its own plug switching.
+
+So the metering is delta-driven and blind at idle. **Dev-number verification
+stays authoritative** (it proves the *camera* lost power, not merely that a
+socket went dead); wattage is a **second, advisory witness**, printed only when
+the camera was actually drawing beforehand — a fall from real load to ~0 does
+report, an already-idle plug stays silent. rc=0/2/3/4 semantics are unchanged,
+so `eos-focus-cycle`'s rc=3 budget refund still works.
+
+**Two traps, both recorded in the code:**
+- **A SECOND S60ZBTPG is on this HA**: `sensor.sonoff_s60zbtpg_*` is the
+  **TUMBLE DRYER** (107 kWh lifetime; the Canon's summation was 0.0). Same
+  model, different appliance — always drive the `canon_eos_power_*` entities.
+  Exactly the node-4 Sandstrom-ghost trap in new clothing.
+- **The HA token must resolve by ABSOLUTE path**, never bare `secrets`: muppet
+  has the tool at `~/super/bin/secrets` but **not on PATH**, so the systemd
+  nightly would have failed. Verified with `env -i` on muppet →
+  `camera enumerated / plug on, 0 W`, rc=0.
+
+`switch/turn_*` is re-read until the entity reports the wanted state, so a plug
+that ACKs without switching returns rc=2 rather than a false success.
+
+**Still unproven (unchanged by the swap):** whether a mains cut clears a
+*genuine* Class-B wedge on this plug. Only a live wedge settles it — and per
+[[eos-wedges-were-a-worn-usb-socket]] the escalating wedges were a loose USB
+socket on muppet, so expect fewer chances to find out.
+
+## ★★ PLUG REPLACED + power-cycles now VERIFIED (2026-08-09) — SUPERSEDED
+*(the Realwe is now the fallback, not the live plug — see the 2026-08-12 entry
+above. The verification design below is still current and still authoritative.)*
 
 **Smart plugs have proved outrageously unreliable — the reset path now checks
 the plug's work instead of trusting it.**
