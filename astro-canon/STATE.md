@@ -126,10 +126,10 @@ resistive ballast is fitted in parallel on the switched side** (10 W being the
 observed passive-reporting floor) — Peter is considering it.
 
 **Two traps, both recorded in the code:**
-- **A SECOND S60ZBTPG is on this HA**: `sensor.sonoff_s60zbtpg_*` is the
-  **TUMBLE DRYER** (107 kWh lifetime; the Canon's summation was 0.0). Same
-  model, different appliance — always drive the `canon_eos_power_*` entities.
-  Exactly the node-4 Sandstrom-ghost trap in new clothing.
+- **Drive the `canon_eos_power_*` entities, never the model-named
+  `sonoff_s60zbtpg_*` ones** — the latter is a different appliance of the same
+  model. Same trap as the node-4 Sandstrom ghost. (Whose plug is whose is
+  [[home-automation]]'s business, not ours.)
 - **The HA token must resolve by ABSOLUTE path**, never bare `secrets`: muppet
   has the tool at `~/super/bin/secrets` but **not on PATH**, so the systemd
   nightly would have failed. Verified with `env -i` on muppet →
