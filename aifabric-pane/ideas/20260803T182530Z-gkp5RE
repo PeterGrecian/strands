@@ -1,8 +1,0 @@
-PAGE CAPACITY + SHADE/DRAG interaction (session 3, 2026-08-03).
-
-DECIDED — **9 terminals per page is the target** (Peter). Gives a natural 3x3 mental model and a sane cap: past ~9 a page gets unreadable, so layout logic should treat 9 as the ceiling and beyond it either SHADE excess into a rail or spill to a new page. Overview/page-strip could show 'N/9'. (Page 0 was at 6/9 when decided.)
-
-EXPLORATORY (Peter: 'hard to imagine how it'll work out' — build by USING, not deciding upfront):
-- SHADE = WindowShade/window-shading idiom (Mac WindowShade, old minimal WMs): collapse a terminal to ~2 rows so only its top line shows, still live; UNSHADE restores height. Proven by hand: shaded an empty terminal + astro-science into a horizontal RAIL across the top of a column, full-size keepers below. Caveat: a booting aicli wants >2 rows to render, so a shaded rail is a GLANCE strip (name + status line); unshade the one you want to talk to.
-- DRAG DIVIDERS: enabled tmux 'mouse on' this session — you can now drag borders between terminals, click-to-focus, wheel-scroll (Shift-drag to select text). Native, works today.
-- HOTKEYS for expand/collapse with 'reasonable' layout logic: NOT designed yet. Primitives are clear (collapse=shade+remember height, expand=restore/grow shrinking siblings, reflow=redistribute rows keeping the rail thin). Open forks parked until the feel is clear: what expand does to siblings (shade them / proportional grow / tmux zoom / cycle presets) and trigger (tmux key-bindings / tell-the-conductor / both). Vocab: an aifabric-pane > deck > page > terminal.

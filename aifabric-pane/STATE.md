@@ -45,6 +45,45 @@ origin `20260810T083137Z-3ID15i`, pivot assessment `20260810T082517Z-fDffQO`.
 **Next: a spike** — `ttyd` + 2 iframes (one a keeper, one an image) + CSS grid, to
 feel the no-jump downward scroll and test copy/paste + keybinding friction.
 
+### ATTENTION-DRIVEN REFLOW — sized by OUTPUT, not presence (2026-08-11)
+
+Terms grow as they are used and **decay continuously toward a floor as they go
+silent**, so the deck self-balances toward where the work is. Peter: *"panes
+should expand as they are used, and quiescent ones should shrink over time."*
+
+**Output is the primary size signal — not human presence.** The driver first
+proposed presence (active term, keystrokes) and then corrected itself, for a
+reason that goes to what the deck is FOR: on a surface built to watch MANY
+strands in parallel, the human can only be present at one. If presence drove
+size, every other term would be permanently small however hard it was working —
+the scatter problem again in miniature, one big term plus decoration. Output is
+the signal that *scales to parallelism*, and it is what says a strand is doing
+its job while you are elsewhere. Peter: *"output is activity — arguably more
+important than input."*
+
+Presence keeps one specific job: **the reading problem.** A term you are
+silently reading emits neither output nor input, and must not shrink under you —
+so presence acts as a HOLD that suspends decay, never as a growth driver.
+
+Constraints, all from real use:
+- **Floors and ceilings** — never decay below readable. Overview and driver are
+  FURNITURE, exempt (the overview auto-fits short by design).
+- **Never fight the human** — a hand resize, or a size he asks for, PINS the term
+  and suspends its decay. Otherwise the deck undoes what he just asked for.
+- **Builders must not be squeezed.** Keepers are idempotent and safe to shrink; a
+  builder mid-trajectory silently squeezed to 3 rows is a worse outcome.
+- **Eased, not jumped** — slow enough never to move text under a reading cursor.
+- **The standard layout is the equilibrium decay returns to**, not something
+  reflow overwrites — otherwise free-running reflow erodes the diagonal corner
+  symmetry, which is deliberate.
+
+**Where it lives: the browser spike, probably not tmux.** CSS transitions make
+eased continuous resize trivial, and output volume is trivially available as
+bytes/sec down each websocket; `resize-pane` in a poll loop is a crude
+approximation fighting a binary split tree. This is a strong first-class demo
+FOR the compositor — it shows why the browser is the right destination.
+Ideas: `20260810T230105Z-Lbu97i` + correction `20260810T230206Z-nZekr0`.
+
 ## VOCABULARY (settled 2026-08-03 session 3 — use these words, not tmux's)
 
 **an aifabric-pane → deck → page → terminal.**
@@ -368,6 +407,28 @@ the driver pane puppeteering real keepers via the tmux CLI:
   - Per-keeper CONTEXT/TOKEN count — HARD (each keeper is its own Claude process;
     no local interface; only screen-scrape the statusline, clobber-prone). Parked
     as aspiration. → idea `20260803T165701Z-3v1Bli`.
+  - **DCP column — SPEC'D, not built** (Peter 2026-08-11: *"one thing I
+    constantly need to know in the overview is how much a dcp is needed for a
+    strand"*). Note **how much**, not whether — a magnitude to scan. He chose
+    COMPACT COUNTS over a heat bar (precise and narrow beats glanceable here).
+    Two measures:
+    1. **Git debt**, exact and cheap, per strand DIRECTORY not per repo: dirty
+       from `git status --porcelain`, unpushed from `git log @{u}..HEAD`.
+       Render `2d 4u`.
+    2. **Staleness proxy** — the part git cannot see, and the one that matters:
+       dcp is *document*-commit-push, so a strand can be spotless in git while
+       `STATE.md` is hours stale. Compare newest-file mtime against `STATE.md`
+       mtime. A distinct MARK (`*`/`!`), not a number — a different KIND of debt.
+    - **COST GOTCHA (heed it):** the roster ticks every 5s and the cleft 429
+      incident is the precedent. Put DCP on its own SLOW cadence (30–60s) and
+      cache between ticks. Do the whole repo in TWO git invocations parsed by
+      leading path, not 2N — measured at **23 ms** for the entire strands repo,
+      versus ~30 strand dirs × 2 calls.
+    - **HONESTY NOTE for the header:** most strands live in the one strands repo,
+      but strand *work* commits elsewhere (the driver's identity fix went to
+      aifabric). So this measures *curation debt in the strands repo*, not all
+      unpushed work. Say so, or optionally union with the strand's `dirs`.
+    → idea `20260811T065453Z-i46gU4`.
 - Build the driver agent (plain-language driver -> tmux CLI). Note: proven
   this session that a plain Claude session in the driver pane, sourcing
   `pane-driver-helpers.sh`, IS the driver — no separate agent needed yet.
@@ -428,6 +489,28 @@ the driver pane puppeteering real keepers via the tmux CLI:
   isn't. (Real evidence remains: "window" for a term.)
 - Replied to `aifabric-pane-driver` with both answers + the moved paths and the
   rename gotcha, so they don't hold stale references.
+
+## Session 8 (2026-08-12) — zone-portable paths, ideas triaged
+
+- **No absolute home paths in the shared repo** (aifabric `560bb13`, `d1a0ba2`).
+  The other zone flagged `/home/peter` in the carried code: it could not fix the
+  path without carrying ITS username back in the PR, so the file was
+  *unmergeable*, not merely unportable. **A hardcoded `/home/<user>` is a
+  username, and a username is content.** 7 leaks → 0.
+  - Resolution order now: `$STRANDS_DIR` → `$HOME` → the script's own location
+    for sibling tools in this repo (`tmux-deck/` walks up to `bin/`).
+  - `bin/aicli` and `bin/sessions` had the *redundant* form —
+    `"$HOME/super/bin/x"` then `"/home/peter/super/bin/x"`. The second is
+    unreachable where it was written and dead on the other side: pure leak.
+  - `mondrian.sh` was the one real `$STRANDS_DIR` bypass (fell straight back to
+    `$HOME/strands`, so a zone setting `STRANDS_DIR` got strands from there but
+    mondrians from `$HOME`). Everything else already consulted it first.
+  - Rule written up in `aifabric/method/zones.md` → "Writing code that travels",
+    with the pre-carry check `grep -rn '/home/' --include='*' . | grep -v .git`.
+    **That file is still UNCOMMITTED** (Peter's draft) — the rule does not reach
+    the other zone until it lands.
+- **IDEAS.md triaged to empty** — 29 entries, all either promoted here or long
+  since actioned. The three new ones (reflow ×2, DCP column) are promoted above.
 
 ## From aifabric-pane-driver (mail received 2026-08-10 — ACTED ON, see Session 7)
 
