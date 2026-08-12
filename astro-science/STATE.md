@@ -585,8 +585,60 @@ the see-vs-identify gap into hard *fainter-than-M-here* labels from detection.
 Holds only where the catalogue is genuinely complete to M (uncrowded/bright
 regime); the ceiling lifting where the catalogue thins is itself information.
 
+## Transients — meteors as a deliverable (NEW 2026-08-11/12)
+
+**Design: `astro/design/transients.md`. Tool: `bin/find-transients`
+(`astro 6b168db`). Peter spotted meteors by eye in the 08-10 sweeps —
+*"lets start some science about it."***
+
+- **The gap:** the archive **throws every meteor away**. `accumulator-outlier-
+  rejection.md` rejects them as "non-sidereal ⇒ reject" (right for the stack),
+  and `catalogue-deliverable.md` mints entries on **persistence** — which a
+  sub-second one-off can never have. They fall through every crack. Fix: the
+  same rejection pass **emits to a transients table** instead of only deleting.
+- **THE RULE — sweep frames cannot classify; work on SUBS.** A sweep frame is a
+  10-min stack: it smears the ablation profile flat (a meteor reads as a flat
+  satellite trail — this caused a **wrong call** on the 00:05:14 event) and
+  merges 10 minutes into one image, so an eyeballed "pair" carries **no timing
+  information** — which is the whole question when asking about clustering.
+- **Peter's discriminators, both of which overturned my wrong calls:**
+  (1) *geometric* — a satellite **crosses** the field so ≥1 end touches the
+  border; a meteor **ignites and burns out inside**, both ends interior. Robust
+  because it survives the saturated cores (JPEG clips at 255 along the whole
+  streak) that defeat profile analysis. (2) *illumination* — at solar altitude
+  **−23.2°** Earth's shadow reaches **~560 km**, above Starlink (~550) and the
+  ISS (~420), so a bright midnight streak is not a sunlit satellite.
+- **Confirmed:** canon **2026-08-11 00:05:14** — 237 px, elong 138, ang 85.8°,
+  both ends interior, single sub, symmetric taper (flux ~350 → ~740 → ~350 by
+  wing integration). A genuine meteor, two nights before Perseid max.
+- **Do they bunch?** Yes across a **season** (that's what a shower is) and
+  across a **night** (rates climb toward dawn); **no within minutes** — Poisson,
+  independent. Testable: a pair in the same **sub** is notable (P≈0.02); in the
+  same 10-min **window** it's ordinary (P≈0.2). Doc carries the arithmetic.
+- **STATUS — passes on one event, NOT usable on a night.** A full-night run gave
+  10 "meteors" from **8 subs**; the cutouts showed **foliage** — leaf edges trip
+  the threshold, stems pass the elongation test. Every *number* looked right
+  (conf 1.00, ends=0, single sub); only the picture was wrong. `--save-cutouts`
+  earned its place on first use. Root cause: the 40 px floor was **overfitted to
+  the one meteor then known** (real 237 px, false positives 48–74 px).
+  **Fixes in order:** (1) **median-subtract across the night** before detecting
+  — kills static foliage *and* near-static star trails at once, the real fix;
+  (2) length floor ~150 px (stopgap; loses the unrecovered 23:51:42 candidate);
+  (3) occlusion mask — already a pending canon refinement, now **blocking**;
+  (4) tune confidence thresholds against eyeballed cutouts.
+- **Next run is astrocam, not canon:** canon has frames on only **08-08 and
+  08-10**, so it cannot answer "meteors all week"; astrocam has run continuously
+  all month and is the right instrument for a **rate-vs-night curve** across the
+  Perseid build-up. **Multi-camera is the prize** — all three cameras recorded
+  meteors on 08-10, and two cameras on one event gives **altitude + speed by
+  triangulation** (waits on canon's pole solve).
+- **Unresolved:** the 23:51:42 canon candidate (~54 px by hand) isn't recovered;
+  the eclipticam pair Peter screengrabbed isn't yet located in the subs.
+
 ## Pending / loose ends
 
+- **Transients: median-subtract fix → re-run on astrocam** (see above;
+  `design/transients.md`). Then the rate-vs-night curve across the Perseids.
 - **Prereq for everything: pole + plate scale from real imx708 sky** (STALE from
   imx219 era). Trail-arc fit on a clear night → pole + resampling geometry, then
   RA/Dec naming + the accumulator.
