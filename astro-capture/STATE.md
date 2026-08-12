@@ -190,6 +190,52 @@ is how a *future* body or a re-seated lens would be re-characterised, and
 dormant/calibration-only so nobody mistakes them for the nightly path. The live
 nightly capture path is `eos-capture` + `--no-focus`.
 
+## Pre-flight check 2026-08-12 (eclipse night) — READ THIS PATTERN
+
+Peter asked for a capture-readiness check before the 2026-08-12 partial
+eclipse. Findings worth keeping:
+
+**All three hosts were STALE and nobody would have noticed.** pip was 10
+commits ahead of origin (never pushed); muppet, astrocam and eclipticam were
+all 13 behind. So the `Immediate` fix committed that same morning had reached
+**no camera**. Pushed, and pulled on all three — now all on `ba4c96a`.
+**Ritual: a capture fix isn't done when committed, it's done when pulled on
+the host that captures.** Check `git status -sb` on pip *and* each host.
+
+**The pull was blocked on all three hosts by hand-copied untracked files**
+(`bin/canon-nightly`, `bin/eos-cr2-to-fits`, `services/canon-nightly.*`,
+`canon/camera.json`). All were byte-identical to the incoming versions except
+muppet's `canon/camera.json`, which was the *older* pip-split version. Deploying
+by `scp` instead of committing is what caused this; it will recur until the
+canon delivery files are deployed from git.
+
+**`~/dotfiles/bin/` is a SECOND copy of the capture tools, and it is the one
+that RUNS.** `eos-focus.service` executes `/home/peter/bin/eos-focus-cycle`
+→ `~/dotfiles/bin/eos-focus-cycle`, *not* `~/astro/bin/`. Updating the astro
+repo does **not** update the live capture path. Checked: the only difference
+was this session's comment header (logic identical, already on Press Full), so
+tonight was never at risk — but a real fix could have been "committed, pulled,
+and still not live". Synced by hand. **This deserves a proper fix (symlink or
+deploy step) — currently tracked nowhere.**
+
+**Astrocam's SD card is at 92% (552 MB free).** Not a threat: `frames_root`
+(`~/astrocam-frames`) is an NFS automount onto muppet's bigstore (4.1 T free)
+and the tmpfs buffer had zero backlog. Worth watching, not fixing tonight.
+
+**The eclipse is not capturable by this estate, and that is by design.**
+Real timings (Royal Observatory, London): first contact **17:17Z**, max ~90%
+**18:12Z**, last contact **19:06Z** — sun altitude +19.3° falling to +2.6°,
+in the **west**, in daylight. Every camera is night-gated (astrocam/eclipticam
+−10°, canon −12°) and earliest capture is **20:40Z — 94 minutes after last
+contact**. Worse, pointing rules it out anyway: astrocam is polar-aligned
+(north, pole in frame), eclipticam-v3w looks south, and daytime capture was
+*deliberately retired* estate-wide on 2026-07-06 (`design/retire-moon-marking-v1.md`)
+— `eclipticam/capture.py` still ticks every minute but shoots nothing by day.
+The only instrument that could image it is the EOS: a tripod body needing a
+human to point it west at a low sun, with a **solar filter** (90% still
+destroys a sensor and an eye). That is a per-device astro-canon job, not a
+pipeline change. **Do not "fix" this by lowering a night gate.**
+
 ## Pending / loose ends
 
 **~~Work unit 1 — the frame-naming / run-tag audit~~ DONE 2026-08-12**
