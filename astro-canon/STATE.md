@@ -91,24 +91,39 @@ plug as the live EOS power path. `eos-power` grew a `PLUG_BACKEND` switch
 (astro `c6cae82`): `"zha"` is live, `"matter"` retained as fallback so a swap
 back needs no code archaeology. Deployed to muppet and verified there.
 
-**The wattage sensor did NOT replace the Dev-number check — it failed its own
-test first.** The metering was the whole reason the plug was offered (watch
+**The wattage sensor is UNUSABLE for this camera, and `eos-power` reads no
+watts at all.** The metering was the whole reason the plug was offered (watch
 draw fall to ~0 instead of the USB re-enumeration proxy, potentially retiring
-rc=3). Measured on the bench plug BEFORE wiring, three ways:
+rc=3). It fails for two independent reasons, found from both ends:
 
-- `homeassistant.update_entity` returns **HTTP 200 but does not refresh the
-  sample** — `last_updated` *and* `last_reported` both stayed frozen across two
-  forced polls. (home-automation's caveat said to poll and read the returned
-  sample; on this sensor that poll does nothing.)
-- The voltage sensor sat at **238.02 V straight through a genuine off/on of its
-  own relay** — the meter did not witness its own plug switching.
+1. **The EOS is below the measurement floor** — decisive; from
+   [[home-automation]] (correction, 2026-08-12, after Peter supplied the real
+   figure). The camera draws **~200 mW ≈ 0.0008 A at 240 V**, against a
+   **0.01 A** current step and **1 W** power quantisation — about **1/12th of
+   one step**. **The meter reads 0.0 W with the camera running normally.** The
+   encouraging bench numbers were a 20–40 W glue gun, not a camera. Keying a
+   verdict off watts would false-pass a cycle that never ran, or false-fail a
+   healthy camera — **the Sandstrom "plug lied" class reintroduced from the
+   other end**, i.e. precisely what the scheme was meant to retire.
+2. **The reporting cannot be polled on demand** — measured here before wiring.
+   `homeassistant.update_entity` returns **HTTP 200 but does not refresh the
+   sample** (`last_updated` *and* `last_reported` both frozen across two forced
+   polls), and the voltage sensor sat at **238.02 V straight through a genuine
+   off/on of its own relay**. So there is no freshness signal at idle either.
 
-So the metering is delta-driven and blind at idle. **Dev-number verification
-stays authoritative** (it proves the *camera* lost power, not merely that a
-socket went dead); wattage is a **second, advisory witness**, printed only when
-the camera was actually drawing beforehand — a fall from real load to ~0 does
-report, an already-idle plug stays silent. rc=0/2/3/4 semantics are unchanged,
-so `eos-focus-cycle`'s rc=3 budget refund still works.
+**Dev-number verification is therefore the SOLE verification** — it proves the
+*camera* lost power, not merely that a socket went dead. rc=0/2/3/4 semantics
+are unchanged, so `eos-focus-cycle`'s rc=3 budget refund still works. `status`
+still prints watts, labelled as below the meter floor and **not** a power
+indication — 0 W there does not mean the camera is off.
+
+*Worth noting the near-miss:* the first cut shipped wattage as an advisory
+second witness gated on `w_before > 0.5`. The EOS never satisfies that, and no
+`sys.exit` ever depended on a wattage value, so **no verdict was ever at risk**
+— but it was dead code that would have misled the next reader into thinking
+watts were usable. Removed in astro `4f18f3b`. **Revisit only if a ~10 W
+resistive ballast is fitted in parallel on the switched side** (10 W being the
+observed passive-reporting floor) — Peter is considering it.
 
 **Two traps, both recorded in the code:**
 - **A SECOND S60ZBTPG is on this HA**: `sensor.sonoff_s60zbtpg_*` is the
@@ -122,6 +137,16 @@ so `eos-focus-cycle`'s rc=3 budget refund still works.
 
 `switch/turn_*` is re-read until the entity reports the wanted state, so a plug
 that ACKs without switching returns rc=2 rather than a false success.
+
+**Does the swap still stand, now the verification premise has gone?** Yes.
+`eos-power` only ever relied on the plug as a **switch**, and that half is
+verified good (3+ clean cycles here and at home-automation; `start_up_behaviour
+= On`). The metering was a hoped-for bonus, never load-bearing — the Dev-number
+check was always doing the verifying. **Fallback confirmed healthy** on request
+(2026-08-12): matter-server **node 7 Realwe `available=True`**, and vendor
+matching still discriminates it from the dead **node-4 Currys ghost
+(`available=False`)**, so flipping `PLUG_BACKEND="matter"` is a one-line
+revert onto a live path.
 
 **Still unproven (unchanged by the swap):** whether a mains cut clears a
 *genuine* Class-B wedge on this plug. Only a live wedge settles it — and per
