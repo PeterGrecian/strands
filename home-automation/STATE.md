@@ -119,6 +119,22 @@
   `docs/integration-policy.md`, which also answers the old `TODO.md` question
   and "why are the fans reliable when everything else barfs" (chain length).
 
+- **Third S60ZBTPG paired as `Canon EOS Power` (2026-08-12) — intended as the
+  Zigbee EOS power path, NOT yet wired to anything.** Joined ZHA at 09:32:51Z
+  (5 → 6 devices) by permit-join; no setup code involved. The QR on the plug
+  body decodes to `25502200004022` — a **plain serial, not a Matter payload**;
+  a body QR is not by itself evidence of Matter. Verified reporting mains while
+  powered (235.92 V). `start_up_behaviour` set to **On** so the EOS returns
+  after a power cut (factory default is Off — the same trap fixed on the dryer
+  2026-08-10). Device **and all 8 entity IDs** renamed to `canon_eos_power_*`:
+  they land as `sonoff_s60zbtpg_*_2` on join, and a `_2` collision suffix is a
+  bad stable identifier — rename entity IDs, not just the device, since the
+  device rename only changes *friendly* names. The dryer's 7 entities keep the
+  generic `sonoff_s60zbtpg_*` names (untouched, verified live after the rename).
+  Currently reads `off` / 0.0 V because it is unplugged from the test socket —
+  that is a de-energised plug holding last-known state, not a fault; the
+  timestamps (09:33:28Z, minutes before any rename) rule out a self-switch.
+
 - **Lab lighting buttons → use Matter, not Zigbee (decided 2026-08-09, not yet
   bought).** Peter wants a physical button for the lab late at night *and*
   keeps voice. Zigbee would pull lab lighting into HA and **lose** its Google
@@ -140,6 +156,19 @@
   on the next wedge** — whole-adapter mains switching may not drop the 12V rail
   as cleanly/quickly as the 12V-only pull STATE validated (PSU bulk caps); may
   need `--secs` > 10. Tracked in astro-canon STATE (CAVEAT).
+
+- **`eos-power` has no ZHA backend — `Canon EOS Power` is unreachable by it.**
+  `eos-power` drives the **matter-server WS API** and matches `MATTER_VENDOR =
+  "Realwe"`; the new plug is **ZHA**, a different backend entirely (HA REST/WS,
+  `switch.canon_eos_power`). Making it usable is a second code path in
+  `astro/bin/eos-power`, not an id change — work for [[astro-canon]], whose
+  repo owns that tool. **Keep the Realwe Matter plug as the live EOS path until
+  the ZHA route is proven end-to-end**; a fresh pairing is not evidence.
+  The prize: the plug's **wattage sensor verifies a power cut directly** (watch
+  draw fall to ~0 and return), replacing `cycle`'s USB-renumeration proxy and
+  retiring the exit-code-3 "plug lied" guesswork — that check exists only
+  because the Sandstrom ACKed without switching. Measuring the rail beats
+  inferring it downstream.
 
 - **Capture homepi's matter-server container in IaC** — **owned by
   [[astro-canon]]** (2026-07-26). The matter-server is a hand-run `docker run`
