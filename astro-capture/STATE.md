@@ -241,6 +241,32 @@ Trimming to the measured minimum would turn ordinary jitter into false wedges
 and cost the night. Do not cut further without re-measuring on this body; the
 figure is exposure-dependent.
 
+**The remaining ~2 s of per-frame overhead is NOT recoverable — tested and
+rejected 2026-08-12.** After the +12→+6 win, the leftover dead time is the
+per-frame `gp("--set-config","viewfinder=0")` (~0.5 s, the only extra gphoto2
+process per frame) plus a hardcoded `time.sleep(1.0)` settle. Both look like
+dead weight in `--no-focus` mode: nothing engages live view between frames
+(`--capture-preview` appears only in `prime()` and `_drive()`, both focus
+operations), so there is seemingly nothing to turn off and nothing to settle.
+
+**Measured A/B on the real body, alternating control/lean over 3 pairs:**
+
+| variant | period | duty | result |
+|---|---|---|---|
+| control (current) | 38.05 s | 79% | **3/3 GOT** |
+| lean (no viewfinder=0, no settle) | 36.53 s | 82% | **1/3 GOT — lean00, lean01 NO FILE** |
+
+So it buys 1.52 s/frame and **loses two frames in three**. The `viewfinder=0`
++ settle is load-bearing even when nothing obviously engaged LV — consistent
+with the code's own note that capturing with LV up "silently fails on this
+body". Left exactly as is. **Do not re-attempt without a mechanism-level
+explanation**; a NO FILE is the wedge tell and escalates to a 12 V power cycle,
+so this variant would also have thrashed the recovery ladder all night.
+
+**Conclusion: ~38 s / ~78-79% duty is this body's practical floor** at 30 s
+subs with the current mechanism. Further gain needs a different mechanism
+(solving bulb for longer subs), not more trimming.
+
 **Event-driven forms do NOT work on this body** (tested, all returned instantly
 with no file): `=FILEADDED`, `=CAPTURECOMPLETE`, and bare counts (`=3`). Bare
 `FILEADDED` with no timeout **blocks forever**. The timed window is the working
