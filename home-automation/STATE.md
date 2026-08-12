@@ -157,16 +157,32 @@
   as cleanly/quickly as the 12V-only pull STATE validated (PSU bulk caps); may
   need `--secs` > 10. Tracked in astro-canon STATE (CAVEAT).
 
-- **astro-canon WIRED THE PLUG IN AS THE LIVE EOS PATH (2026-08-12, astro
-  `c6cae82`) — on a premise that has since been retracted.** `eos-power` now
-  defaults `PLUG_BACKEND='zha'` with Realwe demoted to fallback, deployed to
-  muppet. They acted on my mailbox message, which pitched wattage verification
-  and said "the Realwe plug remains the live EOS path"; the ~200 mW correction
-  arrived **after** they shipped. Correction sent same day. **Open: confirm
-  with astro-canon that `cycle` does not gate on measured watts and that the
-  Realwe fallback still works.** Lesson: a message that recommends a swap
-  travels faster than its own caveats — state the *disqualifying* condition up
-  front, not the prize.
+- **astro-canon WIRED THE PLUG IN AS THE LIVE EOS PATH — settled, no fault
+  (2026-08-12, astro `c6cae82` + `4f18f3b`).** `eos-power` defaults
+  `PLUG_BACKEND='zha'`, deployed to muppet; it reads **no watts** at all now.
+  **No verdict was ever at risk**: the advisory wattage block was gated on
+  `w_before > 0.5`, which a 200 mW camera never satisfies, so it was dead code,
+  not a live false-pass — removed anyway lest it imply watts were usable.
+  Dev-number **re-enumeration remains the verification of record** (it proves
+  the *camera* lost power, not merely that a socket went dead). Realwe fallback
+  confirmed live: matter-server node 7 `available=True`, cleanly distinct from
+  the node-4 Currys ghost; `PLUG_BACKEND='matter'` is a one-line revert.
+  **Two corrections to my own alarm** (recorded because the reasoning error is
+  the reusable part): (1) I called this an inversion of my "Realwe remains the
+  live path" note — but the swap was **Peter's instruction**, not astro-canon
+  freelancing; a mailbox note from this strand does not out-rank the user, and
+  I had no standing to impose that constraint. (2) `eos-power` only ever needed
+  the plug as a **switch** (verified good, `start_up_behaviour=On`); the
+  metering was a hoped-for bonus, never load-bearing — so the retraction cost
+  nothing. Lesson that survives: state the *disqualifying* condition up front,
+  not the prize — my message pitched wattage verification and the ~200 mW fact
+  arrived after they had shipped.
+
+- **Entity-name collision is a live footgun (flagged by [[astro-canon]]).**
+  `sensor.sonoff_s60zbtpg_*` is the **TUMBLE DRYER** (107 kWh lifetime), same
+  model as the Canon plug. **Anything matching this model by *name* rather than
+  entity id will switch the dryer.** Same shape as the node-4 Sandstrom ghost
+  and the `light.lights_east` fault. Match on entity id (`canon_eos_power_*`).
 
 - **~~`eos-power` has no ZHA backend~~ — superseded above; it has one now.**
   `eos-power` drives the **matter-server WS API** and matches `MATTER_VENDOR =
@@ -195,15 +211,18 @@
   not LED/SMPS, which meter poorly). Makes the meter report on the *rail*
   rather than the camera. Costs ~£2/month continuous + heat — weigh against the
   free USB proxy that already works.
-  **Verification must FORCE a read — passive reporting is blind at zero**
-  (established 2026-08-12 over ~40 min of bench testing). The power attribute
-  is **delta-driven and healthy**: it reported a spontaneous 22→21 W change
-  with no command sent. But it stays silent when there is no delta, which is
-  exactly the switched-off case — so **"no report" is ambiguous between *rail
-  down* and *nothing changed*.** A verifier that waits passively cannot tell
-  them apart; it must call `homeassistant.update_entity` and read the returned
-  sample. Not a blocker (an EOS draws far more than any plausible delta
-  threshold), but it is an implementation constraint on the `cycle` rewrite.
+  ~~Verification must FORCE a read via `homeassistant.update_entity`.~~
+  **THAT WORKAROUND DOES NOT WORK** — measured by [[astro-canon]] 2026-08-12:
+  `update_entity` returns **HTTP 200 without refreshing** (both `last_updated`
+  and `last_reported` stayed frozen across two forced polls), and
+  `sensor.canon_eos_power_voltage` sat at **238.02 V straight through a genuine
+  off/on of its own relay** — the meter did not witness its own plug switching.
+  **There is no on-demand freshness signal at idle: the metering cannot be
+  polled.** Passive reporting is delta-driven and does work when a load moves
+  (a spontaneous 22→21 W report was observed), but silence is then ambiguous
+  between *rail down* and *nothing changed*, and nothing can disambiguate it.
+  Two independent findings — this one, and the ~200 mW floor below — each kill
+  wattage verification on their own.
   **Two wrong turns worth not repeating:** (1) a frozen `last_changed` was read
   as a broken/lying plug — it was a correctly-silent delta-driven sensor, and
   `off`-state samples were **stale values, not evidence of current flowing**;
