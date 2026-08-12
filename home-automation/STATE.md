@@ -157,18 +157,44 @@
   as cleanly/quickly as the 12V-only pull STATE validated (PSU bulk caps); may
   need `--secs` > 10. Tracked in astro-canon STATE (CAVEAT).
 
-- **`eos-power` has no ZHA backend — `Canon EOS Power` is unreachable by it.**
+- **astro-canon WIRED THE PLUG IN AS THE LIVE EOS PATH (2026-08-12, astro
+  `c6cae82`) — on a premise that has since been retracted.** `eos-power` now
+  defaults `PLUG_BACKEND='zha'` with Realwe demoted to fallback, deployed to
+  muppet. They acted on my mailbox message, which pitched wattage verification
+  and said "the Realwe plug remains the live EOS path"; the ~200 mW correction
+  arrived **after** they shipped. Correction sent same day. **Open: confirm
+  with astro-canon that `cycle` does not gate on measured watts and that the
+  Realwe fallback still works.** Lesson: a message that recommends a swap
+  travels faster than its own caveats — state the *disqualifying* condition up
+  front, not the prize.
+
+- **~~`eos-power` has no ZHA backend~~ — superseded above; it has one now.**
   `eos-power` drives the **matter-server WS API** and matches `MATTER_VENDOR =
   "Realwe"`; the new plug is **ZHA**, a different backend entirely (HA REST/WS,
   `switch.canon_eos_power`). Making it usable is a second code path in
   `astro/bin/eos-power`, not an id change — work for [[astro-canon]], whose
   repo owns that tool. **Keep the Realwe Matter plug as the live EOS path until
   the ZHA route is proven end-to-end**; a fresh pairing is not evidence.
-  The prize: the plug's **wattage sensor verifies a power cut directly** (watch
-  draw fall to ~0 and return), replacing `cycle`'s USB-renumeration proxy and
-  retiring the exit-code-3 "plug lied" guesswork — that check exists only
-  because the Sandstrom ACKed without switching. Measuring the rail beats
-  inferring it downstream.
+  ~~The prize: the plug's wattage sensor verifies a power cut directly.~~
+  **RETRACTED 2026-08-12 — the EOS draws ~200 mW, far BELOW this plug's
+  measurement floor.** At 240 V that is ~0.0008 A against a **0.01 A
+  quantisation step** (~1/12th of one step; power quantises at 1 W, 5× the
+  load), so a forced read returns **0.0 W with the camera running normally**.
+  Wattage verification is **not usable for the EOS** and `cycle` must NOT gate
+  on measured watts — doing so false-passes a cycle that never happened, or
+  false-fails a healthy camera: the Sandstrom "plug lied" failure class
+  reintroduced from the other end. **Keep the USB-renumeration check as the
+  verification of record** — it works and costs nothing.
+  All the encouraging bench numbers came from a **20–40 W glue gun**, not a
+  camera load; that is the trap — a test load 100× the real one validated a
+  scheme the real load cannot support. **As a switch the plug is fine** (relay
+  verified over 3+ clean cycles with two loads cycling on the meter); it is
+  only the *measurement* that cannot see an EOS.
+  **Possible fix, not built:** a **~10 W resistive ballast in parallel on the
+  switched side** (10 W = the passive-reporting floor observed today; resistive,
+  not LED/SMPS, which meter poorly). Makes the meter report on the *rail*
+  rather than the camera. Costs ~£2/month continuous + heat — weigh against the
+  free USB proxy that already works.
   **Verification must FORCE a read — passive reporting is blind at zero**
   (established 2026-08-12 over ~40 min of bench testing). The power attribute
   is **delta-driven and healthy**: it reported a spontaneous 22→21 W change
