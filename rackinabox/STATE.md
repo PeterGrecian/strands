@@ -51,6 +51,10 @@ maintenance-prone part in the box (bearings, dust) while casting is the least
 reversible method available. It stays in the light, replaceable material.
 If anything *is* ever cast around: use a **sacrificial former** (wrapped 140 mm
 block, pulled after the pour) leaving a socket, never the fan itself.
+**Applies ×4 under the 2026-08-13 cooling scheme** — and more forcefully: four
+cast-in fans would be four irreversible commitments to the most
+maintenance-prone, most likely-to-be-revised parts in the box. Cut the holes,
+mount the fans in the light replaceable material.
 
 **Still to establish about the composite:** sand:PVA ratio; behaviour at
 fixings (a screw may crush/pull out where it would hold in timber — if so, cast
@@ -72,7 +76,8 @@ panel edge.
 
 **What survives from the old plan:** the architecture, not the fabrication.
 Silent home-server enclosure under an IKEA LACK table, 3-layer nested design
-(steel core / base / lid+walls), single 140 mm downdraught fan, dual-chamber PSU
+(steel core / base / lid+walls), ~~single 140 mm downdraught fan~~ **4-fan
+top/bottom scheme at 5 V (see "Cooling architecture")**, dual-chamber PSU
 thermal quarantine, carpet as acoustic sink, tool-less teardown. Full detail in
 `~/rackinabox/DESIGN.md`. `cad/panels.py` still generates a valid finger-jointed
 DXF set (corner parity verified, M4 tab-aware screws) — **kept for reference,
@@ -104,10 +109,132 @@ but it is no longer the build**; its fan bore and finger joints are superseded.
 - **Bought parts that remain valid and cheap:** Arctic 140 mm fan grill **£1.19**
   at [Scan UK](https://www.scan.co.uk/shop/computer-hardware/cooling-air/system-and-case-fan-grilles)
   — worth it for a fan firing down at ankle height over carpet and cables.
+  *(2026-08-13: now **×4** at £1.19 each, still trivial. The bottom pair are
+  intakes at floor level over carpet — grills there are about keeping carpet
+  fluff and cables out of the blades, and a **filter** on the intake pair is
+  worth considering, which is also the argument for positive pressure.)*
   140 mm silicone gasket has no UK specialist source found (Quiet PC's
   AcoustiFan/Fansis ranges stop at 120 mm); Amazon UK marketplace instead.
 
-## SCOPE CHANGE — the rack is now a CASE, not a laptop shelf (2026-08-12)
+## COOLING ARCHITECTURE — settled 2026-08-13 (supersedes the single downdraught fan)
+
+**Scheme: 2× 140 mm bottom (intake) + 2× 140 mm top (exhaust), all 12 V fans
+run at 5 V, plus provision for a couple of 120 mm local fans inside.**
+Supersedes the single 140 mm downdraught fan throughout this file.
+
+**Why top/bottom rather than downdraught:** it works *with* convection —
+cold intake low, hot exhaust high — instead of pushing air down against a
+rising plume.
+
+### The arithmetic (do not re-derive)
+
+A 140 mm fan shifts ~120 m³/h. Air at ~25 °C: ρ≈1.18 kg/m³, c_p≈1005 J/(kg·K)
+→ volumetric heat capacity ≈ **1190 J/(m³·K)**.
+
+    120 m³/h = 0.0333 m³/s  →  0.0333 × 1190 ≈ 40 W/K per fan (ideal)
+
+**Derate for reality** — static pressure in a sealed box with grill + baffle
+(×0.6), deliberately slow/quiet RPM (×0.5), recirculation/short-circuit
+(×0.7) → **≈8 W/K per fan in situ**.
+
+| Config | Ideal | In situ | ΔT at 150 W |
+|---|---|---|---|
+| 1 fan | 40 W/K | ~8 W/K | ~19 °C |
+| 2 top + 2 bottom | 80 W/K | ~16 W/K | ~9 °C |
+
+**⚠ How fans combine — the trap.** *Parallel* (2 side-by-side at the top):
+**flow adds**. *Series* (top and bottom, same air passing both): **pressure
+adds, flow does not.** So 4 fans ≈ 2× the flow of one, not 4×. And the
+**local 120s are internal recirculation — they contribute ~0 W/K of net heat
+export.** Their entire value is cutting component-to-air thermal resistance at
+the disks and NVMe, which have no heatsinks. The W/K budget is a single
+shared box property, spent once — *not* a per-fan allowance to multiply up.
+
+### The real reason for 4 fans: acoustics, not capacity
+
+Fan noise scales ≈ RPM⁵ while airflow scales ≈ RPM. Four fans at ~40% RPM
+deliver the same air as one at high RPM for a tiny fraction of the acoustic
+power (~20 dB quieter each; four sources only sum to ~+6 dB). **More fans,
+slower** is the silent-PC answer. Secondary wins: **redundancy** (1 of 4
+failing is a capacity dip, not a thermal event — important for a headless box
+holding data) and **coverage** (two bottom intakes = one under the disks, one
+under the board, attacking the dead-pocket problem directly).
+
+### What the margin is FOR
+
+With 4 fans there is so much thermal headroom that **the design goal becomes
+acoustic and structural, not thermal**. Plausibly run all four at 5 V, never
+exceed ~10 °C rise, and get an inaudible box. **Spend the margin on silence,
+not on a restrictive layout.**
+
+**ΔT is the easy half.** Air rise is small next to the silicon-to-air drop:
+
+    T_cpu = T_ambient + ΔT_air + (P × R_heatsink)
+
+A stock Wraith cooler is ~0.3–0.5 °C/W → at 80 W that's **24–40 °C above local
+air**, dwarfing the 2–10 °C air rise. To improve CPU temps you change the
+*heatsink*, not the fans. The **disks are the opposite case** — no heatsink at
+all, so they need air moving *across* them; three stacked 3.5" drives with no
+gap is the classic dead-pocket failure, and bulk exhaust temperature will read
+cool while a drive cooks. Disks want to stay under ~45 °C.
+
+### Build rules
+
+- **Intake area is now the binding constraint**, not fan capacity. 4× 140 mm
+  wants ~4 × 150 cm² of free area. In a cast wall that is a lot of material
+  removed — it is a **structural** question for wall thickness, and it is four
+  hole-saw cuts. **140 mm likely exceeds Peter's hole saw set; 4× 120 mm still
+  gives ~176 m³/h ideal and is the safer bet for the tools actually owned.**
+- **Pressure balance — decide deliberately.** Match top and bottom counts and
+  ideally the same model. Slight **negative** (top wins) is usual for a sealed
+  box; **positive** if you want filtered intake and no dust ingress. Get it
+  wrong and hot air leaves through every unsealed seam — and with cast walls
+  the seams are wherever panels meet posts.
+- **Local 120s = provision, not fitted.** Put in mounting points and a spare
+  5 V feed; add them only if the disks *measure* hot. Do not fit on spec.
+- **⚠ 12 V fans at 5 V may not START.** They run happily once spinning but
+  many (sleeve-bearing, unbranded) will not start from cold at 5 V — and a fan
+  that fails to start after a power cut is a **silent thermal failure in a
+  headless box**. Either test each fan starts from cold at 5 V before
+  committing it, or run **PWM fans at 12 V on a low duty cycle**, which keeps
+  full starting torque.
+- **Use 3-pin/4-pin and read the tach.** On 2-pin at 5 V there is no feedback,
+  so the first sign of a dead fan is a thermal event. This fleet has form for
+  silent progressive failures (the muppet USB socket) — a fan that fails
+  *legibly* is worth the extra wire.
+
+### Feedback control — Pi optional, and NOT in the safety path
+
+Idea (Peter): neat closed-loop control with a Pi. Sensing is nearly free —
+`smartctl -A` for disk temps, `k10temp` for CPU, `nvme smart-log` for the
+accumulator — so only actuation is being added. **The control target is
+acoustic**: not "keep it cool" (there is 5× margin) but "run as slowly as
+possible under a threshold". The real prize is **telemetry** — fan RPM and
+temps logged means a failing fan or a clogging intake shows up as *drift*,
+not as a thermal event.
+
+- **⚠ FAIL-SAFE RULE: fans default to FULL SPEED when uncommanded.** Never let
+  a crashed Pi, a full SD card or a failed boot become a thermal event on the
+  box holding the data. PWM does this naturally (no signal = 100% duty). Wire
+  it so the controller **slows** fans from a safe default, never **enables**
+  them from off. A dead Pi must mean a noisy box, not a cooked one.
+- **Check the motherboard first.** B550 boards have 4-pin PWM headers with
+  BIOS fan curves tied to CPU temp — zero extra hardware, no new failure mode.
+  Likely covers the top/bottom pair. The Pi's *unique* contribution is
+  **disk-temperature-driven** control, which motherboard headers cannot do
+  (they cannot see SMART). Honest split: motherboard drives CPU-linked fans,
+  Pi drives disk-local fans + logging.
+- `fancontrol`/lm-sensors **on nit itself** could drive PWM headers from SMART
+  temps with no separate Pi at all — one less machine, one less failure mode.
+  A Pi only wins if control must survive nit being down, or be OS-independent.
+
+### Open — the load figure is not pinned down
+
+Peter cited **80 W**; the earlier estimate here was **130–160 W** (65 W CPU +
+3 spinning disks at ~6–8 W each + board + in-box PSU losses). At ~8 W/K in
+situ that is 10 °C vs 20 °C rise — and 20 °C above a 25 °C August room starts
+to matter for disks. **Settle the real figure before finalising fan count and
+intake area.**
 
 ## SCOPE CHANGE — the rack is now a CASE, not a laptop shelf (2026-08-12)
 
@@ -132,10 +259,12 @@ physical argument that already ruled pog out.
   z-budget from a laptop. Feeds the existing "2 rows or 3" question.
 - **PSU divider** was already pending — now load-bearing, not optional.
 
-**Thermal must be re-derived.** The single 140 mm downdraught fan was specced
-for 3 idle laptops. The real load is an always-on 65 W CPU + 3 spinning disks +
-an NVMe under sustained tiled writeback for hours nightly (it will throttle if
-it bakes). Re-check the fan **before** quoting the panels.
+**Thermal — RE-DERIVED 2026-08-13, see "Cooling architecture" above.** The
+single 140 mm downdraught fan was specced for 3 idle laptops; the real load is
+an always-on 65 W CPU + 3 spinning disks + an NVMe under sustained tiled
+writeback for hours nightly. Answer: **2× top + 2× bottom at 5 V**, which has
+ample capacity — the binding constraints are now **intake area** (structural,
+in a cast wall) and the **disks' local airflow**, not fan capacity.
 
 **Acoustics are load-bearing, not nice-to-have** — nit runs at *night*, which
 is exactly when the house is quiet and when the capture pipeline needs it.
@@ -161,10 +290,13 @@ downstream depends on those three numbers.
 - Fixings in the composite: does a screw hold, or are cast-in inserts / embedded
   timber corner blocks needed? Plan before pouring — it must be done wet.
 - Corner post material + section (timber vs aluminium angle).
-- **Thermals still un-re-derived** — the 140 mm fan was specced for 3 idle
-  laptops; the real load is a 65 W CPU + 3 spinning disks + NVMe under sustained
-  tiled writeback for hours nightly. Must happen before committing geometry.
-  (Cast walls change this: much higher thermal mass, no panel resonance.)
+- ~~Thermals un-re-derived~~ **✅ DONE 2026-08-13** — see "Cooling
+  architecture". What it leaves open: **(a) settle the real load figure**
+  (80 W vs 130–160 W); **(b) intake area vs cast-wall structure** — 4 holes is
+  a lot of material out; **(c) confirm hole-saw size actually owned** (140 mm
+  likely unavailable → 4× 120 mm is the fallback); **(d) pressure balance**
+  positive vs negative; **(e) test 12 V fans start from cold at 5 V**.
+  (Cast walls help: much higher thermal mass, no panel resonance.)
 - Shelf count/heights: was 2 rows (z=20,160) for laid-flat laptops — **re-derive
   against nit's board deck + cooler height**.
 - PSU baffle + dual-chamber divider — now **foam board**, not a cut panel.
@@ -175,6 +307,8 @@ downstream depends on those three numbers.
 - Fan size may be set by **which hole saw Peter actually owns** — 140 mm is
   large for a hole saw (many sets stop at 127 mm). A 120 mm fan is an acceptable
   answer if that is what the tool cuts. Check the set before finalising.
+  **Now ×4 cuts, not ×1** — so this gates more of the build than it did, and
+  4× 120 mm (~176 m³/h ideal) is still ample. Check the set early.
 
 ## Decisions
 
