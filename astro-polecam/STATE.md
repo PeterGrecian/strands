@@ -55,7 +55,11 @@ tested end-to-end; **not yet wired to autostart** (see hazard below).
   Backup: `config.txt.bak-v2-20260729`.
 - **Cover**: SG90 servo on GPIO18, `~/astro/astrocam/cover.py {open|closed}`
   (min=open, mid=closed). Cycled fine repeatedly. gpiozero software-PWM warning
-  is harmless (pigpiod inactive). Currently **open**.
+  is harmless (pigpiod inactive). **Now driven automatically by the gate**
+  (2026-08-13) — see "Cover automation" below. The cover is a piece of white
+  card ~2cm above the lens: closed reads as a *uniform mid-grey*, NOT dark, so
+  frame **mean** cannot tell closed from blue sky — use spatial variance
+  (uniform card vs structured sky) if a detector is ever needed.
 - **Enclosure — sealed plastic box, BY DESIGN (do not vent)**: the whole board
   equalises to one temperature (no SoC hot-spot). ~54.5°C idle, ~70°C under
   stacking load, `throttled=0x0` (never throttled) — well within the Pi 4's
@@ -124,7 +128,8 @@ always-on. Committed `PeterGrecian/astro` @ 0018d7c.
 - Verified: gate correctly stops the service in daylight, both start & stop
   paths work via polkit as peter.
 
-Cover left **open** by hand (no auto cover control in this path).
+Cover was left **open** by hand in this path; superseded 2026-08-13 by gate-driven
+cover automation (below).
 
 ## Brightness pedestal — DONE (2026-08-01, incl. live website)
 
@@ -313,10 +318,30 @@ topology. (This strand becomes **astro-polecam** at the device-rename step.)
   polkit rule are committed under `astrocam/`, but the systemd unit files and
   the installed polkit rule are NOT ansible-managed — add them to ansible so
   they survive a reimage. eclipticam's equivalents are ansible-managed.
-- **No cover automation** (deferred). The gate handles day/night service
-  switching but does NOT move the cover (eclipticam moves the cover on the
-  flip). Cover is currently manual/open. Add cover open-on-night /
-  close-on-day if wanted.
+- ~~**No cover automation** (deferred).~~ **DONE 2026-08-13** — the gate now
+  drives it. `astrocam_v3_gate.py` calls `cover.py` on the two edges: **open
+  before** starting the night daemon, **close after** stopping it (so the
+  sensor is never exposed to a moving card, nor capturing into a closed
+  cover). Verified end-to-end on hardware — Peter confirmed the card by eye in
+  both positions. astrocam commit `002d0a6` (**not pushed**).
+  - The gate is stateless and ticks every minute, but a servo is **not**
+    idempotent the way `systemctl start` is — re-commanding each tick would
+    buzz the SG90 60x/hour. Last commanded position persists in
+    `/var/lib/astrocam/cover.json`; it moves only on a change. A failed move
+    is logged and *not* recorded, so it retries next tick.
+  - **Caveat**: success is inferred from `cover.py` exiting 0, which does not
+    prove the card moved. There is no closed-loop feedback.
+  - **`capture.py` is NOT the deployed path.** It has full cover automation
+    (thresholds, hysteresis, lockout, `events.log`) and none of it has ever
+    run — the live units are `astrocam_v3_night_daemon.py` + the gate. Its
+    `COVER_DARK_MEAN=80` / `COVER_BRIGHT_MEAN=250` are imx219-era raw-Bayer
+    numbers; do not copy them without re-deriving for imx708. The absent
+    `events.log` on every night dir is the tell that capture.py isn't running.
+- **`cover.py` "closed" is `s.mid()`, which reports `value = -0.2`, not centre.**
+  The gpiozero `Servo` isn't symmetric about its range, so "closed" is not the
+  midpoint it reads as. Both positions work in practice (verified by eye), so
+  this is cosmetic *today* — but it's the first suspect if `closed` ever starts
+  underswinging, and it will mislead whoever recalibrates. Unfixed.
 - **Processing topology unclear / puppy not mounting astrocam frames.**
   camera.json says `processing.host: puppy`, but puppy's `~/astrocam-frames` is
   an empty local dir — no NFS mount to bigdisk (192.168.0.10:/mnt/bigdisk/
