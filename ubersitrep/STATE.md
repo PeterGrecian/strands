@@ -4,6 +4,60 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## Direction: aifabric more self-organising, less hand-built (2026-08-13)
+
+Peter: **"I do want aifabric to be more self-organising and less hand built. I
+think we've POCed enough to move in that direction."** The manual versions have
+now taught what to automate, which is the only sound basis for automating.
+
+**The split — what has earned automation and what has not:**
+
+- **Earned it — derivation.** The roster is the clearest case: 42 rows
+  hand-built from blurbs this session, a job that should never be done by hand
+  twice. The **archive diff is the self-organising version** — evidence deriving
+  the roster instead of Claude reading one-liners. Same for **liveness**
+  (`strand-ps`, already mechanical) and the **builder/keeper verdict** (a
+  measurable signal in transcript shape). All cases where the machine sees better
+  than the human.
+- **Earned it — the plumbing.** `dispatch`. No part of arm/drain/re-arm
+  choreography benefits from a human in it, and it is what currently taxes the
+  gate.
+- **NOT earned — the judgement.** What a strand is *for*; what earns a line in
+  STATE; whether two subjects are one keeper or two. This session is the
+  evidence: the fork-off bar, the overlapping-tags ruling, *"knowledge is not
+  like that"* — no derivation produces those.
+
+**Shape: self-organising at the observation layer, hand-curated at the decision
+layer.** The system derives, proposes and flags; Peter rules. Note this is the
+**same shape as `considered-prose`** (machine proposes, human edits, the edit is
+the signal) — arrived at twice independently today, so it is likely the estate's
+natural grain rather than a one-off.
+
+**Deterministic tools, not impressions (Peter: *"I like deterministic tools"*).**
+The observation layer must be **re-runnable tools that emit files**, not an agent
+forming fresh impressions each session. Same grain as
+[[deck-mechanics-deterministic]]: the agent is the natural-language interface,
+deterministic tools do the compound work. So the archive diff is a **tool**, not
+a reading exercise.
+
+**Two guards, both learned today:**
+
+1. **Derivation must propose, never silently overwrite.** If a deriver rewrites
+   `keepers.md` directly, Peter's rulings get erased by evidence that does not
+   know they were rulings. Surface the **disagreements** for acceptance or
+   rejection — which also records *which* human calls overrode evidence, and why.
+2. **The automation belongs to `aifabric`**, not here (theory/practice boundary:
+   the build is the fabric's). ubersitrep **consumes** the derived roster; it must
+   not own the deriver.
+
+**CORRECTION, same session — `keepers.md` is the gate's own file.** Claude had
+filed it under "hand-curated judgement, do not automate", treating its stability
+as the point. Peter: *it is your job to record whatever you think is relevant to
+do your job.* So it is **working memory**, to be rewritten whenever something is
+learned that would route better. **Peter's rulings live in STATE.md Decisions** —
+those are the stable artefact. Two different files, two different owners; the
+earlier draft conflated them.
+
 ## NOT A METAPHOR: aifabric IS an MoE, and its experts are MoEs (2026-08-13)
 
 Peter, correcting a session's worth of hedging: **Opus is an MoE and I'm building

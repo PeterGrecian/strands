@@ -4,6 +4,19 @@
 query can be routed to, and what each one serves. Maintained here because
 ubersitrep is the keeper-keeper — the expert on which experts exist.*
 
+**Whose file this is (Peter, 2026-08-13): it is the gate's own.** Claude records
+whatever it judges relevant to do the routing job — this is working memory, not a
+negotiated artefact, and it should change the moment something is learned that
+would route better. **Peter's rulings live in STATE.md Decisions**, and those are
+the stable thing; do not confuse the two. An earlier draft treated this file as
+deliberately stable "because it stands in for co-adaptation" — that was wrong,
+and conflated the gate's notes with Peter's decisions.
+
+**Prefer deterministic tools over impressions.** Anything derivable — liveness,
+STATE size, activity, the archive-derived verdicts — should be produced by a
+re-runnable tool that emits a file, not re-formed by reading each session. The
+tool observes; the gate judges. (Same grain as [[deck-mechanics-deterministic]].)
+
 **Status of the verdicts: BLURB-DERIVED, UNCONFIRMED (2026-08-13).** Every row
 below was judged from the strand's `blurb` + `CLAUDE.md` mission and its STATE
 size/activity — i.e. from what each strand *declares about itself*. The agreed
