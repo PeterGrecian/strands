@@ -235,11 +235,22 @@ difference on n=10 is well inside Poisson noise (10±3), so this is the body's
 pre-existing background wedge rate, not a regression. Re-check across more
 nights before concluding anything either way.
 
-*Delivery runs a night behind:* `canon-nightly` at 06:05 on the 13th processed
-**2026-08-11**, because "last completed night" uses the noon rollover and the
-08-12 night only ends 03:40 on the 13th. The Perseid night delivers 06:05 on
-the 14th. Not a bug — but it means a morning check of "did last night land?"
-is looking at the night before last.
+*Delivery ran a night behind — and that WAS a bug, now fixed* (astro
+`876a45c`, 2026-08-13 08:17, not this strand). Spotted here first: the 06:05
+run on the 13th processed **2026-08-11**, not the Perseid night. I initially
+judged it "not a bug, just a night behind" — **wrong**, and worth recording as
+a misjudgement. `canon-nightly` defaulted to `last_completed_night()`, but a
+night runs noon..noon UTC, so at 05:00 UTC the session that finished observing
+at ~04:00 has not formally ended: it named the night *before* it, **every
+single run**, redelivering the previous night with exit 0. The Perseid night
+would have been silently skipped, not merely delayed. Fixed by defaulting to
+`night_of(now)` with a fallback to `last_completed_night()` when that night has
+no source dir yet (covers the Persistent=true catch-up run firing after noon).
+
+**Lesson for this strand: exit 0 is not delivery.** The run was "clean" every
+morning while republishing stale output. A capture-side check that asks "did
+the job succeed?" cannot see this — it has to ask *which night* the job
+actually processed.
 
 **Canon duty cycle FIXED 2026-08-12: 45.0s -> 38.2s period, 67% -> 78% duty**
 (astro `0e7bf03`, live before the Perseid peak). Peter asked whether the EOS
