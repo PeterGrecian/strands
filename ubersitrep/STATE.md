@@ -4,6 +4,136 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## The keeper-keeper — routing, not fine-tuning (2026-08-13)
+
+A design conversation, no code. Peter opened on naming ("ubersitrep, or *to
+whom…*, or mixture-of-experts driver — we should be able to call you many
+things") and it turned into the shape of a **router over the strand estate**.
+Recorded here because it is exactly ubersitrep's kind of thing: the connective
+logic above the strands, not work inside one.
+
+**The starting move: router, not LoRA.** Peter was considering a LoRA, then:
+*"actually using a smarter router is very beneficial."* Right call, and the
+reason is structural — **the experts already exist as keeper strands.** Each
+keeper carries curated STATE, its own `dirs`, its own memory. The specialisation
+is in *context*, not in weights, so a fine-tune improves nothing about it. What
+is weak is the **gating function**: today that is Peter, choosing a strand by
+hand, and [[forkterm-coordination-tax]] already records that the cost of
+delegating is the choreography, not the launch. Peter's framing: *"we achieve
+experts with keeper strands"* — so the mixture-of-experts is **the keepers**,
+not all 41 strands. Build strands are too churny to route to; a query landing on
+one mid-build gets an answer true for ten minutes.
+
+**Naming ruled on.** `ubersitrep` stays the strand name. **"to whom…"** is the
+*routing* capability (the address for a thing whose owner is unknown) and is
+worth naming as a served function, not a nickname. **"driver" is refused** — it
+is already the aifabric-pane agent ([[driver-not-conductor]],
+[[driver-agent-vs-driver-pane]]); a second unrelated driver breaks a distinction
+Peter deliberately established. MoE stays a *metaphor for the mechanism*, not a
+name.
+
+**Surveyed the estate — the gate's input already exists.** 41 strands, **40 have
+a `blurb`**, and the first lines are consistently sharp domain statements
+("Keeps astro data under control", "Keeps the alerting/paging pipeline useful
+and quiet"). ~3 KB of text total. **The blurbs are the router's weights** — and
+unlike a LoRA they are explainable, edited with a text editor, and *current by
+construction*: adding a strand is updating the router. Two gaps found:
+
+- **The keeper flag is not a flag.** Grepping "keeper" in CLAUDE.md finds 10;
+  the blurbs show roughly twice that opening with "Keeps…" and serving a bounded
+  subject (ansible, hardware, housekeeping, pifleet, xmatters, cloud-init-init,
+  muppet-status, splay-tweaks). The keeper/build boundary is currently vibes and
+  is **not machine-readable**.
+- **Some blurbs describe a deliverable, not a domain** (splay-grid, rackinabox,
+  glacier-app, bookmarks) — correctly, they are builders. The gate needs to know
+  which population it is drawing from.
+
+**Peter's refinement: cache the judgement, don't declare it.** Not a marker file
+— a **cached judgement** with re-derivation. Builder/keeper is a **phase, not a
+birth property**: `bookmarks` says outright it is short-lived, `testbook` is
+mid-pivot, `rackinabox` is "design locked" (a builder one step from done). A
+hand-set flag on any of those is wrong within weeks and nothing forces a re-read.
+Peter's poles are sharper than "steady state": **a builder explores new
+territory, a keeper defends its context and refines its remit** — that is about
+the *direction of work*, which is observable in a diff. Cache entry wants:
+verdict / as-of / evidence / **staleness trigger** (the last is what makes it a
+cache rather than a stale flag). Re-derivation has a natural home: the
+**review-ledger rotation** already visits every subject, so a visit *is* the
+moment to re-judge. Cache stops the gate re-reading 41 strands per query; the
+rotation stops the cache rotting. **The builder→keeper transition is itself worth
+recording, not overwriting — it is the estate's completion signal, and nothing
+currently captures it.**
+
+**Two structural proposals from Peter:**
+
+1. **A builder can fork off a keeper.** Better than wholesale phase transition:
+   a strand is *not uniformly one phase* — it has settled parts and moving parts,
+   and one verdict flattens that. Fork-off is how a settled part escapes; the
+   builder is the right judge because only it knows which of its outputs stopped
+   changing. Live examples: astro-capture's epoch_ms naming convention is
+   durable inside a builder ([[epoch-ms-house-naming-convention]]);
+   aifabric-pane's vocabulary ladder is settled while the deck work continues
+   ([[pane-of-glass-vocabulary]]). **Risk: proliferation** — every builder
+   shedding keepers makes the gate's job harder. **Bar: fork only if it will be
+   *asked about* independently** — a routing test, which pleasingly means the
+   keeper-keeper's needs define what deserves to be a keeper.
+2. **Thematic hierarchy.** Flat, the gate reads 41 surfaces; themed, ~6 then the
+   members of one. Themes are already latent in the naming (`astro-*`, `splay-*`,
+   `aifabric-*`) and latent-without-prefix in infrastructure (ansible, hardware,
+   muppet-status, pifleet, cloud-init-init). Wins beyond gate cost: routing can
+   **stop early** at the theme when the query is coarse, and a theme is the
+   natural home for **cross-cutting facts currently duplicated across five
+   STATEs** (frame naming, night boundaries, storage roots in the astro family).
+
+**SETTLED: routing structure, not containment.** Peter: *"it would be very
+difficult to have a rigid exclusive structure. Knowledge is not like that."*
+Correct, and it kills containment: `astro-science` under both astro and analysis
+is the normal state, not an edge case. So themes are **overlapping tags**,
+strands stay peers, a strand is reachable by several paths. The cross-cutting-
+facts problem does not disappear — it becomes a theme-level note several strands
+link to, rather than something a tree forces.
+
+**The inversion, and the strongest idea of the session: derive the keepers from
+the session archive.** Everything above derives keepers from what strands
+*declare* — blurbs, CLAUDE.md, cached judgements — and self-reports are exactly
+where drift lives (a blurb describes what a strand was *scaffolded* to do). The
+OpenSearch archive is **evidence**: what was actually worked on and returned to.
+It yields three things declarations cannot:
+
+- **Strands that should exist but don't** — a subject recurring across sessions,
+  owned by nobody, re-derived from scratch in five places. Unfindable by reading
+  blurbs; every blurb says it is someone else's job.
+- **A measurable builder/keeper signal** — keeper sessions are *queries* (short,
+  answered from state, subject stable); builder sessions are *construction*
+  (long, edit-heavy, subject moving). Transcript shape, not judgement.
+- Confirmation of the model itself: `aifabric-sessions` already serves the
+  archive "for Peter and for agents", so the keeper-keeper **routes to the keeper
+  that owns the query** rather than learning OpenSearch.
+
+**Three caveats before trusting derivation as primary** — all empirical:
+**coverage** (gaps bias toward whatever was busy lately; dormant-but-real keepers
+vanish — the [[unmarked-is-not-rejected]] failure mode exactly), **attribution**
+(forkterms and ad-hoc sessions run with no strand, and those are precisely where
+unowned subjects live, so topic-clustering must do the work), **volume** (an
+aggregation job, and it belongs in `aifabric-sessions`, not here).
+
+**The synthesis — declared and derived are two views to COMPARE, not one
+replacing the other.** Blurbs are the current roster; the archive is ground truth
+of what is served. **The disagreements are the product**, more than any routing
+table: declared keepers with no traffic (dormant or dead), heavy traffic with no
+owning keeper (missing keeper), a strand whose sessions are all about something
+its blurb never mentions (drifted remit). That also makes the first pass cheap
+and non-committal — **a one-off derivation diffed against the 40 blurbs, before
+building any cache or gate.** If it broadly agrees, the declared route is
+trustworthy and the router is nearly free; if it disagrees, that disagreement is
+the finding.
+
+**Next moves (none started):** the one-off archive-vs-blurb diff (needs
+`aifabric-sessions`); make keeper/builder machine-readable; then cache + gate
+only if the diff justifies them. Strand-model theory here belongs to the
+`strands` strand, the build to `aifabric` — same theory/practice boundary as the
+keeper-vs-development taxonomy below.
+
 ## ★ /astro/canon IS LIVE — the three-layer split closed a loop (2026-08-11)
 
 **Done same day.** astro-science ran the chain and deployed. Verified
@@ -845,6 +975,36 @@ and the rest of the portfolio list in super/GLOBAL.md.
 
 ## Decisions
 
+- **ubersitrep is the keeper-keeper — a router over the keepers** (2026-08-13,
+  Peter): the estate's mixture-of-experts is **the keeper strands**; ubersitrep
+  holds the **gate**. Chosen over a LoRA because the expertise lives in *context*
+  (each keeper's STATE/dirs/memory), not in weights — so the gain is dispatch,
+  not fine-tuning. **The `blurb` files are the router's weights** (40 of 41
+  strands, ~3 KB): explainable, text-edited, current by construction. Naming:
+  "to whom…" = the routing capability; **"driver" refused** (taken by the
+  aifabric-pane agent). ubersitrep is both an expert *and* the gate — as expert
+  it answers "what is the shape of the estate", as gate "who owns this" — and
+  the second makes **keeping the roster honest** part of its job.
+- **Builder/keeper is a CACHED JUDGEMENT, not a declared flag** (2026-08-13,
+  Peter): it is a **phase, not a birth property**, so a hand-set flag goes stale
+  unread. Poles: **a builder explores new territory; a keeper defends its context
+  and refines its remit** — a direction of work, observable in a diff. Entry =
+  verdict / as-of / evidence / **staleness trigger**; re-derived on the
+  review-ledger visit. A **builder may fork off a keeper** for a part of itself
+  that stopped moving (bar: only if it will be *asked about* independently).
+  Record the builder→keeper transition rather than overwriting — it is the
+  estate's completion signal.
+- **Themes are overlapping tags, never a containment tree** (2026-08-13, Peter):
+  *"knowledge is not like that"* — no rigid exclusive structure. Strands stay
+  peers, reachable by several paths; the hierarchy is a **routing index** that
+  lets the gate stop early on coarse queries, not an ownership tree.
+- **Declared and derived keepers get COMPARED, not substituted** (2026-08-13):
+  blurbs are the roster, the OpenSearch session archive is ground truth of what
+  is actually served. **The disagreements are the product** — dormant declared
+  keepers, heavy traffic with no owner (a *missing* keeper), drifted remits.
+  First pass is a cheap one-off diff, before any cache or gate is built. Caveats:
+  archive coverage, attribution of strand-less forkterms, volume (the job belongs
+  to `aifabric-sessions`).
 - **Strands come in two kinds — keeper vs development** (2026-08-02, Peter):
   estate-wide taxonomy. **Keeper** = steady-state custodian of a running thing:
   cadence visits, specialized, **modifies STATE sparingly** (STATE = stable
