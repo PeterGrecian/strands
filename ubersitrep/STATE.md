@@ -24,6 +24,34 @@ reason is that the two gates are not doing the same job:
   just a lookup. That is **comprehension before selection** — and it is hard
   precisely because the input is unstructured and the roster is alive.
 
+**The honest reason, and it corrects the above (Peter): *the exquisitely
+engineered MoE is not what we can do, so we need a strong router.*** The framing
+above makes the strong gate sound *superior* — comprehension beating mechanical
+selection. It is not; it is a **constraint**. A real MoE's gate is cheap
+**because it was trained jointly with its experts** — gate and experts co-adapt
+end-to-end against a loss. That joint optimisation is the exquisite engineering,
+and it is precisely what is unavailable here: no training loop, no loss, and
+experts that are *text files a human edits*. So the strong router is not the
+clever choice, it is the **only** one that works when the gate cannot be trained.
+**Inference-time judgement substituted for training-time co-adaptation** — a real
+trade, expensive per query where a learned gate is nearly free.
+
+**This predicts the design's weakness, which the flattering version hides.** A
+trained gate is **consistent** — same input, same route, every time. A
+strong-model gate is a judgement call and **will route the same question
+differently on different days**, with no loss signal to correct it; a mis-route
+just yields a slightly worse session and nobody notices. Hence: **the roster must
+be explicit, not re-inferred from blurbs each session.** `keepers.md` is the
+closest thing this design has to a stable weight.
+
+**And it reframes what the roster IS.** Not merely the gate's *input* — it is the
+**stand-in for the co-adaptation that cannot happen**: hand-maintained,
+deliberately stable, the human doing by editing what backprop would otherwise do.
+Which makes **the archive diff more than validation — it is the substitute for a
+training signal**, evidence fed back to correct the gate's picture of its own
+experts. That is as close to learning as this architecture gets, and the reason
+the diff matters more than a mere audit would.
+
 **Refinement on the metaphor:** the strong agent is not *commanding* — it is
 **triaging**. The keepers are not weaklings; they are deep in their own domains
 and their curated context does the work. Less general-and-privates, more an
