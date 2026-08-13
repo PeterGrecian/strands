@@ -75,6 +75,14 @@
     USB bridge → the bigstore blindness problem simply doesn't exist)**, mains
     power, replaceable sockets, real cooling. If ever taken up, **buy it a disk**
     rather than borrowing eclipticam's back.
+- **homepi** — the **home-services host: Home Assistant + Tailscale exit node**
+  (recorded 2026-08-13; previously only referenced in passing as the SSH
+  bastion / exit node `100.127.158.37`). Not part of the compute or storage
+  tiering — it carries the *always-on household* services, so its availability
+  requirement is different in kind from the astro fleet's: HA going down is
+  felt immediately in the house, and the exit node going down affects remote
+  access to everything. **Keep it out of experiments.**
+
 - **nit** (specced 2026-08-12, **NOT YET BOUGHT**) — the **renewal machine**:
   a storage/compute server, and the first deliberate renewal purchase this
   strand has made rather than a repair. Peter: *"the ancientness of my hardware
@@ -645,12 +653,97 @@ disk sprawl down to one live drive + two cold copies; nothing to landfill):
   specific workload is CPU-starved — current astro/OpenSearch pressure is
   disk/retention, not CPU.
 - **New laptop = non-urgent shopping quest, driven by future capacity
-  (2026-07-22).** Not a fix-it-now: fallback if pip pops is already covered
-  (phone + keyboard, or another host + monitor). The forward driver is that
-  **muppet and puppy WILL get overloaded** at some stage — so the eventual buy
-  should add a genuinely capable third x86 node: **more than 8 GiB RAM** (the
-  standing fleet ceiling) and a CPU newer than pip's, not a like-for-like pip
-  replacement. It becomes daily driver; pip drops to bench/spare fallback.
+  (2026-07-22).** ***SUPERSEDED 2026-08-13 — the prediction came true and the
+  answer is NOT a laptop. See "Duty-cycle tiering" below.*** Not a fix-it-now:
+  fallback if pip pops is already covered (phone + keyboard, or another host +
+  monitor). The forward driver is that **muppet and puppy WILL get overloaded**
+  at some stage — so the eventual buy should add a genuinely capable third x86
+  node: **more than 8 GiB RAM** (the standing fleet ceiling) and a CPU newer
+  than pip's, not a like-for-like pip replacement. It becomes daily driver; pip
+  drops to bench/spare fallback.
+  *(What it got right: overload was the forward driver, and RAM was the ceiling.
+  What it got wrong: it was still shopping for a **laptop**, which the puppy
+  thermal-halt evidence disproves — the workload cooks laptop chassis
+  regardless of silicon. nit is a desktop, and it is dedicated compute, which
+  this entry also advised against.)*
+
+- **DUTY-CYCLE TIERING — the fleet's organising principle (2026-08-13).**
+  Peter: *"I want pog then nit to take over the high power stuff and
+  muppet/puppy to do redundant 2nd tier storage."*
+
+  | Tier | Machines | Duty |
+  |---|---|---|
+  | High-power compute | **pog** (stand-in) → **nit** | crunching; hot, mains, real cooling |
+  | 2nd-tier redundant storage | **muppet + puppy** | low-duty IO, cool — **plus OpenSearch data nodes** |
+  | Cluster tiebreaker | **vole** | voting-only, no data (Acer C720) |
+  | Home services | **homepi** | Home Assistant + Tailscale exit node |
+
+  **⚠ muppet and puppy are NOT idle in this scheme — they are the OpenSearch
+  cluster** (with **vole** as the voting-only tiebreaker it was bought to be —
+  quorum 2/3, cluster stays writable through any single-node outage). So "2nd
+  tier storage" means *storage + a live database role*, not a cool parking
+  space. Two consequences:
+  - **Their thermal budget is not free.** OpenSearch is a JVM with a resident
+    heap and background merge/indexing IO — real, if bursty, load. Moving the
+    astro crunch off them is still a large reduction, but it does **not** take
+    them to idle, and puppy's lid-closed halt is a cluster-availability event,
+    not just a lost file server.
+  - **Storage redundancy and cluster redundancy ride the same two machines.**
+    Losing muppet or puppy costs a data copy *and* an OpenSearch data node at
+    once — correlated, not independent. Worth remembering when sizing the
+    offsite subset, which is the only copy not on this pair.
+
+  **The evidence this is built on — two machines, ONE CPU, both cooked.**
+  puppy (ASUS VivoBook X515EA) and muppet (ThinkPad X1 Carbon Gen 9) both run
+  the **same i5-1135G7**. So the fleet's compute problem was never silicon
+  speed — it is that a 28 W laptop part in a laptop chassis cannot hold a
+  sustained load:
+  - **puppy: THERMAL HALT, not throttling.** With the **lid closed on hot
+    days** it would **suddenly halt** — firmware cutting power at critical, not
+    slowing down. Lid-closed blocks the keyboard-deck airflow path these thin
+    chassis rely on. For a box NFS-exporting live camera frames that is an
+    **outage**, not a slowdown. puppy was effectively *disqualified* from the
+    heavy work; the load did not migrate to muppet by choice.
+  - **muppet is the last laptop standing** under that load, and was measured at
+    **80 °C during astro processing on a hot August day** (2026-08-13). There is
+    no third laptop behind it.
+
+  **Consequences that correct earlier reasoning in this file:**
+  - **nit's case is DUTY-CYCLE CORRECTION first, performance second.** It is not
+    replacing a slow machine — it replaces an *appropriately fast machine in the
+    wrong package*. (nit ≈ **2.3×** muppet/puppy multi-core, and more like ~3×
+    on hour-long work once their throttling is counted; but the reason to buy is
+    that laptops keep halting, not the multiple.)
+  - **Two laptops as redundant storage is a FEATURE, and it retires an earlier
+    objection.** This file previously argued nit should take the archive because
+    muppet's disks are USB-bridged and SMART-blind. Peter's scheme is stronger:
+    two *independent machines* each holding a copy is what
+    [[redundancy-not-capacity]] actually asks for ("stop being at one").
+    **Redundancy beats observability here** — the SMART-blindness objection is
+    withdrawn as a reason to move the archive.
+  - **It puts muppet and puppy on a duty cycle they can survive.** Serving files
+    is bursty and cool. Their 2%-worn NVMe and clean shutdown record
+    ([[muppet-interfaces-worn-not-silicon]]) say the silicon has years left *if
+    the load is right*. This also answers the standing open question "is muppet
+    the right astro tether host?" from the other end: not the wrong host, the
+    **wrong load**.
+  - **⚠ NEW single point of compute.** nit (and pog before it) becomes the only
+    machine that crunches — today muppet at least limps. Acceptable (a compute
+    outage delays work; a storage outage loses data) but be deliberate: **keep
+    pog alive as a warm spare after nit arrives**, which reverses the "retire
+    pog when nit is bought" condition floated earlier.
+  - **The rack now holds only the hot machine.** muppet and puppy stay *outside*
+    the enclosure as storage, so its thermal problem is one 65 W CPU + disks,
+    not three laptops + a server — and the shelf-height question stops being
+    about laid-flat laptops at all.
+  - **⚠ Do not repeat the mistake a third time.** Two chassis have now failed
+    this workload thermally. Putting a 65 W desktop CPU + 3 spinning disks into
+    a sealed cast-walled box whose fan was specced for *three idle laptops* is
+    the same error again. **The rackinabox thermal re-derivation is now the
+    highest-risk open item in either strand.**
+  - **It argues for buying sooner.** Every hot night spends muppet's remaining
+    life on a job nit should be doing — a real cost against "wait for DRAM
+    prices to ease by 2027".
 - **Firmware updates are reviewed consciously via `cld -k` housekeeping**, not
   installed from unexplained desktop popups. (2026-07-11, from pip-maintenance)
 - **Connectors: solder + heatshrink, not Wago.** Wago lever-nuts are for
