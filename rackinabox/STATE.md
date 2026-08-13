@@ -78,7 +78,8 @@ panel edge.
 Silent home-server enclosure under an IKEA LACK table, 3-layer nested design
 (steel core / base / lid+walls), ~~single 140 mm downdraught fan~~ **4-fan
 top/bottom scheme at 5 V (see "Cooling architecture")**, dual-chamber PSU
-thermal quarantine, carpet as acoustic sink, tool-less teardown. Full detail in
+thermal quarantine, carpet as acoustic sink (**still valid, but it does not
+imply downdraught — see "Airflow direction"**), tool-less teardown. Full detail in
 `~/rackinabox/DESIGN.md`. `cad/panels.py` still generates a valid finger-jointed
 DXF set (corner parity verified, M4 tab-aware screws) — **kept for reference,
 but it is no longer the build**; its fan bore and finger joints are superseded.
@@ -108,11 +109,12 @@ but it is no longer the build**; its fan bore and finger joints are superseded.
   Others: Timberite (Canterbury, 01227 765011), Cworkshop, Woodsheets.
 - **Bought parts that remain valid and cheap:** Arctic 140 mm fan grill **£1.19**
   at [Scan UK](https://www.scan.co.uk/shop/computer-hardware/cooling-air/system-and-case-fan-grilles)
-  — worth it for a fan firing down at ankle height over carpet and cables.
-  *(2026-08-13: now **×4** at £1.19 each, still trivial. The bottom pair are
-  intakes at floor level over carpet — grills there are about keeping carpet
-  fluff and cables out of the blades, and a **filter** on the intake pair is
-  worth considering, which is also the argument for positive pressure.)*
+  — worth it for a fan at ankle height over carpet and cables.
+  *(2026-08-13: now **×4** at £1.19 each, still trivial. Airflow is **upward**,
+  so the bottom pair **draw in** at floor level rather than firing down — grills
+  there keep carpet fluff and cables out of the blades, and a **filter** on the
+  intake pair is worth considering, which is also the argument for positive
+  pressure.)*
   140 mm silicone gasket has no UK specialist source found (Quiet PC's
   AcoustiFan/Fansis ranges stop at 120 mm); Amazon UK marketplace instead.
 
@@ -125,6 +127,79 @@ Supersedes the single 140 mm downdraught fan throughout this file.
 **Why top/bottom rather than downdraught:** it works *with* convection —
 cold intake low, hot exhaust high — instead of pushing air down against a
 rising plume.
+
+### AIRFLOW DIRECTION — upward. The carpet argument does NOT require downdraught
+
+The original downdraught choice came from carpet-as-acoustic-sink: the box
+sits on carpet, so fire the fan down into it. **That reasoning conflated sound
+with air, and it does not hold.** Carpet absorbs sound that *reaches* it —
+sound propagates out of an opening regardless of which way air moves through
+it. So a **bottom intake still gets the full carpet absorption** while air
+flows upward. The acoustic benefit is kept and convection is no longer fought.
+
+Cost of a bottom intake over carpet: it pulls **fluff**. That is the argument
+for a filter on the intake pair, and hence for **positive** pressure (see
+pressure balance below).
+
+### STACKING ORDER — coldest-limit component lowest
+
+In a top/bottom convective box the gradient is **vertical and fixed by
+physics**: cold at the bottom, hot at the top. You do not choose which end is
+which — only what you put where. So layout is an *ordering* problem up that
+axis.
+
+| Height | Component | Why |
+|---|---|---|
+| **Bottom** (intake) | **Disks** | Tightest limit (~45 °C), **no heatsink**, needs the coldest air |
+| Middle | Board / NVMe | Moderate; NVMe throttles but tolerates more than disks |
+| **Top** (exhaust) | **CPU + PSU** | Highest tolerance (~90 °C), has its own heatsink, PSU already quarantined |
+
+**⚠ "nit hottest, disks at the top" was considered and REVERSED (2026-08-13).**
+Putting disks above the CPU sits them in its exhaust plume — using the very
+buoyancy the design relies on to deliver pre-warmed air to the components with
+no heatsinks and the tightest limit. The budget asymmetry decides it: **the CPU
+can lose 10 °C of air quality and barely notice; a disk at 40 °C that gains
+10 °C is at its limit.**
+
+*If disks are wanted high for **mechanical** reasons* — vibration isolation
+away from the baseboard, or swap access, both legitimate — **do not reorder the
+stack. Give them their own intake instead** (see segregation).
+
+### SEGREGATION — the point is to remove what is downstream
+
+Hot air is not a problem *per se*. It is only a problem when something
+temperature-sensitive sits **downstream** of it. Segregation removes the
+downstream, and that is what lets flow be spent unevenly:
+
+- **Cold zone** — disks (and the cool intake feeding them), generous
+  cross-section, slow high-volume flow, kept near ambient.
+- **Hot zone** — CPU + PSU, allowed to actually run hot, small, exhausting
+  straight out of the top. The existing dual-chamber PSU quarantine is already
+  this idea; the disks deserve the same treatment in the other direction.
+
+**⚠ Segregate by PARTITION, not by narrow ducting.** 120–140 mm fans are
+high-flow **low-pressure** devices whose flow collapses against resistance.
+Narrow ducts raise static pressure and would undo the derating assumptions in
+the arithmetic below. Keep the cold path generous in cross-section.
+
+### Small cold flow vs large warm flow — the answer is "both, slowly"
+
+For a fixed heat load, ṁ·c_p·ΔT is constant: halve the flow and double the
+rise. **Identical heat exported either way** — so that is not where the
+difference lies. The difference is the temperature components actually sit at:
+
+- **Large flow / small ΔT** wins on component temperature: the box is nearly
+  isothermal and the *last* item in a chain is barely warmer than the first.
+  Low flow means a steep gradient and whatever sits downstream cooks. With
+  no-heatsink disks, **gradient is the enemy**.
+- **Small flow / large ΔT** wins on noise — which is the real design constraint.
+
+**The trade is asymmetric, and that is the whole trick.** Noise ~ RPM⁵ while
+flow ~ RPM, so flow is very cheap at low RPM. **Many fans, large total area,
+all running slowly** is simultaneously large flow *and* quiet — which is
+exactly what the 4-fan scheme already buys. Large slow fans also move air with
+less turbulence, and turbulent noise is broadband and far more noticeable than
+low-frequency rumble.
 
 ### The arithmetic (do not re-derive)
 
@@ -283,6 +358,13 @@ subset is still required alongside — consolidation is not redundancy.
 weight, whether it takes a screw directly, and real cure time. Everything else
 downstream depends on those three numbers.
 
+- **Disk mounting: is "disks high" wanted for MECHANICAL reasons?** The thermal
+  answer is disks at the bottom (see stacking order). If vibration isolation or
+  swap access argues for mounting them high, the answer is **a separate intake
+  for the disk zone**, not reordering the stack. Decide before the partition
+  geometry is fixed.
+- **Cold-zone partition** — where the divider runs, and its cross-section.
+  Generous (partition, not duct); low-pressure fans collapse against restriction.
 - Capture the composite recipe from Peter: **sand:PVA ratio**, and whether the
   speaker build was a layered laminate or a single pour (established: single
   horizontal pour, cardboard top face, runny mix).
