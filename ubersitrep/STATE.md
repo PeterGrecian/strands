@@ -4,6 +4,65 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## SETTLED: ubersitrep is the interface Peter types into (2026-08-13)
+
+Peter, closing the keeper-keeper discussion: **"the keeper-keeper should be the
+only interface I type into."** Example given — *if I want to replace one pane
+with another, ask `aifabric-pane-driver` to do it, and if it is not live, start
+it up.* And the allocation that fixes the role's weight: **"if I was allowed one
+agent of Fable and the others were Opus, it would be that one."**
+
+**This promotes the strand from lookup to front end.** Everything below (the
+routing design) had the keeper-keeper answering *who owns this* and Peter then
+going there. Now it **dispatches**: to a live keeper if there is one, spawning it
+if there is not. The routing table becomes an execution path, and ubersitrep
+becomes **router / dispatcher / coordinator** on top of narrator.
+
+**What the model allocation tells us about the role.** The strongest model goes
+to the gate because **routing is the hard judgement and the rest is execution** —
+*who owns this*, *is this one question or three*, *does this need a session or
+just an answer from state*. Getting those wrong is expensive and silent. A
+keeper working its own bounded subject with curated context is the easier
+problem. **Corollary: keep the gate thin.** If this is the expensive session,
+filling it with plumbing is the worst possible use of it.
+
+**Which makes `dispatch` the load-bearing dependency, not a nice-to-have.**
+[[forkterm-coordination-tax]]: the cost of delegating falls on the *parent* —
+briefing, arm/drain/re-arm, message shuttle. Under a single front end, **every**
+delegation's choreography accumulates here, displacing exactly the routing
+judgement the strand exists to do. The `dispatch` spec (three lanes:
+scalar-query / correspondent-task / scratch-poke) is written at
+`aifabric/docs/decisions/dispatch.md` and **still unbuilt**. Building the front
+end without it means ubersitrep drowns in plumbing and stops holding the macro
+picture. **Build `dispatch` first.**
+
+**Second input the gate does not yet have: liveness.** The roster is a static
+list of strands; a dispatcher also needs *which sessions are running, where, and
+reachable how* — `strand-ps` plus the mailbox spool. "Start it if it is not live"
+means ubersitrep spawns sessions (`forkterm into` / `aicli -s`). Roster answers
+*who owns this*; liveness answers *is anyone home*. Both are required.
+
+**Boundary with the driver — SETTLED, and it was a real collision.**
+`aifabric-pane` is building "one agent-driven tmux surface for all strands" with
+a **driver** agent; Peter's own example (replace a pane) is literally the
+driver's job. Two candidate single-interfaces existed. The ruling:
+**the driver owns the *surface*; ubersitrep owns the *subject matter*.** Peter
+types here; anything about panes/decks/layout is **delegated sideways to the
+driver**, which keeps ubersitrep out of tmux mechanics (cf.
+[[deck-mechanics-deterministic]] — the driver is the natural-language interface
+to deterministic deck tools). Claude argued the inverse (type at the driver,
+have it consult the gate, since the driver is already in front of Peter and
+already owns the surface); **Peter chose ubersitrep** — a surface agent should
+not own subject-matter routing. Recorded because the losing argument is worth
+keeping: the cost of this choice is that the gate must be *running and in front
+of Peter*, which is a UI role for a narrative strand, and that tension will
+surface again.
+
+**Not yet decided:** how Peter reaches this session when it is not the focused
+pane; whether the dispatcher answers cheap queries itself from the target
+keeper's STATE (the scalar-query lane) or always hands off; and whether
+`aifabric-pane-driver` needs telling — it is a claim on what that agent is for.
+
 ## The keeper-keeper — routing, not fine-tuning (2026-08-13)
 
 A design conversation, no code. Peter opened on naming ("ubersitrep, or *to
@@ -975,6 +1034,18 @@ and the rest of the portfolio list in super/GLOBAL.md.
 
 ## Decisions
 
+- **ubersitrep is the single interface Peter types into** (2026-08-13, Peter):
+  the strand dispatches to keepers — live if running, started if not — rather
+  than merely advising where to go. **Router / dispatcher / coordinator.** It
+  takes the strongest model in the estate (*"if I was allowed one agent of Fable
+  and the others were Opus, it would be that one"*) because **routing is the hard
+  judgement and the rest is execution**. Corollary: **keep the gate thin** —
+  choreography absorbed here displaces routing. **`dispatch` must be built
+  first** ([[forkterm-coordination-tax]]); without it the front end drowns the
+  strand in plumbing. Needs a second input beyond the roster: **liveness**
+  (`strand-ps` + mailbox). **Boundary with `aifabric-pane-driver`: the driver
+  owns the surface, ubersitrep owns the subject matter** — pane/deck/layout work
+  is delegated sideways, never done here.
 - **ubersitrep is the keeper-keeper — a router over the keepers** (2026-08-13,
   Peter): the estate's mixture-of-experts is **the keeper strands**; ubersitrep
   holds the **gate**. Chosen over a LoRA because the expertise lives in *context*

@@ -49,6 +49,27 @@ Key workstreams it tracks:
   cloud-init-init, xmatters: the largest keeper cluster, and the one that was
   undeclared until the roster was written.
 
+## The interface Peter types into (2026-08-13)
+
+**This strand is the front end.** Peter types here; ubersitrep dispatches — to a
+live keeper if there is one, starting it if there is not. Router / dispatcher /
+coordinator, on top of narrator. It gets the strongest model available, because
+**routing is the hard judgement and the rest is execution**.
+
+**So keep the gate thin.** Spend context on *decisions and results*, never on
+plumbing. Every arm/drain/re-arm cycle absorbed here displaces the routing
+judgement this strand exists for. Brief, hand off, take the verdict back.
+`dispatch` (`aifabric/docs/decisions/dispatch.md`, **unbuilt**) is the dependency
+that makes this affordable — until it exists, delegate sparingly and deliberately.
+
+**Boundary: the driver owns the surface; ubersitrep owns the subject matter.**
+Anything about panes, decks or layout is delegated sideways to
+`aifabric-pane-driver` — never done here. Routing over *expertise* is this
+strand's; manipulating the *display* is not.
+
+Dispatching needs two inputs: **`keepers.md`** (who owns this) and **liveness**
+(`strand-ps` + the mailbox spool — is anyone home).
+
 ## The keeper roster — ubersitrep is the keeper-keeper
 
 **`keepers.md` is part of this brief. Read it with STATE.md.**
