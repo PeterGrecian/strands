@@ -222,6 +222,25 @@ deploy step) — currently tracked nowhere.**
 (`~/astrocam-frames`) is an NFS automount onto muppet's bigstore (4.1 T free)
 and the tmpfs buffer had zero backlog. Worth watching, not fixing tonight.
 
+**CONFIRMED IN PRODUCTION (Perseid peak night, 2026-08-12/13):** canon
+**548 frames**, median period **39.0 s**, duty **77%**, 20:57-03:40Z (81.6
+frames/h vs 71.9 the night before) — **+71 frames over the same window**, the
+fix delivering exactly as measured. astrocam **431 frames, 59.90 s median gap,
+100% duty, zero dropouts**, 20:41-03:50Z.
+
+*Checked the risk I flagged — the tighter margin did NOT cause false wedges.*
+NO FILE events must be compared as a RATE, not a count, since frame count rose:
+08-11 (old +12) 8/477 = **1.68%**; 08-12 (new +6) 10/548 = **1.82%**. A 0.15pp
+difference on n=10 is well inside Poisson noise (10±3), so this is the body's
+pre-existing background wedge rate, not a regression. Re-check across more
+nights before concluding anything either way.
+
+*Delivery runs a night behind:* `canon-nightly` at 06:05 on the 13th processed
+**2026-08-11**, because "last completed night" uses the noon rollover and the
+08-12 night only ends 03:40 on the 13th. The Perseid night delivers 06:05 on
+the 14th. Not a bug — but it means a morning check of "did last night land?"
+is looking at the night before last.
+
 **Canon duty cycle FIXED 2026-08-12: 45.0s -> 38.2s period, 67% -> 78% duty**
 (astro `0e7bf03`, live before the Perseid peak). Peter asked whether the EOS
 double-buffers. It does not — it is a mechanical-shutter DSLR, so some dead
