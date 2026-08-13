@@ -89,6 +89,7 @@ blurbs, not by the `keeper` grep. That gap is the roster's reason to exist.
 | `home-automation` | **keeper** | Matter/Zigbee, headless | blurb "Keeps…" |
 | `electronics` | **keeper** | circuits, actuator drive, the bench layer | bounded charter, sits between home-automation and hardware |
 | `ubersitrep` | **keeper** | the whole-estate picture **+ the gate** | this strand; both an expert and the keeper-keeper |
+| `considered-prose` | **keeper** | how wording gets chosen — the prose-quality loop | **added 2026-08-13**, the first row since the roster was written. Found as a *missing keeper*: export prose was being re-derived independently by aifabric-essay, cv, aifabric, testbook and owned by none of them |
 | `calendaralarm` | **builder** | un-ignorable calendar alarms | ✅ live but still active effort |
 | `rackinabox` | **builder** | the laser-cut enclosure | design locked, unfabricated — **one step from done** |
 | `testbook` | **builder** | the sleep-listening app | mid-pivot 2026-07-25 |
@@ -102,7 +103,7 @@ blurbs, not by the `keeper` grep. That gap is the roster's reason to exist.
 
 ## Tally
 
-**41 strands: 21 keeper, 18 builder, 2 provisional.** The `keeper` grep over
+**42 strands: 22 keeper, 18 builder, 2 provisional.** The `keeper` grep over
 CLAUDE.md finds only **10** — so **the declared count is less than half the real
 one**, which is exactly why the roster is a file and not a grep.
 

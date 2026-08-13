@@ -1,0 +1,10 @@
+Keeps house voice improving by capture — proposed wording, Peter's edit, the diff stored, so the next suggestion is better.
+
+The prose-quality loop. Not a style guide (a write-mostly graveyard) but a
+growing corpus of before/after **pairs**: Claude proposes wording, Peter edits
+it, the pair is captured with a note on why. The pairs are the artefact; rules
+are an optional summary if a pattern recurs often enough to earn one. Covers
+prose for export (essay, CV, READMEs, the public repos) and house prose (STATE,
+blurbs, commits) — tagged per pair, since the registers differ. Distinct from
+[[aifabric-essay]], which owes *a* piece of public writing; this owns *how
+wording gets chosen* across all of them.
