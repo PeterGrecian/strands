@@ -4,6 +4,47 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## The framing: an inverted MoE — the strong agent is the gate (2026-08-13)
+
+Peter, on the shape of it: **it is kind of the opposite of LoRA, where a
+weakling is in charge of the army.** The clearest statement of the architecture
+reached so far — recorded here so a future session does not re-derive it.
+
+In a LoRA-style mixture of experts the gate is deliberately **cheap**: a small
+learned layer that picks which expert fires, with all the capability in the
+experts. Here it is reversed — the **strongest** agent sits at the front. The
+reason is that the two gates are not doing the same job:
+
+- **A neural gate routes a *token* against a *fixed* expert set.** The task
+  arrives pre-formed, the experts never change, the decision is near-mechanical.
+  Cheap is correct.
+- **This gate takes an ambiguous human sentence against a *shifting* roster.** It
+  must work out what is actually being asked, whether it is one question or
+  three, whether a keeper exists for it at all, and whether it needs a session or
+  just a lookup. That is **comprehension before selection** — and it is hard
+  precisely because the input is unstructured and the roster is alive.
+
+**Refinement on the metaphor:** the strong agent is not *commanding* — it is
+**triaging**. The keepers are not weaklings; they are deep in their own domains
+and their curated context does the work. Less general-and-privates, more an
+excellent switchboard in front of specialists: it needs judgement to understand a
+half-formed question well enough to know who to hand it to, and needs to know
+nothing about storage lifecycles or gphoto2 quirks.
+
+**Why "keep the gate thin" is the fragile part.** A strong model at the front is
+only worth it while it stays *judgement*. The failure mode is that it begins
+answering things itself — it **can**, it is the strong one — and then it stops
+routing and becomes a bottleneck holding everyone's context. That is the
+coordination tax arriving by a second road: not plumbing crowding out judgement,
+but **capability tempting the gate into doing the experts' work**. Watch for it.
+
+**The irony that explains the whole design.** What makes this inversion necessary
+is the same thing that makes the experts cheap: **keepers are strong because of
+curated context, not model size** — a keeper with its STATE loaded beats a bigger
+model without it. Capability moved out of the weights and into the files, and
+what is left at the front is the one job files cannot do: **deciding which files
+to load.** That is why this is a router and never a LoRA.
+
 ## SETTLED: ubersitrep is the interface Peter types into (2026-08-13)
 
 Peter, closing the keeper-keeper discussion: **"the keeper-keeper should be the
