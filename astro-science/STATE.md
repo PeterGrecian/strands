@@ -754,8 +754,23 @@ regime); the ceiling lifting where the catalogue thins is itself information.
   where `night_of()` would name a night still in progress). Both sides of the
   boundary verified. Note `bin/nightly-cam:277` still defaults via
   `last_completed_night()` — harmless today because canon-nightly always passes
-  an explicit `--night`, but the same trap if it is ever scheduled directly.
+  an explicit `--night`, but the same trap if it is ever scheduled directly
+  (spooled to `ideas/`).
   (2026-08-09's absence from S3 is unrelated and genuine — no capture that night.)
+
+  **Follow-on: the fallback now announces itself** (astro `d393603`). The
+  source-dir fallback above quietly reintroduced the same bug by another route —
+  if capture ever fails to create tonight's dir, delivery reaches back and
+  redelivers the previous night, looking identical to a healthy run. It now logs
+  the night it declined and says plainly that a missing dir is a *capture*
+  failure surfacing at the delivery seam. Both branches exercised against
+  fixtures. The general rule worth keeping: **when a guard's recovery path lands
+  in the same state as the bug it guards against, the recovery must be loud.**
+  Live on muppet (`d393603`) for tonight's timer.
+
+  2026-08-12 backfilled by hand the same morning. A good night: 548 frames,
+  20:57–03:40 UTC, verdict **clear**, **527/548 stacked** (21 out of band, 0
+  saturated).
 - **astro-science created 2026-08-02** as the consolidated science/theory strand
   (a **development** strand). Absorbs subpixel + breathing-theory + storage-
   discussion-theory + the sidereal direction + deliverables; those strands
