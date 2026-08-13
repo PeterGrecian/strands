@@ -11,7 +11,9 @@ solstice. Lives in `~/manim`:
 - `scenes/earth_nights.py` — the renderer (Cairo + ffmpeg)
 - `scenes/solar.py` — dependency-free solar position (NOAA/Meeus)
 - `scenes/astro_nights.py` — bigstore reader for all six camera streams
-- output: `media/earth_nights.mp4` (1080p60, 45 s, 6.4 MB) — **not uploaded yet**
+- `scenes/pointing.py` — per-camera-EPOCH boresight + FOV, sourced and
+  certainty-tagged (8 epochs across 6 streams)
+- output: `media/earth_nights.mp4` (1080p60, 45 s) — **not uploaded yet**
 
 The globe is tilted 23.44°, lit from screen-left, and pitched up 34° so
 Berrylands' latitude circle is presented face-on rather than edge-on. Each
@@ -40,6 +42,18 @@ this fleet gets its observing time.
 
 Cameras routinely exceed 100% of the −10° window (astrocam 117%, skycam 163%)
 — they start before the gate and run past it. Expected, not a bug.
+
+## Finding: the EOS field is ~8x smaller than the design doc assumed
+
+EXIF from the CR2s on bigstore: the 2000D shoots at **53mm (2026-08-08) and
+55mm (2026-08-10..)** on the EF-S 18-55 kit zoom — not the 18mm assumed by the
+nesting table in `design/accumulation-bucket-refinement.md`. Real field 22.9 x
+15.4 deg (354 sq deg) against the assumed 63.6 x 45.0 (2,862). So the DSLR is
+the **smallest field and the deepest instrument** in the estate (~13.8"/px),
+and the containment hierarchy is stronger than the doc's own table showed.
+The 53->55mm step falls exactly on the position_index 1->2 boundary (the
+by-eye "marker 0" refocus). Worth feeding back into the astro repo — the
+design doc's table is still wrong there.
 
 ## Decisions
 
