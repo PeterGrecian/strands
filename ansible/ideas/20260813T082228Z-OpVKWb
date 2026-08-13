@@ -1,0 +1,26 @@
+astrocam v3 units are NOT ansible-managed — they won't survive a reimage.
+
+From astro-polecam, 2026-08-13. STATE.md:315 has flagged this for a while;
+raising it now because cover automation just landed on top of the unmanaged
+pieces, so a reimage would now lose working behaviour, not just config.
+
+Installed BY HAND on astrocam (root-owned, not in ansible):
+  - astrocam-v3-night.service
+  - astrocam-v3-uploader.service
+  - astrocam-v3-gate.service + astrocam-v3-gate.timer
+  - /etc/polkit-1/rules.d/50-astrocam.rules
+    (lets peter toggle the services without sudo; the gate needs this)
+
+Repo copies of the gate SCRIPT and the polkit rule are committed under
+~/astro/astrocam/, but the systemd unit files and the INSTALLED polkit rule
+are not managed. eclipticam's equivalents ARE ansible-managed, so there's a
+working pattern to copy — likely just extending that role to astrocam.
+
+New since 2026-08-13: the gate now also drives the lens cover (opens before
+the night daemon starts, closes after it stops), persisting position in
+/var/lib/astrocam/cover.json. astrocam commit 002d0a6, not yet pushed. So
+"reimage loses the gate" now also means "reimage loses cover automation and
+the lens sits open all day".
+
+Not urgent, no deadline — but it's the last hand-installed corner of an
+otherwise-automated camera.

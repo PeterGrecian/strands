@@ -7,6 +7,25 @@
 Replace the v2 (imx219) camera on **astrocam** with a newly-bought **Pi Camera
 v3 (standard)** — imx708 sensor — and get it focused and capturing for sky use.
 
+## Cover automation landed (2026-08-13)
+
+Good results overnight, but the cover was still open at dawn. Root cause was
+**not** a broken servo: nothing was ever commanding it. The gate switched
+services on sun altitude and left the card wherever it was last put by hand.
+The gate now drives `cover.py` on both edges — verified end-to-end on hardware,
+Peter confirming the card by eye in each position. Details in the pending list
+below (including the `capture.py`-is-not-the-deployed-path trap).
+
+Two lessons worth carrying:
+- **The cover is white card ~2cm above the lens**, so closed reads as uniform
+  mid-grey, not dark. Frame **mean** cannot tell it from blue sky (measured:
+  120–136 across the whole servo sweep). I spent two days concluding the servo
+  was mechanically broken on the strength of that non-measurement. Use spatial
+  variance if a detector is ever needed — or just ask the human at the box.
+- **Check what actually runs before reading its logic.** The cover automation
+  in `capture.py` is elaborate and has never executed; the deployed units are
+  the night daemon + gate. The missing `events.log` was the tell.
+
 ## First night + calibration fixes (2026-07-30)
 
 **Night 1 (2026-07-29 session) captured cleanly and unattended: 373 dark-sky
