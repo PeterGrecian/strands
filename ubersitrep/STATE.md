@@ -4,6 +4,64 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+## NOT A METAPHOR: aifabric IS an MoE, and its experts are MoEs (2026-08-13)
+
+Peter, correcting a session's worth of hedging: **Opus is an MoE and I'm building
+one at a different scale. Each element in the MoE is itself an MoE (an Opus
+agent). The big MoE is aifabric.**
+
+Everything below treats the mixture-of-experts as an *analogy* for the strand
+system. It is not an analogy — it is **the same architecture at a different
+scale**, and it is **recursive**:
+
+| | Opus (inner) | aifabric (outer) |
+|---|---|---|
+| Expert | a subnetwork | a **keeper strand** |
+| Expert's knowledge | learned weights | curated context (STATE, `dirs`, memory) |
+| Gate | a trained layer | **ubersitrep**, an agent |
+| Routing signal | learned | comprehension of a human sentence |
+| Element routed | a token | a **task** |
+
+**This resolves what `aifabric` structurally *is*.** Not a portfolio that happens
+to contain strands — **it is the outer MoE**, and its tooling is that MoE's
+machinery: `aicli` spawns experts, the mailbox/`ding` is inter-expert routing,
+`strand-ps` is liveness, the `blurb` files are the gate's input. Its own blurb
+already says "practical stranding… one portfolio cloth"; the architecture behind
+that phrase is the mixture of experts.
+
+**It also retires two mistakes made earlier this session.** (1) Claude repeatedly
+framed this gate as *unlike* a neural gate — comprehension not selection, a
+shifting roster not a fixed one — and read those as *departures from* the
+architecture. They are not departures; they are what the same architecture looks
+like when the elements are **tasks** and the experts are **files**. (2) The LoRA
+question was answered as "don't fine-tune, route better". The deeper answer:
+Peter is **already building the system a fine-tune would have been a component
+of**, and its experts are not weights at all — so a LoRA was a category error,
+not merely a worse option.
+
+**The recursion is load-bearing, not decorative.** A neural gate must route
+*precisely*, because a subnetwork cannot ask what you meant. These experts
+**can** — each is an Opus agent with its own internal routing, so a slightly
+wrong hand-off is recoverable: the keeper reinterprets, or mailboxes back. That
+is real slack the inner architecture lacks, and it means **the outer gate needs
+to be good, not exact**. It materially softens the routing-inconsistency worry
+recorded below: inconsistent routing **degrades gracefully** rather than failing,
+because there is judgement at both ends.
+
+**Same shape, opposite economics** — which is the honest statement of how the two
+levels differ. Inner: cheap gate, expensive joint training, fixed experts,
+mechanical selection. Outer: **expensive gate, no training at all**,
+hand-maintained experts, comprehension at the gate. The outer configuration is
+not a degraded copy; it is the only one available at that scale (see the
+constraint framing below).
+
+**Ownership boundary — ubersitrep must not annex this.** The *architecture* is
+**aifabric's** (it is the fabric; the tools are its machinery). *Being the gate*
+is **ubersitrep's**. This strand is a **component of** the design, not its owner,
+and records it here only because the gate has to understand the system it gates
+for. The design work belongs in `aifabric`; Peter is writing the hierarchical
+dispatch that implements it.
+
 ## The framing: an inverted MoE — the strong agent is the gate (2026-08-13)
 
 Peter, on the shape of it: **it is kind of the opposite of LoRA, where a
