@@ -1,6 +1,93 @@
 # astro-storage — state
 
-*Updated 2026-08-09*
+*Updated 2026-08-12*
+
+## INVENTORY WAS ROTTEN — corrected, and `inventory-drift` built to stop it (2026-08-12)
+
+Started as "what's on the thumbdrive?", ended with the inventory rewritten and a
+night unaccounted for. **`whereisallthedata.csv` had drifted badly** (22 → 35
+rows). Nothing had ever checked its assertions against disk.
+
+**What was wrong:**
+- **2026-05-21** recorded as 10G squashed at `/mnt/bigdisk/starcam-backup/2026-05-21`
+  — **that path does not exist**. Reality: **40G of UNSQUASHED raw on bigstore**
+  (16899 files, zero `-sum8` dirs). The "sources deleted" note was false; the
+  sources are what is there. Cause: commit `65729a0` (2026-07-17) *replaced* the
+  puppy raw row with a muppet squashed row instead of adding one, so the file
+  asserted a copy that never materialised and forgot the raw one that did.
+  Same edit did the same to **05-24**, which is why it read single-copy.
+- **Nine bigstore copies absent entirely** — the bigstore migration completed and
+  the inventory was never updated. Root cause of most other errors.
+- **05-23** had *left* puppy for bigstore; CSV still pointed at puppy.
+- **eos was never tracked at all** — no rows for any EOS night.
+
+**Corrected single-copy set: 3 nights (~84G), not the 10 (~170G) the CSV implied:**
+2026-05-21 (39.7G raw, bigstore only), 2026-05-23 (39.8G raw, bigstore only,
+"darkest night"), 2026-07-04 eclipticam-v3w (4.4G, Deep Archive only).
+**Both starcam ones are squash candidates** — `squash-starcam-night` would take
+~80G of exposure down to ~16G. Cheaper than any R2 tier; do this before costing
+offsite.
+
+## 2026-05-27 IS MISSING — 40G, no copy found anywhere online (2026-08-12)
+
+In the inventory continuously since 2026-06-13 (40G raw on puppy: 31.5G bayer +
+8.9G binned, never squashed, never shipped). **Not on** puppy, muppet
+bigdisk/bigdisk2/bigstore/astrobackup, S3 `cold/starcam/` (only 05-20 is there),
+glacier-app, or either trashcan. **NOT checked: photodisk** (shelved offline) —
+the most likely place if it survives. Row kept as `storage_class=missing` with
+the search recorded; it is now the only evidence the night existed.
+
+**Peter's call: acceptable loss** — capture has improved a lot since May, so it
+is <1% of the information. **The finding is not the night, it is that it vanished
+with nothing noticing for 2+ months**, surfaced only by an unrelated question.
+Silent undetected loss is already happening — that argues hardware's redundancy
+point better than the SMART-blindness argument does.
+
+## `inventory-drift` — the missing feedback loop (2026-08-12)
+
+New: **`astro/bin/inventory-drift`**. Walks every CSV row, stats the path on its
+host (ssh remote / local), reports `ok` / `MISSING` / `SIZE` / `skip`. **Exit 1
+on any missing or mis-sized row** so a timer or CI step fails loudly.
+`--quiet` (timers), `--sizes` (recorded vs actual bytes, `--tolerance` pct),
+`--camera` / `--host` filters. Follows `inventory-from-csv`'s conventions.
+
+Cold rows (deep-archive/glacier) are **listed as skips, never verified** —
+confirming an S3 object costs money; the coverage gap stays visible rather than
+being papered over.
+
+**Current: 32 ok, 0 missing, 0 size-drift, 3 skipped (2 cold + 05-27).**
+
+**Build gotcha worth keeping:** v1 reported **seven false MISSINGs** on puppy
+nights that were plainly there — `shlex.quote` wrapped `~/...` so the remote
+shell never expanded the tilde. Shipped to a timer, it would have paged nightly
+about healthy data and taught us to ignore it: **a drift checker that cries wolf
+is worse than none.** Fix quotes only the part after `~/`; reasoning is in the
+docstring. Its only true positive so far was a planted one — untested against
+natural drift, though it would have caught both 05-27 and the 05-21 bad path
+(plain absent paths).
+
+**Not done:** no timer installed (runs by hand); photodisk check for 05-27
+pending its next spin-up; hardware's redundancy question still unanswered.
+
+## astrobackup stick: cleaned, mounted on muppet, EOS 08-10 added (2026-08-12)
+
+The 58G SanDisk `ASTROBACKUP`. Trashed the factory cruft ("gifts from SanDisk of
+negative value" — installers + PDF, ~1.5MB). Now **mounted on muppet at
+`/mnt/astrobackup`** — `sudo mount -t vfat -o uid=1000,gid=1000,umask=022
+/dev/sdb1 /mnt/astrobackup`. **No fstab entry: it will not survive a reboot.**
+(`cold-archive-night` expects `/mnt/astrobackup/<cam>/<mode>/<night>/`, hence
+that mountpoint, not `/media/...`.)
+
+Holds 5 squashed starcam nights (30G) + **eos/night/2026-08-10** (14.9G, 461
+CR2s + manifest.csv, a very clear night) = **45G used, 13G free**. EOS copy
+verified by rsync dry-run: 461 files both sides, nothing to transfer.
+
+**Weighting ambiguity, unresolved:** the copy-rule below lists "astrobackup" at
+**1.0 (solid)** but "USB thumb drives" at **0.5 (flaky)**. This *is* a thumb
+drive, and on 2026-08-12 it vanished from pip's USB bus entirely (uas driver
+offlined it after failed Inquiry/Test-Unit-Ready; needed a physical replug).
+**Treat it as 0.5** — that changes the clearable-surplus arithmetic. Needs a
+decision recorded properly.
 
 ## eclipticam ship timer INSTALLED + first run freed ~74G (2026-08-09)
 
