@@ -19,6 +19,19 @@ Retention is a *resolution schedule*, not keep-vs-delete: recent nights at
 full cadence, older nights progressively squashed, squashed form kept ~forever
 (the RRD pyramid → O(1) storage). See STATE.md / IDEAS.md.
 
+> **Squash is DORMANT (Peter, 2026-08-12)** — we don't squash much now, because
+> there is more storage: bigstore is 5.5T at **27% used, 4.0T free**. Squash is a
+> **disk-pressure** tool, and the pressure that justified it (bigdisk 97%,
+> bigdisk2 93%) went away when the streams moved to bigstore. The t² argument
+> above still holds long-term, so this is dormancy, not retirement — **revisit
+> when capacity tightens**.
+>
+> Two things that do *not* change: **`cold-archive-night` still requires
+> squashed+manifested input**, so anything bound for Deep Archive still gets
+> squashed on the way; and **squashing is not a redundancy measure** — it shrinks
+> the single copy, it does not make a second one. Don't reach for it to answer a
+> "this night has only one copy" problem.
+
 ## Canonical tools
 
 - **`super/bin/squash-starcam-night`** — the squash front-half (built

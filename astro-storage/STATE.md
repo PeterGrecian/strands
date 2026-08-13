@@ -24,9 +24,17 @@ rows). Nothing had ever checked its assertions against disk.
 **Corrected single-copy set: 3 nights (~84G), not the 10 (~170G) the CSV implied:**
 2026-05-21 (39.7G raw, bigstore only), 2026-05-23 (39.8G raw, bigstore only,
 "darkest night"), 2026-07-04 eclipticam-v3w (4.4G, Deep Archive only).
-**Both starcam ones are squash candidates** — `squash-starcam-night` would take
-~80G of exposure down to ~16G. Cheaper than any R2 tier; do this before costing
-offsite.
+
+**Do NOT reach for squash here (Peter, 2026-08-12).** I first proposed squashing
+05-21 + 05-23 (~80G → ~16G) as the cheap answer to redundancy. Wrong on two
+counts: (a) **squashing makes no second copy** — it shrinks the single copy, so
+it lowers the cost of replicating but leaves the exposure exactly where it was;
+(b) **we don't squash much now because there is more storage** — bigstore is
+5.5T at **27% used, 4.0T free** (2026-08-12), so saving 64G is noise. The
+pressure that justified squashing was bigdisk (**97%**) and bigdisk2 (**93%**),
+and the streams have since moved off both onto bigstore. Squash is a
+disk-pressure tool; the pressure is gone, so the ~84G stays raw and the
+redundancy question must be answered on its own terms (a real second copy).
 
 ## 2026-05-27 IS MISSING — 40G, no copy found anywhere online (2026-08-12)
 
