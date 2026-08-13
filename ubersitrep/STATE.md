@@ -4,6 +4,18 @@
 lives in the sub-strands; this is the shape of the whole. Updated at session
 end / on dcp.*
 
+**Current thrust (2026-08-13):** ubersitrep became **the interface Peter types
+into** — router/dispatcher over the keepers, not just a narrator. The estate is
+an **MoE at strand scale** (`aifabric` is the outer one; each keeper is an Opus
+agent, itself an MoE) — architecture, not analogy. The roster is built
+(`keepers.md`, 42 rows) and is **the gate's own working memory**; Peter's rulings
+live in Decisions at the foot of this file. Direction of travel: **more
+self-organising, less hand-built** — deterministic tools observe, Peter judges.
+**Blocked on two builds, both other strands':** `dispatch` (`aifabric`) so
+delegation stops taxing the gate, and the **archive-diff deriver**
+(`aifabric-sessions`) so the roster is grounded in evidence rather than blurbs.
+Meanwhile the astro line is healthy — `/astro/canon` live since 08-11.
+
 ## Direction: aifabric more self-organising, less hand-built (2026-08-13)
 
 Peter: **"I do want aifabric to be more self-organising and less hand built. I
