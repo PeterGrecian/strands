@@ -37,13 +37,48 @@ Everything, at a distance. It does not duplicate sub-strand STATE.md detail —
 it links to it. A sub-strand's STATE is the source of truth for *its* work;
 ubersitrep's STATE is the source of truth for *the shape of the whole*.
 
-Key workstreams it tracks (as of first writing):
+Key workstreams it tracks:
 - **aifabric** — the AI working method extracted to a standalone portfolio repo
   (`~/aifabric`). See `super/strands/aifabric/`.
-- **astro** — the astronomy instrument fleet (astrocam, eclipticam, starcam,
+- **astro** — the astronomy instrument fleet (astrocam/polecam, eclipticam,
   skycam, the Canon EOS 2000D) and its capture/processing/publish pipeline.
-  See the `astro-*` strand family (canon, breathing, subpixel, storage,
-  deliverables, speaker-dither, canon-power).
+  See the `astro-*` family: canon, polecam, storage (keepers) + capture,
+  science (builders). *(starcam retired 2026-08-02; breathing/subpixel/
+  deliverables/speaker-dither/canon-power archived in the 08-02 re-org.)*
+- **infrastructure** — ansible, pifleet, hardware, muppet-status,
+  cloud-init-init, xmatters: the largest keeper cluster, and the one that was
+  undeclared until the roster was written.
+
+## The keeper roster — ubersitrep is the keeper-keeper
+
+**`keepers.md` is part of this brief. Read it with STATE.md.**
+
+The estate's experts *are* its keeper strands — the specialisation lives in each
+keeper's curated context, not in any model. ubersitrep holds the **gate**: which
+strands exist, what each serves, and which are routable. That makes this strand
+both an expert (it answers "what is the shape of the estate") and the
+keeper-keeper (it answers "**who owns this**").
+
+Two standing duties follow, and they are the job, not side-effects:
+
+- **Keep the roster honest.** A keeper's `blurb` is its declaration of domain —
+  under a router that is load-bearing, not housekeeping. A stale blurb mis-routes
+  silently. Re-judge a row when the review ledger visits that subject.
+- **Watch for the missing keeper.** A subject that keeps recurring across
+  sessions and is owned by no row is a keeper that should exist. It cannot be
+  found by reading blurbs — every blurb says it is someone else's job.
+
+Verdicts in `keepers.md` are currently **blurb-derived and unconfirmed**: judged
+from what strands declare about themselves. The grounding move is to derive the
+same list from the OpenSearch session archive (`aifabric-sessions`) — what was
+*actually* worked on — and **diff the two**. The disagreements are the product,
+more than any routing table.
+
+Structural rules already settled (see STATE.md Decisions, 2026-08-13):
+themes are **overlapping tags, never a containment tree** ("knowledge is not
+like that"); builder/keeper is a **cached judgement**, not a declared flag,
+because it is a phase; a builder may **fork off a keeper** for a settled part,
+but only if that part will be *asked about* independently.
 
 ## Session ritual
 
