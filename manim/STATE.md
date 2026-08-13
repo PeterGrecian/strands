@@ -55,6 +55,17 @@ The 53->55mm step falls exactly on the position_index 1->2 boundary (the
 by-eye "marker 0" refocus). Worth feeding back into the astro repo — the
 design doc's table is still wrong there.
 
+## Correction: skycam is a v1 Pi camera (2026-08-13)
+
+First drawn at 120x30 deg on a guess, making it the widest field in the fleet
+(10,800 sq deg). Peter caught it: it's a v1 Pi for cloud timelapse. Frame EXIF
+confirms `ov5647` / `Raspberry Pi` — same sensor and stock lens as eclipticam
+v1 and starcam, so the measured plate_scale 0.0206 applies (53.4 deg). Frames
+are a 16:9 1296x728 crop of the full sensor field, so vertical ~30 deg.
+**1,602 sq deg, a 6.7x overstatement corrected.** Lesson: an `assumed` value
+should never be allowed to dominate the picture — check the frames' EXIF
+before guessing a field.
+
 ## Decisions
 
 - **Cairo + ffmpeg, not manim.** The repo README already documents manim
