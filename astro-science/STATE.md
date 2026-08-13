@@ -737,6 +737,25 @@ regime); the ceiling lifting where the catalogue thins is itself information.
 
 ## Decisions
 
+- **canon-nightly delivered the night BEFORE last, on every run — FIXED
+  2026-08-13** (astro `876a45c`). Peter noticed 2026-08-12 had no deliverables.
+  Capture was fine (548 CR2s on disk, a *bigger* night than 08-11); the delivery
+  chain simply targeted the wrong date. Cause: `canon-nightly` defaulted to
+  `last_completed_night()`, but nights run **noon..noon UTC**, so at the timer's
+  06:00 local (05:00 UTC) the session that just finished observing has not
+  formally *ended* — that helper only advances at noon, seven hours later.
+  **The failure mode is the lesson: totally silent.** The 06:05 run exited 0,
+  published a complete artefact set and refreshed `index.json` — all for
+  2026-08-11, idempotently redoing finished work. No unit went red. Never read
+  "exit 0 + uploads happened" as proof the right night shipped; check the date in
+  the log line. Fix: default to `night_of()`, falling back to
+  `last_completed_night()` when that night has no source dir yet (the timer is
+  `Persistent=true`, so a catch-up run after an outage can fire *after* noon,
+  where `night_of()` would name a night still in progress). Both sides of the
+  boundary verified. Note `bin/nightly-cam:277` still defaults via
+  `last_completed_night()` — harmless today because canon-nightly always passes
+  an explicit `--night`, but the same trap if it is ever scheduled directly.
+  (2026-08-09's absence from S3 is unrelated and genuine — no capture that night.)
 - **astro-science created 2026-08-02** as the consolidated science/theory strand
   (a **development** strand). Absorbs subpixel + breathing-theory + storage-
   discussion-theory + the sidereal direction + deliverables; those strands
