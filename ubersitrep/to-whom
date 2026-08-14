@@ -1,0 +1,492 @@
+#!/usr/bin/env python3
+"""to-whom — the keeper-keeper's gate, as a deterministic tool.
+
+The gate's job is "who owns this?" and "is anyone home?". The judgement half
+(comprehension of a half-formed sentence) is the agent's and stays the agent's.
+This tool does the half that must NOT be re-formed from impressions each
+session: read the roster, read liveness, and emit the routing facts as data.
+
+The agent asks a question; this answers with candidates + how to reach them.
+
+  to-whom "why did canon wedge last night?"   rank roster rows against a query
+  to-whom --list                              the whole roster, with liveness
+  to-whom --live                              only strands with a live session
+  to-whom --strand astro-canon                one row, full detail + route
+  to-whom --audit                             roster vs reality drift report
+  to-whom --json ...                          machine-readable form of any of the above
+  to-whom --hints                             AI-facing description
+
+DEVELOPMENT STATUS: lives in the ubersitrep strand dir while it earns its
+keep. Graduates to aifabric/bin once proven (the fabric owns tooling; this
+strand owns the roster it reads).
+
+Sources of truth, in the house style — observe deterministically, judge in the
+agent:
+  - roster   ubersitrep/keepers.md   verdict + what each strand serves
+  - blurbs   <strand>/blurb          the domain statement (the router's weights)
+  - liveness strand-ps               /proc, never stale
+  - mail     strand-mailbox peek     is a not-live strand holding unread mail
+"""
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+HINTS = """to-whom — AI-facing hints (human usage: --help)
+
+WHAT: the keeper-keeper's routing lookup. Answers "who owns this subject?"
+and "is anyone home?" from deterministic sources, so the gate spends its
+context on judgement rather than on re-reading 42 strands.
+
+  to-whom "<query>"        ranked candidate owners for a subject
+  to-whom --list           whole roster + liveness
+  to-whom --live           strands with a running session
+  to-whom --strand <name>  one row in full, with the route to reach it
+  to-whom --audit          drift: roster vs the strands actually on disk
+  to-whom --json           any of the above as JSON
+
+USE WHEN: routing a request to the strand that owns it; deciding whether to
+mailbox a live session or start a cold one; auditing the roster before a
+review-ledger visit.
+
+DOES NOT: decide. Ranking is lexical overlap over blurbs and roster rows --
+a shortlist, not a verdict. The agent reads the candidates and judges. A
+`builder` row is deliberately marked not-routable-for-facts: its answers are
+true only while its frontier stands still.
+
+RELATED: strand-ps (liveness), strand-mailbox (reach a live session),
+aicli -s <name> (start a cold one), keepers.md (the roster this reads).
+"""
+
+STRANDS_DIR = Path(os.environ.get("STRANDS_DIR") or Path.home() / "strands")
+ROSTER = STRANDS_DIR / "ubersitrep" / "keepers.md"
+
+# Words too common across the estate to discriminate between strands.
+STOPWORDS = {
+    "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with", "is",
+    "it", "its", "that", "this", "at", "by", "as", "be", "are", "was", "were",
+    "from", "how", "what", "why", "when", "who", "which", "do", "does", "did",
+    "can", "i", "we", "my", "our", "you", "your", "not", "no", "so", "if",
+    "keeps", "keep", "strand", "strands", "peter", "s", "t",
+}
+
+
+def tokens(text):
+    return {w for w in re.findall(r"[a-z0-9]+", text.lower())
+            if w not in STOPWORDS and len(w) > 1}
+
+
+def parse_roster(path=ROSTER):
+    """Pull the roster's markdown tables into rows.
+
+    Rows look like: | `name` | **verdict** | serves | evidence |
+    Section headings (### ...) become the row's theme -- themes are overlapping
+    tags, so a row carries the heading it was listed under, not a parent.
+    """
+    if not path.exists():
+        sys.exit(f"to-whom: no roster at {path}")
+
+    rows = {}
+    theme = None
+    row_re = re.compile(r"^\|\s*`([^`]+)`\s*\|(.+)$")
+
+    for line in path.read_text().splitlines():
+        if line.startswith("###"):
+            theme = line.lstrip("#").strip()
+            # "Astro -- the deepest theme..." : keep the short name only.
+            theme = re.split(r"\s+[-—]\s+", theme)[0].strip()
+            continue
+        m = row_re.match(line)
+        if not m:
+            continue
+        name = m.group(1).strip()
+        cells = [c.strip() for c in m.group(2).split("|")]
+        if len(cells) < 3:
+            continue
+        verdict = re.sub(r"\*\*|\*", "", cells[0]).strip().lower()
+        rows[name] = {
+            "strand": name,
+            "verdict": verdict,
+            "serves": re.sub(r"\*\*|\*", "", cells[1]).strip(),
+            "evidence": re.sub(r"\*\*|\*", "", cells[2]).strip(),
+            "theme": theme,
+        }
+    return rows
+
+
+def parse_rules(path=ROSTER):
+    """Routing rules from the roster -- rulings the lexical ranking cannot know.
+
+    Bulleted lines under the "Routing rules" heading. Surfaced verbatim beside
+    the candidates so the gate applies them; the tool never applies them itself
+    (a rule is a judgement, and judgement is the agent's half).
+    """
+    if not path.exists():
+        return []
+    rules, inside, buf = [], False, []
+    for line in path.read_text().splitlines():
+        if line.startswith("##"):
+            if buf:
+                rules.append(" ".join(buf))
+                buf = []
+            inside = line.lstrip("#").strip().lower().startswith("routing rules")
+            continue
+        if not inside:
+            continue
+        if line.startswith("- "):
+            if buf:
+                rules.append(" ".join(buf))
+            buf = [line[2:].strip()]
+        elif buf and line.strip() and not line.startswith("*"):
+            buf.append(line.strip())
+        elif buf:
+            rules.append(" ".join(buf))
+            buf = []
+    if buf:
+        rules.append(" ".join(buf))
+    return [re.sub(r"\*\*|\*|`", "", r) for r in rules]
+
+
+def matching_rules(query, rules, candidates):
+    """Rules worth showing.
+
+    Deliberately strict: a rule that fires on unrelated queries teaches the gate
+    to skim past rules, which is worse than not surfacing them. So match only on
+    a rule's FIRST sentence (its statement -- the rest is justification, full of
+    incidental words), and require either a named candidate or a strong
+    query overlap.
+    """
+    q = tokens(query)
+    names = {c["strand"] for c in candidates}
+    hits = []
+    for rule in rules:
+        statement = re.split(r"(?<=[.;])\s", rule)[0]
+        st = tokens(statement)
+        if any(n in statement for n in names) or len(q & st) >= 2:
+            hits.append(rule)
+    return hits
+
+
+def blurb_of(name):
+    """First line of a strand's blurb -- its domain statement, or None."""
+    f = STRANDS_DIR / name / "blurb"
+    if not f.exists():
+        return None
+    for line in f.read_text().splitlines():
+        if line.strip():
+            return line.strip()
+    return None
+
+
+def blurb_full(name):
+    f = STRANDS_DIR / name / "blurb"
+    return f.read_text() if f.exists() else ""
+
+
+def live_strands():
+    """Strand names with a running claude session, via strand-ps (/proc)."""
+    if not shutil.which("strand-ps"):
+        return set()
+    try:
+        out = subprocess.run(["strand-ps", "--live-strands"],
+                             capture_output=True, text=True, timeout=10)
+    except (subprocess.SubprocessError, OSError):
+        return set()
+    return {l.strip() for l in out.stdout.splitlines() if l.strip()}
+
+
+def live_sessions():
+    """Full session rows keyed by strand: [{pid, tty, uptime}, ...]."""
+    if not shutil.which("strand-ps"):
+        return {}
+    try:
+        out = subprocess.run(["strand-ps"], capture_output=True,
+                             text=True, timeout=10)
+    except (subprocess.SubprocessError, OSError):
+        return {}
+    sessions = {}
+    for line in out.stdout.splitlines()[1:]:
+        parts = line.split()
+        if len(parts) < 4:
+            continue
+        pid, tty = parts[0], parts[1]
+        # UPTIME is 1 or 2 fields ("06:16" or "1d 05:47"); STRAND is second-last.
+        strand, uptime = parts[-2], " ".join(parts[2:-2])
+        sessions.setdefault(strand, []).append(
+            {"pid": pid, "tty": tty, "uptime": uptime})
+    return sessions
+
+
+def pending_mail(name):
+    """Unread spooled messages for a strand (non-destructive peek)."""
+    if not shutil.which("strand-mailbox"):
+        return 0
+    try:
+        out = subprocess.run(["strand-mailbox", "peek", name],
+                             capture_output=True, text=True, timeout=10)
+    except (subprocess.SubprocessError, OSError):
+        return 0
+    m = re.search(r"(\d+)\s+pending", out.stdout)
+    return int(m.group(1)) if m else 0
+
+
+def route_for(name, sessions):
+    """How to reach this strand right now."""
+    running = sessions.get(name, [])
+    if running:
+        ttys = ", ".join(s["tty"] for s in running)
+        note = "  (MULTIPLE sessions -- disambiguate)" if len(running) > 1 else ""
+        return {
+            "live": True,
+            "how": "mailbox",
+            "detail": f"strand-mailbox send {name} '<briefing>'",
+            "where": ttys,
+            "note": note.strip(),
+        }
+    return {
+        "live": False,
+        "how": "start",
+        "detail": f"aicli -s {name}",
+        "where": None,
+        "note": "",
+    }
+
+
+def score(query, row):
+    """Lexical overlap between query and a row's text. A shortlist, not a verdict.
+
+    Weighted so the strand's own name and its blurb one-liner (the router's
+    weights) count for more than roster prose.
+    """
+    q = tokens(query)
+    if not q:
+        return 0.0
+    name_t = tokens(row["strand"].replace("-", " "))
+    blurb = blurb_of(row["strand"]) or ""
+    fields = [
+        (name_t, 3.0),
+        (tokens(blurb), 2.0),
+        (tokens(row["serves"]), 2.0),
+        (tokens(blurb_full(row["strand"])), 1.0),
+        (tokens(row["evidence"]), 0.5),
+        (tokens(row.get("theme") or ""), 0.5),
+    ]
+    total = 0.0
+    for toks, weight in fields:
+        total += weight * len(q & toks)
+    # Substring bonus: "canon" matching astro-canon is a strong signal.
+    for w in q:
+        if len(w) > 3 and w in row["strand"].lower():
+            total += 2.0
+    return total
+
+
+def enrich(row, sessions, live):
+    r = dict(row)
+    r["blurb"] = blurb_of(row["strand"])
+    r["route"] = route_for(row["strand"], sessions)
+    r["routable"] = row["verdict"] == "keeper"
+    if r["route"]["live"]:
+        r["sessions"] = sessions.get(row["strand"], [])
+    else:
+        r["pending_mail"] = pending_mail(row["strand"])
+    return r
+
+
+# --- output ---------------------------------------------------------------
+
+def mark(row):
+    """One-glyph routability + liveness marker."""
+    live = "*" if row["route"]["live"] else " "
+    kind = {"keeper": "K", "builder": "b", "provisional": "?"}.get(
+        row["verdict"], "-")
+    return f"{live}{kind}"
+
+
+def print_candidates(query, ranked, rules=()):
+    print(f'query: "{query}"\n')
+    if rules:
+        print("  RULES THAT APPLY (rulings beat the ranking):")
+        for r in rules:
+            print(f"    - {r}")
+        print()
+    if not ranked:
+        print("  no candidate owner in the roster.")
+        print("  -> a subject nobody owns may be a MISSING KEEPER "
+              "(keepers.md, Maintenance).")
+        return
+    for row, sc in ranked:
+        r = row["route"]
+        where = f" {r['where']}" if r["where"] else ""
+        state = f"LIVE{where}" if r["live"] else "not live"
+        print(f"  {mark(row)}  {row['strand']:<24} {row['verdict']:<12} "
+              f"{state}   [{sc:.0f}]")
+        print(f"        serves: {row['serves']}")
+        if not row["routable"]:
+            print("        NOT ROUTABLE FOR FACTS -- builder; "
+                  "route work here, not questions.")
+        if not r["live"] and row.get("pending_mail"):
+            print(f"        {row['pending_mail']} unread message(s) waiting")
+        print(f"        route:  {r['detail']}{'  ' + r['note'] if r['note'] else ''}")
+        print()
+    print("  legend: *=live  K=keeper(routable)  b=builder  ?=provisional")
+
+
+def print_list(rows):
+    theme = None
+    for row in rows:
+        if row.get("theme") != theme:
+            theme = row.get("theme")
+            print(f"\n-- {theme or 'unthemed'} --")
+        r = row["route"]
+        where = r["where"] or ""
+        print(f"  {mark(row)}  {row['strand']:<24} {row['verdict']:<12} "
+              f"{where:<10} {row['serves']}")
+    print("\n  legend: *=live  K=keeper(routable)  b=builder  ?=provisional")
+
+
+def print_strand(row):
+    r = row["route"]
+    print(f"{row['strand']}  [{row['verdict']}]")
+    print(f"  theme:    {row.get('theme') or '-'}")
+    print(f"  serves:   {row['serves']}")
+    print(f"  evidence: {row['evidence']}")
+    print(f"  blurb:    {row['blurb'] or '(NO BLURB -- routing hole)'}")
+    print(f"  routable: {'yes' if row['routable'] else 'no -- builder, facts go stale'}")
+    if r["live"]:
+        for s in row.get("sessions", []):
+            print(f"  LIVE:     pid {s['pid']} on {s['tty']} (up {s['uptime']})")
+    else:
+        print("  LIVE:     no")
+        if row.get("pending_mail"):
+            print(f"  MAIL:     {row['pending_mail']} unread waiting")
+    print(f"  route:    {r['detail']}")
+    if r["note"]:
+        print(f"  note:     {r['note']}")
+
+
+def audit(roster, sessions, live):
+    """Roster vs reality. Drift is the product -- print what disagrees."""
+    on_disk = {d.name for d in STRANDS_DIR.iterdir()
+               if d.is_dir() and not d.name.startswith(".")
+               and (d / "CLAUDE.md").exists()}
+    listed = set(roster)
+
+    findings = []
+
+    for name in sorted(on_disk - listed):
+        findings.append(("UNROSTERED", name,
+                         "on disk with a CLAUDE.md but no roster row -- "
+                         "unroutable; the gate cannot see it"))
+    for name in sorted(listed - on_disk):
+        findings.append(("PHANTOM", name,
+                         "roster row with no strand dir on disk"))
+    for name in sorted(listed & on_disk):
+        if blurb_of(name) is None:
+            verdict = roster[name]["verdict"]
+            sev = "ROUTING HOLE" if verdict == "keeper" else "NO BLURB"
+            findings.append((sev, name,
+                             f"{verdict} with no blurb -- the router's weights "
+                             "are missing for this row"))
+    for name in sorted(live - listed):
+        findings.append(("LIVE UNROSTERED", name,
+                         "a session is running in a strand the roster "
+                         "does not list"))
+    for name, rows in sessions.items():
+        if len(rows) > 1:
+            ttys = ", ".join(r["tty"] for r in rows)
+            findings.append(("DUPLICATE SESSIONS", name,
+                             f"{len(rows)} sessions ({ttys}) -- "
+                             "a dispatch would be ambiguous"))
+
+    print(f"roster: {len(listed)} rows   on disk: {len(on_disk)}   "
+          f"live: {len(live)}\n")
+    if not findings:
+        print("  no drift: roster matches reality.")
+        return findings
+    width = max(len(f[0]) for f in findings)
+    for kind, name, why in findings:
+        print(f"  {kind:<{width}}  {name}")
+        print(f"  {'':<{width}}  {why}\n")
+    return findings
+
+
+def main():
+    p = argparse.ArgumentParser(
+        description="the keeper-keeper's routing lookup",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__)
+    p.add_argument("query", nargs="*", help="subject to route")
+    p.add_argument("--list", action="store_true", help="whole roster + liveness")
+    p.add_argument("--live", action="store_true", help="only live strands")
+    p.add_argument("--strand", metavar="NAME", help="one row in full")
+    p.add_argument("--audit", action="store_true", help="roster vs reality drift")
+    p.add_argument("--json", action="store_true", help="machine-readable output")
+    p.add_argument("-n", type=int, default=5, metavar="N",
+                   help="candidates to show (default 5)")
+    p.add_argument("--hints", action="store_true", help="AI-facing description")
+    args = p.parse_args()
+
+    if args.hints:
+        print(HINTS)
+        return
+
+    roster = parse_roster()
+    sessions = live_sessions()
+    live = live_strands()
+
+    if args.audit:
+        findings = audit(roster, sessions, live)
+        if args.json:
+            print(json.dumps([{"kind": k, "strand": s, "why": w}
+                              for k, s, w in findings], indent=2))
+        return
+
+    if args.strand:
+        if args.strand not in roster:
+            sys.exit(f"to-whom: '{args.strand}' has no roster row "
+                     f"(try --audit; it may be unrostered)")
+        row = enrich(roster[args.strand], sessions, live)
+        print(json.dumps(row, indent=2) if args.json else None or "", end="")
+        if not args.json:
+            print_strand(row)
+        return
+
+    if args.list or args.live:
+        rows = [enrich(r, sessions, live) for r in roster.values()]
+        if args.live:
+            rows = [r for r in rows if r["route"]["live"]]
+        if args.json:
+            print(json.dumps(rows, indent=2))
+        else:
+            print_list(rows)
+        return
+
+    if not args.query:
+        p.print_help()
+        return
+
+    query = " ".join(args.query)
+    scored = [(r, score(query, r)) for r in roster.values()]
+    scored = [(r, s) for r, s in scored if s > 0]
+    scored.sort(key=lambda x: (-x[1], x[0]["strand"]))
+    ranked = [(enrich(r, sessions, live), s) for r, s in scored[:args.n]]
+    rules = matching_rules(query, parse_rules(), [r for r, _ in ranked])
+
+    if args.json:
+        print(json.dumps({
+            "query": query,
+            "rules": rules,
+            "candidates": [{**r, "score": s} for r, s in ranked],
+        }, indent=2))
+    else:
+        print_candidates(query, ranked, rules)
+
+
+if __name__ == "__main__":
+    main()

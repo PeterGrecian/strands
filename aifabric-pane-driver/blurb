@@ -1,0 +1,9 @@
+Keeps the driver sharp — the one component you talk to to make a deck do things.
+
+The driver agent: the natural-language interface to a deck's deterministic
+mechanics (layout, terms, attention, mail). Every deck has exactly one overview
+and one driver, and this strand owns the driver only — it inherits the pane's
+design from [[aifabric-pane]] rather than redesigning it. The boundary that
+matters for routing: **the driver owns the surface, [[ubersitrep]] owns the
+subject matter**, so pane/deck/layout work comes here and expertise questions
+do not.

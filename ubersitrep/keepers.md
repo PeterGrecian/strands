@@ -17,6 +17,20 @@ STATE size, activity, the archive-derived verdicts — should be produced by a
 re-runnable tool that emits a file, not re-formed by reading each session. The
 tool observes; the gate judges. (Same grain as [[deck-mechanics-deterministic]].)
 
+**The tool exists: `ubersitrep/to-whom` (built 2026-08-14).** It parses the
+tables below, joins them to `strand-ps` liveness and the mailbox spool, and
+answers *who owns this* + *is anyone home* as data. Use it instead of re-reading
+this file:
+
+    to-whom "<query>"        ranked candidate owners, with the route to each
+    to-whom --list|--live    the roster, or just what is running
+    to-whom --strand <name>  one row in full
+    to-whom --audit          drift: roster vs the strands actually on disk
+
+**Ranking is lexical overlap, deliberately** — a shortlist, not a verdict. The
+tool never decides; it hands candidates to the gate, which judges. That split is
+the point: derivation observes, the agent rules.
+
 **Status of the verdicts: BLURB-DERIVED, UNCONFIRMED (2026-08-13).** Every row
 below was judged from the strand's `blurb` + `CLAUDE.md` mission and its STATE
 size/activity — i.e. from what each strand *declares about itself*. The agreed
@@ -110,15 +124,34 @@ blurbs, not by the `keeper` grep. That gap is the roster's reason to exist.
 | `cleft-plus` | **builder** | usage observability | "Grow cleft from…" |
 | `strandchat` | **builder** | browser window onto the mesh | deliverable-shaped |
 | `srfc` | **builder** | court-booking automation | "Integrate…" |
-| `manim` | **builder** | animation work | no blurb — **the only strand without one** |
+| `manim` | **builder** | animations in cairo, occasionally manim | blurb written 2026-08-14 (Peter): cairo is the usual tool, manim only when its scene machinery earns the dependency — **the strand name is the library that got there first, not the tool of choice** |
 | `bookmarks` | **builder** | bookmark reorganisation | self-declares short-lived, retires when done |
 | `cv` | **provisional** | CV / job-hunt materials | **CLAUDE.md self-marks provisional** |
 
 ## Tally
 
-**42 strands: 22 keeper, 18 builder, 2 provisional.** The `keeper` grep over
-CLAUDE.md finds only **10** — so **the declared count is less than half the real
-one**, which is exactly why the roster is a file and not a grep.
+**41 rows: 20 keeper, 19 builder, 2 provisional** — counted by `to-whom --list`,
+not by hand. The `keeper` grep over CLAUDE.md finds only **10**, so **the
+declared count is half the real one**, which is exactly why the roster is a file
+and not a grep.
+
+*(Corrected 2026-08-14. The hand-written tally said "42: 22/18/2" and was wrong
+on every figure — the first thing `to-whom` found. Arithmetic over the rows is
+the tool's job now; don't hand-count it again.)*
+
+## Routing rules the ranking cannot know
+
+*Lexical overlap ranks by wording; these are rulings. Where a rule contradicts
+the ranking, the rule wins — the gate applies them, `to-whom` only shortlists.*
+
+- **Pane / deck / layout work → `aifabric-pane-driver`, not `aifabric-pane`.**
+  The ranking puts `aifabric-pane` first on any pane wording (it owns the design
+  and says so), but the driver is *the thing you talk to*. Verified 2026-08-14:
+  "replace pane 2 with the deck" ranks pane [10] over driver [9] — wrong by
+  Peter's ruling, right by wording. Design questions go to `aifabric-pane`;
+  making a deck *do* something goes to the driver.
+- **Subject-matter routing is never delegated to a surface agent.** The driver
+  owns the surface; ubersitrep owns the subject matter (STATE, 2026-08-13).
 
 ## Contested rows — resolve at the archive diff
 

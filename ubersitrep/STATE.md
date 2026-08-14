@@ -11,10 +11,84 @@ agent, itself an MoE) — architecture, not analogy. The roster is built
 (`keepers.md`, 42 rows) and is **the gate's own working memory**; Peter's rulings
 live in Decisions at the foot of this file. Direction of travel: **more
 self-organising, less hand-built** — deterministic tools observe, Peter judges.
-**Blocked on two builds, both other strands':** `dispatch` (`aifabric`) so
-delegation stops taxing the gate, and the **archive-diff deriver**
-(`aifabric-sessions`) so the roster is grounded in evidence rather than blurbs.
-Meanwhile the astro line is healthy — `/astro/canon` live since 08-11.
+**Update 2026-08-14 — the gate started being built, and it was not blocked after
+all.** `to-whom` exists (roster + liveness + routes, as data); the two builds
+still outstanding are `dispatch` (`aifabric`) so delegation stops taxing the
+gate, and the **archive-diff deriver** (`aifabric-sessions`) for evidence-based
+verdicts — but **neither blocked the routing lookup itself**, which was the
+useful discovery. Next: **exercise it on real dispatches** (Peter: *"I will ask
+for tasks to be despatched to different and new strands and we'll discuss that
+until a pattern arises as well as actually doing it"*) — the dispatch pattern
+gets **extracted from live use, not designed up front**, which is the same
+manual-versions-teach-what-to-automate discipline as below. Meanwhile the astro
+line is healthy — `/astro/canon` live since 08-11.
+
+## BUILT: `to-whom` — the gate stops being a reading exercise (2026-08-14)
+
+**First code this strand has owned.** `ubersitrep/to-whom` parses `keepers.md`,
+joins it to `strand-ps` liveness and the mailbox spool, and answers *who owns
+this* + *is anyone home* as data. Developed **here** deliberately (Peter:
+*"we'll develop it here before making it a keeper"*) — it graduates to
+`aifabric/bin` once proven, which keeps the theory/practice boundary intact
+without blocking on it.
+
+    to-whom "<query>"   ranked owners + the route to each   --list / --live
+    to-whom --audit     roster vs reality drift             --strand <name>
+
+**It reuses rather than rebuilds** — `strand-ps` already had liveness
+(`--live-strands`, /proc, never stale) and `strand-mailbox peek` already had
+unread counts. The only thing missing was the join.
+
+**The split it enforces is the design's, made mechanical:** the tool observes and
+shortlists, **never decides**. Ranking is lexical overlap over blurbs — announced
+as a shortlist in `--hints` so nobody mistakes it for a verdict. Judgement stays
+in the agent. Builder rows print `NOT ROUTABLE FOR FACTS`, so the phase
+distinction finally does something at the point of use rather than sitting in a
+table.
+
+**It found roster drift the moment it ran — which is the argument for it.**
+
+- **The tally was wrong on every figure.** `keepers.md` claimed *42: 22 keeper,
+  18 builder, 2 provisional*; the rows are **41: 20/19/2**. Hand-counted, never
+  re-counted. Arithmetic is the tool's job now.
+- **`aifabric-pane-driver` had no blurb** — a *keeper*, and the sideways-
+  delegation target for all pane work, with **no router weights at all**. Written.
+  The roster's "manim is the only strand without a blurb" was simply false; three
+  lacked one.
+- **`manim` blurbed** from Peter's own words: *animations using cairo, and
+  occasionally manim* — the strand name is the library that got there first, not
+  the tool of choice. Worth having asked; the name actively misleads the router.
+- **Duplicate sessions are a routing hazard**, not a curiosity:
+  `aifabric-pane-driver` has two (pts/12, pts/9), so "dispatch to the driver" is
+  **ambiguous today**. The tool flags it; nothing else did.
+
+**Rulings beat rankings — and needed their own mechanism.** Verified live: *"replace
+pane 2 with the deck"* ranks `aifabric-pane` **[10]** over `aifabric-pane-driver`
+**[9]** — right by wording, **wrong by Peter's ruling**. Lexical overlap cannot
+know a decision. So `keepers.md` grew a **Routing rules** section that `to-whom`
+surfaces beside the candidates; the gate applies them, the tool never does.
+First filter was too loose (fired on *"make the alert go to my phone"*),
+tightened to match a rule's **statement sentence only** — a rule that cries wolf
+trains the gate to skim past rules, which is worse than no rules.
+
+**Weaknesses found by trying real queries, not by inspection** — the honest
+result of the first spread, all still open:
+
+- **"how much is R2 costing" returns NOTHING.** No candidate. Cloud cost spans
+  three billed providers in GLOBAL.md and **no strand owns it** — this is the
+  **missing-keeper signal** the design predicted, arriving on day one from a
+  five-word query rather than from an archive job.
+- **"which pi is offline" → `cloud-init-init`, not `pifleet`** — pifleet serves
+  exactly *knowing the fleet's state*, and lost on wording.
+- **"make the alert go to my phone" → `calendaralarm` (builder), not `xmatters`
+  (keeper)** — the alerting pipeline's keeper beaten by a builder on the word
+  "alarm".
+- **"stack last night's frames" → splay strands, not `astro-science`.**
+
+The pattern in all four: **blurbs are written to describe a strand, not to be
+matched against how Peter actually asks.** That is a finding about the *router's
+weights*, and it is fixable by editing blurbs — the cheap half of what the
+archive diff would have told us, available now.
 
 ## Direction: aifabric more self-organising, less hand-built (2026-08-13)
 

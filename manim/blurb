@@ -1,0 +1,5 @@
+Animations using cairo, and occasionally manim.
+
+Animation work: the drawing is usually direct cairo, with manim itself reached
+for only when its scene/animation machinery earns the dependency. The strand
+name is the library that got there first, not the tool of choice.
