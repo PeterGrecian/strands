@@ -1,0 +1,50 @@
+EPOCHS PAGE -- the HISTORICAL picture, which is bigger and messier than the
+"current epoch" badge suggests (Peter, 2026-08-13: "the historical situation -
+v1 astrocam for the first few weeks"; "astrocam has had 3 cameras as I
+recall"; "eclipticam has 2 cameras but the v1 is currently not used").
+
+MEASURED FROM DISK + FITS HEADERS (astrocam-frames, 62 nights):
+  epoch 1 av2  imx219 3280x2464 BGGR : 47 nights 2026-06-08..2026-07-28 = 76%
+  epoch 2 av3s imx708 4608x2592 RGGB : 15 nights 2026-07-29..2026-08-12 = 24%
+So "the first few weeks" UNDERSTATES it: the v2 era is the MAJORITY of the
+astrocam archive by 3:1. The epochs page is therefore not a status badge
+("we are on epoch 2") but a MAP OF AN ARCHIVE THAT IS MOSTLY NOT THE CURRENT
+CAMERA. Any year-scale result that spans 2026-07-29 crosses a hard calibration
+boundary; that is this strand's central question, so the page is load-bearing
+science documentation, not decoration.
+
+EPOCH 1 FRAMES CARRY NO POSINDEX AT ALL. The header was introduced WITH epoch 2
+(first seen 2026-07-29). Checked 2026-06-10 / 07-01 / 07-20 / 07-28: all
+POSINDEX=None, CAMERA=imx219. So 76% of the archive is epoch-UNSTAMPED and its
+epoch is inferable only from sensor/resolution/bayer. The page should say this
+plainly, and any epoch-aware tooling must FALL BACK to sensor+resolution rather
+than trust POSINDEX to exist.
+
+THIRD ASTROCAM CAMERA -- UNRESOLVED, ASK PETER. The registry has 2 entries and
+the frame headers show exactly 2 sensors (imx219 -> imx708 at 07-29); no av3w
+or third label anywhere in the repo. But a swap of one v3 module for another v3
+would NOT change CAMERA=imx708, so a third PHYSICAL camera could be invisible
+in the data. If there was a third, the registry is incomplete and the page
+would be publishing a wrong history. Resolve before building.
+
+ECLIPTICAM IS MODELLED DIFFERENTLY -- and has NO epoch mechanism at all:
+  eclipticam/camera.json, eclipticam-v1/, eclipticam-v3w/ ALL have
+  position_index=None and NO position_registry. The epoch system was only ever
+  applied to canon + astrocam.
+  Its two cameras are SEPARATE CONFIG FILES, not epochs, because both are
+  physically present on ONE Pi simultaneously (v1 = OV5647 2592x1944,
+  v3w = IMX708 4608x2592). Confirmed 2026-08-12: only v3w/ has frames; v1 is
+  IDLE (Peter: "the v1 is currently not used").
+  => The page needs TWO concepts, not one: SUCCESSION (astrocam/canon: epoch N
+  replaces N-1 in time) and COEXISTENCE (eclipticam: two cameras on one host,
+  one currently dormant). A single "current epoch" field cannot express the
+  second.
+
+ALSO A LIVE CONFIG BUG (not just docs): astrocam camera.json still carries
+plate_scale_deg_px=0.019 and pole_prior_xy=[1945,1823] -- which the registry
+itself records as the EPOCH 1 (av2) values -- while plate_scale_notes and
+pole_prior_notes both say "STALE ... INVALID after the imx708 swap ... must be
+re-solved". So the CURRENT camera is running with the OLD camera's geometry in
+live config. (pedestal is fine: live 50 is a deliberate 2026-08-01 winter-
+footroom re-derivation that supersedes the registry's 105.) An epochs page
+rendering registry-vs-live would surface exactly this class of drift.

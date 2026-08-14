@@ -7,6 +7,93 @@ astro-v3s (sidereal direction) + astro-deliverables — those strands are archiv
 their operational/engineering halves went to the keepers (polecam/eclipticam/
 canon/storage).*
 
+## THE MAP — sidereal-space static accumulator
+<!-- named "the map" 2026-08-13 (Peter), retiring the placeholder "the thrust".
+     Mathematical sense: a mapping from image space to the celestial sphere. -->
+
+**Status 2026-08-14: the map has a name, a design, a subproject, and its first
+working measurement.** Read this section first; the older material below is
+theory that still stands.
+
+- **`design/accumulation-bucket-refinement.md`** is the master doc — extent,
+  projections, buffers, dtype, bootstrap, statistical star/contaminant
+  separation, and astro-storage's binding constraints.
+- **`polefit/`** is the working subproject (README + fitter + CLI + regression
+  test + sample max stacks).
+- **`design/refraction-quest.md`** is the long-horizon prize: measure the
+  atmosphere as a second static vector field, and invert it to a barometer.
+
+### What was measured on 2026-08-14 (astrocam 2026-08-12)
+
+**De-rotation works** — the first positive result. Matched-moving-star sharpness
+on 20 frames of hour 01 (single frame = 4.452 is the ceiling):
+
+| stack | sharpness |
+|---|---|
+| plain sum | 1.358 |
+| whole-image gradient-fit pole | 1.884 |
+| **Polaris-arc pole (1392, 978)** | **2.549** |
+
+**The pole comes from Polaris's own arc.** Trails are concentric circles about
+the pole; Polaris draws the innermost (radius 17.5 px measured vs 18.1 predicted,
+sweeping 138°). Short radius + large sweep is the well-conditioned case for a
+circle fit; the long outer arcs have huge radius and small sweep so their
+curvature barely constrains a centre. **This beat both existing tools** —
+`bin/arc-walk` (moves ~90 px with threshold) and `bin/fit-pole` (wrong for this
+night). `_epoch.wcs.json` does NOT rescale cleanly from epoch 1.
+
+**Polaris also gives the plate scale for free**: 0.7525° / 18.1 px = **0.02079
+°/px full-res**, against `_epoch.wcs.json`'s 0.02081 — **0.1% agreement from an
+independent measurement**.
+
+**The coarse stage is distortion-immune** (Peter's method, `polefit/
+radial_normal.py`): points where the arc normal is radial from the image centre
+are unaffected by radial distortion, because the displacement is parallel to the
+normal. Circular mean of their azimuths → **0.33° = 2.8 px**, versus 85 px for a
+whole-image gradient fit. The estimator MUST be circular; the arithmetic mean
+errs by 11.58° from mod-180 wrap alone.
+
+### Hour stacks and the arc-completeness filter
+
+Per-hour stacks **do not exist** (only per-night, whose ~7 h arcs are near-
+complete circles and hard to separate). Building one takes 7.7 s and gives short
+separated ~14.8° arcs — far better suited.
+
+**Peter's completeness insight, made operational:** for a complete arc the
+MIDPOINT is half past the hour and the ENDS are the hour's start and end, so a
+max stack is a *time-parameterised curve*, not time-blind. Requiring
+|sweep − expected| < 0.8° cut **70 candidate arcs to 6 complete ones**;
+everything rejected was frame-clipped or occluded. **Sweep-vs-duration is also a
+free capture-continuity check** — the same signal proposed for `summary.json`,
+straight from geometry.
+
+**Dtype:** a MAX stack is capped at the SENSOR ceiling (1023) whatever the
+container; a 60-frame SUM reaches 26,459 (fits uint16, overflows int16 1.9×,
+use int32) and has **26× the dynamic range** with zero saturation. For midpoints
+the sum is strictly better — a max stack of a saturated star is a flat plateau
+with no centroid.
+
+### The hierarchy (Peter): 1 → 6 → 20 → 100
+
+Each stage improves the mapping, which makes the next stage's identifications
+trustworthy. 1 star (Polaris) → pole + scale. 6 → roll (one parameter from six
+constraints, overdetermined). Then **interpolation between known stars beats
+extrapolation**: a tight error box lets you go fainter, because false-alarm rate
+scales with search area. So expand *inward between anchors* first, where the
+field is best constrained — which makes our clustered arcs a strength, not the
+weakness I first called them.
+
+**Accumulation happens in MAP SPACE, not by de-rotating images.** Project each
+frame through the field at its own timestamp and sum there; a star is stationary
+by construction. De-rotation was only ever an approximation valid when
+distortion is ignorable.
+
+**The rigidity constraint is the deepest lever:** the sky is rigid and only its
+phase changes, so the same star at two times must map to ONE point. A field
+error is fixed in *image* space; a timing/pole error is fixed in *sky* phase.
+Opposite signatures, so they separate — and one star sweeping its arc samples
+the field at hundreds of positions.
+
 ## The thrust — sidereal-space static accumulator
 
 The framing that ties all the sub-pixel work together, and the strand's next
@@ -715,8 +802,69 @@ regime); the ceiling lifting where the catalogue thins is itself information.
 
 ## Pending / loose ends
 
+### THE MAP — next steps, in order (2026-08-14)
+
+1. **Solve roll from the six complete arcs.** Feed their midpoints to
+   `bin/solve-detections` → `solve-field`, scale bracketed around the measured
+   **74.8 arcsec/px**. Pole and scale are known, so only roll is unknown — one
+   parameter from six constraints. *Do not* hand-roll a roll scan: mine failed
+   because I used catalogue RA from memory. Tycho-2 index files ARE on puppy
+   (`/usr/share/astrometry/index-tycho2-*`) but are kd-tree packed and NOT
+   directly readable; Vizier is unreachable from pip (connect timeout — and
+   astroquery will silently serve a CACHED result, so check for ConnectTimeout
+   before trusting one). `solve-field` sidesteps both by quad-matching.
+2. **Then the residuals ARE the vector field** — not error to minimise away.
+   `per-tile-effective-pole.md` already frames tiles as samples of it; Peter's
+   refinement is to **interpolate a continuous field** rather than treat tiles as
+   the resolution limit (tiles impose a false discontinuity and force a bad
+   resolution-vs-noise trade).
+3. **Arc curvature is a second, independent field probe.** In a perfect field an
+   arc's curvature is exactly 1/r from the pole; departures measure the field
+   locally — and it needs NO identification, so all ~70 arcs contribute, not just
+   the 6 identified. Untested. Caveat: circle fits on short sweeps are
+   ill-conditioned (a 20 px Polaris fragment gave r=10.9 vs 18.1 expected).
+4. **Bound focus breathing BEFORE claiming anything atmospheric.** `LENSPOS` is
+   in every frame header, so it is a measurable covariate, not a nuisance.
+5. **Then `design/refraction-quest.md`** stages 1–4.
+
+### From 2026-08-13, still pending (details in `ideas/`)
+
+- **EOS capture is being interrupted — confirmed, and the sweep video shows it.**
+  Peter: *"the videos look like inch worms as the stacks collapse and build up"*.
+  2026-08-12 had 6 gaps >90 s (121–646 s) against a 45 s median cadence; a 10-min
+  hole empties a whole sweep window. TWO causes: `eos-focus-cycle` pass turnaround
+  (~19.5 min apart, systematic) and a genuine Class-B wedge at 00:05 that
+  self-recovered via the 12 V pull. **The unit is `eos-focus`, NOT
+  `eos-focus-cycle`** — querying the latter returns "No entries" and looks like a
+  quiet night. Proposed: a capture-continuity line in `summary.json`.
+- **Multi-camera meteor coincidence is CHEAP — exposures are long.** astrocam
+  59.9 s and canon 30 s against a <1 s meteor means both cameras are effectively
+  always open, so no trigger or sync work is needed; matching is "same ~60 s
+  window by timestamp". **26 of 31 probed astrocam meteors had a simultaneous
+  canon exposure.** Blocked for *triangulation* only by canon's null
+  `pole_prior_xy`/`plate_scale`. NB the 5 misses are the capture gaps above —
+  interruptions directly cost coincidences.
+- **`/astro/transients` and `/astro/epochs`** — two cross-camera deliverable
+  pages designed but not built (crop-led transient gallery; epoch registry
+  renderer). Gated on detector trustworthiness.
+
+### Blocked / known-broken
+
+- **`astro/map/accumulate.py` metric is wrong.** Whole-frame percentile and
+  source-count metrics are dominated by FIXED contaminants (one "star" moved
+  0.0 px in 59 min), so a CORRECT de-rotation scores worse. Score on **matched
+  moving stars only**. The transform itself is unit-tested correct.
+- **Detection on the sum stack finds only Polaris.** Robust sigma comes out 716
+  ADU because the summed sky background is bright and structured. This is a
+  **background-model** problem — do not tune thresholds. Median filter size 25
+  also eats the arcs.
+- **Strategy (Peter): bright stars only for now.** Light pollution means dim
+  stars come later, so SNR is not the constraint and the max stack is adequate.
+
 - **Transients: median-subtract fix → re-run on astrocam** (see above;
   `design/transients.md`). Then the rate-vs-night curve across the Perseids.
+  **Detector recall is 1/38** against Peter's probes — see Decisions; the size
+  model was inverted, real meteors are small (5–12 px).
 - **Prereq for everything: pole + plate scale from real imx708 sky** (STALE from
   imx219 era). Trail-arc fit on a clear night → pole + resampling geometry, then
   RA/Dec naming + the accumulator.
