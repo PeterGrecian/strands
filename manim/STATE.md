@@ -12,7 +12,7 @@ solstice. Lives in `~/manim`:
 - `scenes/solar.py` — dependency-free solar position (NOAA/Meeus)
 - `scenes/astro_nights.py` — bigstore reader for all six camera streams
 - `scenes/pointing.py` — per-camera-EPOCH boresight + FOV, sourced and
-  certainty-tagged (8 epochs across 6 streams)
+  certainty-tagged (8 epochs across 5 cameras)
 - output: `media/earth_nights.mp4` (1080p60, 45 s) — **not uploaded yet**
 
 The globe is tilted 23.44°, lit from screen-left, and pitched up 34° so
@@ -27,7 +27,20 @@ captured. Timeline interpolates between nights, then projects weekly to
 ~13.9 h at midwinter — 3.2×, from nothing but axial tilt. Midwinter is when
 this fleet gets its observing time.
 
-## Data coverage (as extracted 2026-08-13)
+## Data coverage (re-extracted 2026-08-14)
+
+166 night-records, 2026-05-21 .. 2026-08-13, across **5 cameras** (not 6 —
+see the eos/canon correction below):
+
+| stream | nights | span |
+|---|---|---|
+| eclipticam | 66 | 06-09..08-13 |
+| astrocam | 60 | 06-09..08-13 |
+| canon | 19 | 07-25..08-13 (eos-frames + canon-frames merged) |
+| starcam | 11 | 05-21..06-04 |
+| skycam | 10 | 07-18..07-27 |
+
+## Old coverage table (2026-08-13, pre-merge)
 
 167 night-records, 2026-05-21 .. 2026-08-12, ~316k frames:
 
@@ -55,6 +68,16 @@ The 53->55mm step falls exactly on the position_index 1->2 boundary (the
 by-eye "marker 0" refocus). Worth feeding back into the astro repo — the
 design doc's table is still wrong there.
 
+## Correction: eos and canon are ONE camera (2026-08-14)
+
+Peter caught it. `eos-frames` and `canon-frames` are the same Canon EOS 2000D
+at two pipeline stages — raw CR2s vs processed deliverables (2026-08-12: 548
+CR2s vs 520 .fz + posters + summary; four nights overlap outright). There is
+no `eos/` camera config in ~/astro, only `canon/`, whose position_registry
+labels its own epochs `eos1`/`eos2`. Folded together via `STREAM_ALIASES`;
+the animation had been drawing it as two cameras with two cones and counting
+it twice.
+
 ## Correction: skycam is a v1 Pi camera (2026-08-13)
 
 First drawn at 120x30 deg on a guess, making it the widest field in the fleet
@@ -65,6 +88,40 @@ are a 16:9 1296x728 crop of the full sensor field, so vertical ~30 deg.
 **1,602 sq deg, a 6.7x overstatement corrected.** Lesson: an `assumed` value
 should never be allowed to dominate the picture — check the frames' EXIF
 before guessing a field.
+
+## FAILED: plate-solving astrocam av3s (2026-08-14)
+
+Attempted to ground the last `assumed` field (astrocam v3s, 66x41 deg from a
+nominal lens spec; `plate_scale_deg_px` and `pole_prior_xy` both STALE since
+the imx708 swap). **Did not succeed — av3s remains `assumed`.**
+
+What worked:
+- The night 2026-08-12 is `verdict: clear`, 396 stacked frames, and its
+  `max.fits.fz` is a clean concentric star-trail stack — the right input.
+- **Pole position** converged twice by independent methods: a trail-edge
+  gradient fit (every trail's gradient is radial, so those lines intersect at
+  the pole) gave ~(1081, 496) in the 2304x1296 preview; a rigid-rotation fit
+  between two frames 20 min apart gave ~(1066, 517). Agreement to ~25 px.
+  A concentricity check scored 0.956 at the solution vs 0.570 when displaced
+  400 px, so the pole fit is real.
+
+What failed, and why:
+- **Plate scale cannot be recovered from rotation alone** — a rotation is
+  scale-invariant, so the sidereal rate constrains the pole but not `f`.
+- The gnomonic approach (fit `f` from `r = f*tan(rho)` by matching star
+  displacements) ran to the search boundary and then to **negative focal
+  length** — a physically meaningless answer, median residual ~7.6 px and
+  never improving. The 59.9 s exposures trail the stars, so nearest-neighbour
+  matching across frames is dominated by mismatches; 9,038 "pairs" were
+  mostly noise.
+
+What to try next: the scale needs ONE true angle in the frame. Options —
+(a) identify a single star (Deneb/Polaris were used before on astrocam) and
+use its known declination: `rho = 90 - dec` against its pixel radius from the
+now-known pole; (b) measure pole-to-horizon (= 51.39 deg) using the tree line
+in the occlusion map; (c) cross-solve against eclipticam, which sees the same
+sky with a MEASURED plate scale. Scratch scripts are in this session's
+scratchpad and were not kept — the method notes above are the durable part.
 
 ## Decisions
 
