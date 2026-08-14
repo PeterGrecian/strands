@@ -218,6 +218,29 @@ tonight was never at risk — but a real fix could have been "committed, pulled,
 and still not live". Synced by hand. **This deserves a proper fix (symlink or
 deploy step) — currently tracked nowhere.**
 
+**The `~/dotfiles/bin` second-copy trap: CLOSED 2026-08-13/14** (dotfiles
+`8bde193`). Flagged on 08-12, fixed now. What it actually was:
+
+`eos-focus.service` runs `/home/peter/bin/eos-focus-cycle`; `~/bin` is a symlink
+to `dotfiles/bin`, which held **10 astro tools as untracked real copies** —
+tracked in *no* repo (dotfiles/bin tracks only 3 config helpers by design). So
+they were versioned nowhere and drifted silently. Measured: **4 of 10 had
+diverged**, and `eos-sequence` + `eos-star-watch` **still carried the wedging
+`Immediate`** the repo versions were fixed for on 08-12. Nothing armed runs
+those two, but typing `eos-sequence` would have wedged the body.
+
+Fix: the copies are now **symlinks into `~/astro/bin`** (originals trashed, not
+deleted), so repo == live — verified `readlink -f` on both paths gives the same
+file. And `~/astro/bin` is now on `$PATH`, appended **last** after
+`aifabric/bin` and `super/bin` (it is a project repo of 159 tools, not a general
+drawer, so it must never shadow a fabric/super tool; appending never prepending
+keeps system binaries safe). Zero name clashes verified against /usr/bin,
+aifabric/bin and super/bin. Deployed to muppet.
+
+**Rule this establishes: a capture tool must exist ONCE.** If a service invokes
+it by absolute path, that path must resolve into the repo. "Committed, pushed
+and pulled" is not the same as "live" when a second copy exists.
+
 **Astrocam's SD card is at 92% (552 MB free).** Not a threat: `frames_root`
 (`~/astrocam-frames`) is an NFS automount onto muppet's bigstore (4.1 T free)
 and the tmpfs buffer had zero backlog. Worth watching, not fixing tonight.
