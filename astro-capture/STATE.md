@@ -245,6 +245,39 @@ and pulled" is not the same as "live" when a second copy exists.
 (`~/astrocam-frames`) is an NFS automount onto muppet's bigstore (4.1 T free)
 and the tmpfs buffer had zero backlog. Worth watching, not fixing tonight.
 
+**Perseid night delivered + first meteor run (2026-08-14).** The 08-12 night is
+**live on /astro**: 548 frames, 527 stacked, verdict clear — the index count
+matches capture exactly, so nothing was lost camera→website. Astrocam's 08-12
+night delivered its full artefact set too. *But the Perseid artefacts are
+timestamped 09:52 on 08-13 — a MANUAL rescue*, because that morning's 06:05
+timer run was still the buggy one. The fix is now proven unattended: the 08-14
+run correctly targeted **2026-08-13** and built at 06:36-07:00.
+
+**`find-transients` over the peak night: 30 meteors reported, ~11 real.**
+Ran it (canon, 548 subs, 7 jobs, ~10 min). Raw verdicts: 30 meteor / 25
+satellite / 1 uncertain. **The meteor count is inflated by streak
+fragmentation** — the detector splits one long streak into many candidates:
+
+| | raw | after merging collinear fragments |
+|---|---|---|
+| meteor | 30 | **11** |
+| satellite | 25 | 24 |
+
+The worst case: **16 "meteors" in a single frame** (00:11:41), all at
+58.0-58.8° — a 0.9° spread — with endpoints chaining contiguously
+(350,1)→(397,78), (398,80)→(453,170), … and every fragment within **26 px** of
+one line running corner to corner. That is one ~2,100 px streak cut into 16
+pieces, not 16 meteors. Two more events fragmented 3× and 2×.
+
+So **the geometric meteor/satellite discriminator is working** (satellites
+barely fragment — they touch the border and persist across subs, which is the
+documented test), but there is **no fragment-merging pass**. Any per-night
+meteor *count* is currently an overestimate; treat the tool as a candidate
+finder, not a counter. Merging collinear same-frame candidates (angle within
+~6°, centre within ~40 px of the seed axis) reduces 56 raw → 36 events and is
+the obvious next step — deliberately NOT implemented here: the detector is
+astro-science's, early-development, and for this peak week only.
+
 **CONFIRMED IN PRODUCTION (Perseid peak night, 2026-08-12/13):** canon
 **548 frames**, median period **39.0 s**, duty **77%**, 20:57-03:40Z (81.6
 frames/h vs 71.9 the night before) — **+71 frames over the same window**, the
