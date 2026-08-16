@@ -2,6 +2,73 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## THE BOX IS BUILT AND POPULATED (2026-08-16)
+
+**vole is living in the rack.** The enclosure exists physically; measured
+internal depth **400 mm** (confirming the 402 mm design figure). This
+supersedes the "pour one test panel" next-action below — the casting question
+is settled by having been done.
+
+**Airflow is vertical, so machines stand vertical**, and that turns out to be
+the good way round: a machine is **lowered in from the top**, which is exactly
+what the open-top box affords. Vertical machines in vertical flow means every
+slot is open top and bottom — the rack *guides* air rather than blocking it,
+which a shelf would.
+
+**vole stands PORTRAIT** — on its short edge, 204 mm tall, 288 mm deep. Not a
+detail: landscape would stand 288 mm inside a 300 mm envelope, leaving 12 mm,
+which is enough for the machine and nothing else — no hand-room to lift it out.
+Portrait leaves ~96 mm. **The lift-out grip is the property the whole rack is
+for**, so orientation is load-bearing, not cosmetic.
+
+## PLATE RACK — the holding scheme (designed 2026-08-16)
+
+The draining-board plate rack: parallel slots, machines on edge, top-loaded.
+Generator: **`~/rackinabox/cad/platerack.py`** → `cad/export/platerack_*.dxf`.
+Run it for the live slot plan; the numbers below are outputs, not inputs.
+
+**Adjustable pitch via fine sockets.** The combs carry a fin socket every
+**10 mm**; a slot is made by dropping two fins into whichever sockets suit.
+Fixed pitch was rejected because this fleet cannot share one: a 19 mm
+Chromebook, a 26 mm disk and a ~71 mm board-on-bracket in the same rack.
+
+**Two comb heights, not one — and the zone is derived from HEIGHT, not name.**
+A single top comb high enough to restrain the board (244 mm) floats uselessly
+above the disks (147 mm) — and the disks are the items that most need
+restraining, being the only ones that vibrate. So: bottom comb at 30 mm
+(carries the load, full length), top comb at **190 mm** for the board zone and
+**120 mm** for the short zone (disks + portrait vole). `top_comb_z()` picks the
+zone by grip, so a machine added later cannot silently take a comb that floats
+above it. *(This error was made and caught by the generator's own grip check —
+keep that check.)*
+
+**Current fit:** 3 disks + board + vole use **300 mm of 398 mm**, leaving
+~98 mm (9 sockets) spare; tallest item 244 mm leaves 56 mm headroom. Fin depth
+is **derived** from the deepest machine (288 mm vole + margin = 308 mm),
+handing the remaining **92 mm to a rear cable plenum** — which also answers the
+long-open "rear cable access" item and doubles as unobstructed exhaust.
+
+### The mATX board is NOT a plate — it gets a bracket
+
+The one item that breaks the rack's premises, and the reason to design it
+deliberately rather than force it into a slot:
+
+- **No rigid edge to stand on** — a PCB on edge is a flexible sheet carrying a
+  cantilevered cooler; a tower cooler is a lever arm on the socket all day.
+- **Not top-loadable** — it arrives wired to PSU, disks, front panel and rear
+  I/O. "Lowering it in" means threading a loom.
+- **It eats a third of the comb** — ~87 mm of slot against ~43 mm for the rest.
+
+**Decision: mount it to a rigid backplate and rack the assembly.** Standoffs,
+I/O shield and cooler support all live on the bracket, so the board *becomes* a
+plate by being mounted to one. Slot thickness = backplate 6 + standoff 9 +
+PCB 1.6 + cooler.
+
+**⚠ Cooler height is the dominant term and is NOT yet chosen** — it alone sets
+how much comb the board eats. Budget capped at **70 mm (low-profile)**; a tower
+cooler both dominates the rack and hangs a lever off a vertical socket. Choose
+the cooler before cutting combs.
+
 ## What exists
 
 - **Deliverable repo:** `~/rackinabox/` — LIVE on GitHub (private):
@@ -354,11 +421,36 @@ subset is still required alongside — consolidation is not redundancy.
 
 ## Pending / loose ends
 
-**Next action: pour one test panel.** ~300×300 at a chosen thickness. Measure
-weight, whether it takes a screw directly, and real cure time. Everything else
-downstream depends on those three numbers.
+~~**Next action: pour one test panel.**~~ **✅ OVERTAKEN 2026-08-16** — the box
+is built and vole is in it. The casting questions (ratio, cure, fixings) are
+answered by the physical box; harvest what is worth recording from it rather
+than re-deriving.
 
-- **Disk mounting: is "disks high" wanted for MECHANICAL reasons?** The thermal
+**Next action: measure, then cut combs.** Three numbers gate the cut:
+
+1. **Caliper vole** — 19.05 × 204 × 288 mm is the *published* C720 figure, not
+   a measurement. It sets the datum slot.
+2. **Choose the CPU cooler** — the dominant term in the board's slot width and
+   the only unbounded one. Cap 70 mm.
+3. **Confirm the board bracket stack** — backplate thickness + standoff height,
+   once the cooler is known.
+
+Then `platerack.py` emits the comb + fin DXFs directly.
+
+- **✅ DISSOLVED by the plate rack (2026-08-16): "disks high or low?"** The
+  question assumed a stack of horizontal shelves. In a vertical plate rack the
+  disks are not above or below anything — every machine spans the same height
+  band and sits in its own air gap. The stacking-order debate below is
+  **superseded for the disks**; what replaces it is *horizontal* placement
+  along the comb (disks nearest the intake end). Keep the reasoning for the
+  record, but do not re-litigate the ordering.
+- **New: does the rack want decoupling grommets, or does the slot do it?** The
+  disks are the only vibrating items and now stand in fin-bounded slots. A
+  compliant strip in the slot may beat grommets. Open.
+- **New: fin retention.** Fins currently just drop into sockets. Decide whether
+  gravity + machine weight is enough, or whether they need a positive catch —
+  a fin lifting with a machine as it is withdrawn would be annoying.
+- ~~**Disk mounting: is "disks high" wanted for MECHANICAL reasons?**~~ The thermal
   answer is disks at the bottom (see stacking order). If vibration isolation or
   swap access argues for mounting them high, the answer is **a separate intake
   for the disk zone**, not reordering the stack. Decide before the partition
