@@ -61,7 +61,8 @@
     tree connect, SMB1 → refused at negotiation.
   - **Not yet done — the Chromebook itself.** The hardware hasn't arrived. When
     it does: Files app → Add SMB file share → `\\muppet.local\astro`, user
-    `peter`, password via `secrets copy /samba/muppet-peter` (copy, don't print).
+    `peter`, password from `secrets get /samba/muppet-peter` (NB `secrets copy`
+    hangs on pip — see below).
     If `muppet.local` doesn't resolve on ChromeOS, fall back to `\\192.168.0.10\astro`
     (muppet's pinned static). Untested against real ChromeOS until then.
   - **Android/VLC (2026-08-16, same day).** VLC for Android speaks SMB and works
@@ -102,6 +103,55 @@
     along on it; needs merging to main with the rest of that branch.
 
 ## Pending / loose ends
+
+- **Triaged in from `ideas/` 2026-08-16** (three items; the fourth, a forkchat
+  UI-zones note, belongs to an aifabric-pane strand and was left for it):
+
+  - **astrocam v3 units are NOT ansible-managed — a reimage loses them**
+    (from astro-polecam, 2026-08-13). Hand-installed root-owned on astrocam:
+    `astrocam-v3-night.service`, `-uploader.service`, `-gate.service` +
+    `.timer`, and `/etc/polkit-1/rules.d/50-astrocam.rules` (lets peter toggle
+    the services without sudo — the gate needs it). Repo copies of the gate
+    *script* and polkit rule are in `~/astro/astrocam/`, but the unit files and
+    the *installed* rule are unmanaged. **Escalated by the cover automation
+    landing on top**: the gate now drives the lens cover (opens before the night
+    daemon, closes after, position in `/var/lib/astrocam/cover.json`), so a
+    reimage no longer just loses config — it leaves the lens sitting open all
+    day. **eclipticam's equivalents ARE ansible-managed, so the pattern exists**
+    — likely just extending that role to astrocam. Not urgent, no deadline; it's
+    the last hand-installed corner of an otherwise-automated camera.
+
+  - **vole's networking is an outlier — single-homed on WiFi by config**
+    (2026-08-15). vole runs ifupdown + wpa_supplicant with NO NetworkManager /
+    networkd / netplan / resolved. One stanza only: `wlp1s0` static
+    192.168.0.9 — **the .9 everyone resolves is the WiFi address**. Its USB
+    ethernet dongle has *no stanza at all*: enumerated, PHY has link, but never
+    brought up (state DOWN, qdisc noop, carrier_changes 0, rx/tx all zero).
+    Pure config gap, hardware fine. Matters because vole is the OpenSearch
+    voting tiebreaker (see [[duty-cycle-tiering]]) — so no-redundancy is a real
+    property, not cosmetic. Also: static in a file rather than a DHCP
+    reservation, drifting silently from the router's view.
+
+  - **Sitewide: "prefer wired, fall back to WiFi, same IP" role** — the
+    generalisation of the vole finding; vole is just where it surfaced. Peter
+    unplugged that ethernet for ~12h and it was *completely invisible* (zero
+    node-left events in 16 days of master log) — the cable fed a link the OS
+    ignored. **Hard design constraint: keep the SAME address on whichever link
+    is up, do NOT give ethernet a second IP.** vole's .9 is pinned in three
+    places (compose `network.publish_host` + published ports, the other nodes'
+    `discovery.seed_hosts`, and the shared node cert SANs), so same-IP failover
+    means zero OpenSearch change; a second address forces cert regen and a
+    force-recreate of puppy+muppet. Options weighed, **no decision made**:
+    (1) both IFs on the subnet, ethernet lower route metric — least machinery,
+    but ARP flux and a carrier-up-but-dead port won't fail over;
+    (2) active-backup bond — textbook and genuinely automatic, but bonding WiFi
+    is fiddly and vole is a 2GB box you want boring;
+    (3) install NetworkManager for `autoconnect-priority` — cleanest semantics,
+    replaces a working stack. Needs Peter's call on the house standard, then an
+    audit of the other always-on hosts for the same drift.
+    Gotcha for whoever picks this up: `/etc/network/interfaces` on vole is
+    **root-readable only** — an unprivileged `cat` returns empty and looks like
+    an empty file. Use sudo. The WiFi PSK is cleartext in that same file.
 
 - **puppy `/etc/default/astro-process` cleanup** (low prio, from astro-storage
   mail 2026-08-03): the file still names `CAMERAS='--camera astrocam'`, stale
