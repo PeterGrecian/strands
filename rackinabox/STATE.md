@@ -5,9 +5,15 @@
 ## THE BOX IS BUILT AND POPULATED (2026-08-16)
 
 **vole is living in the rack.** The enclosure exists physically; measured
-internal depth **400 mm** (confirming the 402 mm design figure). This
-supersedes the "pour one test panel" next-action below — the casting question
-is settled by having been done.
+internal depth **400 mm**. This supersedes the "pour one test panel"
+next-action below — the casting question is settled by having been done.
+
+**⚠ The built box is 2 mm UNDER its design depth** (400 measured vs 402 in
+`cad/panels.py`). Small, but it means the design figures are optimistic rather
+than authoritative, and **width and height have not been measured at all**.
+The comb is cut to the internal width, so a 2 mm error there is a real fit
+problem. `platerack.py` now carries measured-vs-design labels and warns on
+every run. **Measure W and H before cutting.**
 
 **Airflow is vertical, so machines stand vertical**, and that turns out to be
 the good way round: a machine is **lowered in from the top**, which is exactly
@@ -426,13 +432,15 @@ is built and vole is in it. The casting questions (ratio, cure, fixings) are
 answered by the physical box; harvest what is worth recording from it rather
 than re-deriving.
 
-**Next action: measure, then cut combs.** Three numbers gate the cut:
+**Next action: measure, then cut combs.** Four numbers gate the cut:
 
-1. **Caliper vole** — 19.05 × 204 × 288 mm is the *published* C720 figure, not
+1. **Measure the box's internal W and H** — depth came in 2 mm under design, so
+   the other two design figures are suspect. The comb is cut to W.
+2. **Caliper vole** — 19.05 × 204 × 288 mm is the *published* C720 figure, not
    a measurement. It sets the datum slot.
-2. **Choose the CPU cooler** — the dominant term in the board's slot width and
+3. **Choose the CPU cooler** — the dominant term in the board's slot width and
    the only unbounded one. Cap 70 mm.
-3. **Confirm the board bracket stack** — backplate thickness + standoff height,
+4. **Confirm the board bracket stack** — backplate thickness + standoff height,
    once the cooler is known.
 
 Then `platerack.py` emits the comb + fin DXFs directly.
