@@ -1,0 +1,9 @@
+tin: a new always-on serving box to spec
+
+cld-strand-astro-serving.md proposes splitting processing (nit) from serving
+(tin). tin holds frame sets resident and serves browsers: modest CPU, quiet,
+low-power, always on — a different machine character from nit, and a build this
+strand owns. The doc's own caveat: the NAS build may answer the storage-topology
+question (does tin hold a copy, or mount from nit / the NAS?) and make tin much
+thinner than currently imagined. So do NOT buy for tin before the NAS decision —
+spec it after.

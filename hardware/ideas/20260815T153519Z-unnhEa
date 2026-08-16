@@ -1,0 +1,8 @@
+nit RAM ceiling: verify 64GB is actually reachable
+
+cld-strand-astro-serving.md (Drive, 2026-08-15) assumes nit "eventually wants
+64GB" for the processing role. nit is deliberately AM4/DDR4 (32G DDR4 beat 16G
+DDR5 in the price crisis). Before that ceiling is treated as a plan, check the
+board's DIMM count, how many slots are populated now, and the max supported
+capacity per slot — 64GB on 2 populated slots means replacing DIMMs, not adding
+them. Also re-check B550 M.2/SATA lane sharing while the spec is open.

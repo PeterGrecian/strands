@@ -184,6 +184,37 @@ solder items, so the old "disk emergency" framing is gone):
 *Settled:* pog is a liability, and out on physical grounds (doesn't fit an
 enclosure specced for laptops).
 
+**New demand on this strand from `astro-serving` (2026-08-16).** A design
+sketch (`cld-strand-astro-serving.md`, Drive 2026-08-15; now transcribed into
+the `astro-serving` strand, which was scaffolded for it) proposes splitting
+processing from serving — **nit** processes, a new box **tin** serves rendered
+frames to browsers. Three hardware items were spooled to `ideas/` on
+2026-08-15; they are **sequenced, not independent**:
+
+1. **NAS with real parity — the prerequisite, and it does not exist.** The
+   design scopes redundancy tightly and correctly: the only thing that cannot
+   be lost is the *captured frames*, everything downstream being reproducible
+   while the pipeline is in git. It then assumes those frames sit on a NAS with
+   parity. Today they sit on **bigstore — one SMART-blind copy**. So the
+   design's most protected component is in fact our least protected one. This
+   is the same gap as "Redundancy is the real on-prem/cloud difference" above,
+   now with a second strand depending on it.
+2. **tin — a new quiet, low-power, always-on serving box.** Resident frame
+   sets, modest CPU. **Do not spec or buy before the NAS decision** — the
+   storage topology (does tin hold a copy, or mount from nit / the NAS?) is
+   explicitly undecided there, and may make tin much thinner than imagined.
+3. **nit's 64 GB ceiling — verify it is reachable.** The design says nit
+   "eventually wants 64 GB". nit is deliberately AM4/DDR4 (see Decisions).
+   Check the board's DIMM count, currently-populated slots, and max per slot
+   before treating that as a plan: 64 GB across 2 populated slots means
+   *replacing* DIMMs, not adding. Re-check the B550 M.2↔SATA lane-sharing
+   blocker while the spec is open anyway.
+
+**One constraint this strand contributed back:** the serving box belongs on the
+**wired** side of the house, near the bytes — pip's 4.9 vs 34 MB/s measurement
+([[compute-follows-the-data]]) means no amount of client-side bandwidth
+adaptation rescues a server sitting behind a slow radio link.
+
 
 - **muppet USB socket wear — one socket confirmed worn, rest verified sound
   (2026-08-10).** Found via astro-canon: the Canon EOS 2000D's escalating PTP

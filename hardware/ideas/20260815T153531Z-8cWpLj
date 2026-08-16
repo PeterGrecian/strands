@@ -1,0 +1,13 @@
+NAS with real parity is a prerequisite astro-serving assumes but we don't have
+
+cld-strand-astro-serving.md scopes redundancy tightly and correctly: the ONLY
+thing that cannot be lost is the captured frames; everything downstream is
+reproducible while the pipeline is in git. It then assumes "raw archive lives on
+the NAS with real parity" — which does not exist yet. Today bigstore is one
+SMART-blind copy (Seagate Expansion enclosure blocks ATA pass-through), so the
+raw archive is currently the LEAST protected part of the chain, not the most.
+
+This is the concrete form of "redundancy not capacity" — the goal is to stop
+being at one copy. It also gates the other two astro-serving hardware items:
+the NAS decision determines the storage topology, which determines how thin tin
+can be. Sequence: NAS parity first, then tin, then nit's RAM ceiling.
