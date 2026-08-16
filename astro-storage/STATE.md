@@ -1,6 +1,109 @@
 # astro-storage — state
 
-*Updated 2026-08-12*
+*Updated 2026-08-13*
+
+## astro-science all-time accumulation — coordinated, four answers given (2026-08-13)
+
+astro-science is starting **all-time sidereal accumulation** over the whole
+archive (~703G: astrocam 606G + eos 97G), frames bucket-sorted by quality and
+recursively refined. Method doc `astro/design/accumulation-bucket-refinement.md`.
+Read-heavy, write-tiny (accumulator output is 400-700MB **forever** per
+instrument). They asked four questions; answers, now in their design doc:
+
+1. **Multi-hour full-archive read on muppet: YES, no window needed.** Only
+   `canon-nightly` (~06:05) contends. But muppet **NFS-exports
+   `/mnt/bigstore/astro-data` to the whole 192.168.0.0/24**, so `nice -19` /
+   `ionice -c3` it; and per `muppet-interfaces-worn-not-silicon` bigstore is
+   **USB** — a saturating multi-hour read is exactly the load that surfaces a
+   marginal socket, so the pass must be **resumable per-night**.
+2. **Bad-read logging: YES — the most valuable part of the proposal to us.**
+   First archive-wide integrity check we have ever had, and bigstore is
+   SMART-blind so it is the only warning we can get. Log path/night/camera/
+   error/bytes-read-before-failure as a diffable file; **do not repair or
+   quarantine**, just log.
+3. **Accumulator output → `/mnt/bigstore/astro-data/<instrument>/accumulator/`**
+   with a `MANIFEST.sha256` re-emitted on rewrite. Sidecar quality table same
+   tree but marked **DERIVED/regenerable**. Crucially: **bigstore placement is
+   CONVENTIONAL, not SAFE** — it is one SMART-blind copy, so the accumulator is
+   a **cold-archive candidate**; they ping us when a version is worth freezing
+   and it is not "safe" until it reaches Deep Archive. At 400-700MB it is the
+   clearest case in the estate for archiving (regeneration = a full 703G re-read).
+4. **Do-not-touch:** 05-21 + 05-23 (single copies, reads fine, no moves);
+   2026-07-04 eclipticam-v3w is **Deep Archive only — never trigger a restore**;
+   no writes to bigdisk (97%) or bigdisk2 (93%); ignore `/mnt/astrobackup`.
+
+**Durable answer file:** `for-astro-science-tree-shapes.md` in this dir (committed).
+Written because the spool ate the reply **twice** — see the mailbox gotchas below.
+
+## TREE SHAPES: astrocam has TWO coexisting layouts (2026-08-13)
+
+Walked the disk rather than recalling, and my own earlier answer was wrong (said
+"three" shapes, listed four; neither was right). The real hazard:
+
+```
+astrocam-frames/YYYY-MM-DD/          <-- FLAT. ALL 606G is here. 62 dirs.
+astrocam-frames/YYYY/MM/DD/astrocam/ <-- NESTED. METADATA ONLY: 31 files, 748K,
+                                         ZERO fits. state.json + brightness.csv.
+```
+
+I sampled the nested tree first and briefly thought astro-science's 606G premise
+was wrong. **A naive date-dir glob matches BOTH and may pick the empty one.**
+`astro-where astrocam <night>` returns the **flat** path — the house resolver
+treats flat as canonical. Also `astrocam-frames/latest-astrocam` is a **symlink
+OFF bigstore** into `/home/peter/astrocam-frames/` — walks must **not follow
+symlinks** or they leave the archive and double-count.
+
+Other shapes: canon `YYYY-MM-DD/HH/HH-MM-SS.fits.fz` (hour dirs sit **alongside**
+product dirs — filter to two-digit names); eclipticam
+`night/YYYY-MM-DD/v3w/` (with `moon/ sweep-colour/ sweep-diff/` siblings — take
+`v3w` explicitly); eos `YYYY-MM-DD/<epoch>…cr2`; starcam raw `HH`+`HHb` **or**
+`HH-sum8`+`HHb-sum2`, **both permanent** now squash is dormant.
+
+**`astro-where` gotcha (astro-science's catch):** it needs the **full** camera
+name `eclipticam-v3w`; bare `eclipticam` resolves nothing and reads like the tool
+is broken. Worth documenting wherever astro-where is described.
+
+## Derived night products are NOT frames — double-counting hazard (2026-08-13)
+
+Reconciling a 57-file count gap with astro-science: both counts were right, we
+counted different things. At the **night level** (depth 2) there are 231 derived
+fits: exactly **57 `sum.fits.fz`, 57 `min.fits.fz`, 57 `max.fits.fz`, 57
+`badpixel.fits`**, plus 3 `derot.fits.fz`. Captures live at **depth 3, in the
+hour dirs**.
+
+**`sum.fits.fz` is an already-accumulated night stack.** Ingesting it as a frame
+would *accumulate an accumulation* — double-counting a whole night's photons in
+one object and silently biasing every quality bucket it lands in. Same hazard for
+max/min (extrema, not exposures) and badpixel (a mask). **Rule: take fits only
+from the two-digit hour dirs; everything at the night level is derived.**
+
+## 2026-06-08 astrocam is a KNOWN-EMPTY night (2026-08-13)
+
+Found by astro-science while counting; verified independently from both strands:
+zero entries of any kind, 4.0K stub, mtime 2026-06-15. So astrocam is **61
+populated nights + 1 empty**, not 62. Recorded in the CSV as a new
+**`storage_class=empty`**, and `inventory-drift` now understands that class — the
+dir must exist **and stay empty**; data *appearing* in a known-empty night is
+flagged as drift (verified both directions). Recorded so nobody re-derives the
+question in three months.
+
+**Inventory now: 36 rows, 33 ok, 0 missing, 0 size-drift, 3 skipped.**
+
+## MAILBOX GOTCHAS — a long reply was destroyed twice (2026-08-13)
+
+Both are tool-shaped traps, not carelessness. Worth knowing estate-wide:
+
+- **`strand-mailbox drain` removes the `.msg` from the tmpfs spool.** Pipe the
+  drain through `head` and the tail is destroyed **unrecoverably** — the spool
+  keeps no copy. **Read the `.msg` whole (`cat "$SPOOL"/*.msg`) BEFORE draining.**
+- **`drain` empties the spool, NOT `MAILBOX.md`** (the house
+  `doorbell-rearm-loop` gotcha). A `--keep` waiter re-reads the stale pointer
+  line and rings instantly, forever. **Clear `MAILBOX.md` before re-arming.**
+- **For anything longer than a few lines, write a FILE in the strand dir and send
+  the path.** A file survives both sides' mistakes; the spool does not.
+- Also seen this session: `strand-mailbox drain` run from the wrong cwd silently
+  drains a *different* strand (reported `strands:` instead of `astro-storage:`).
+  Run it from the strand dir.
 
 ## INVENTORY WAS ROTTEN — corrected, and `inventory-drift` built to stop it (2026-08-12)
 
