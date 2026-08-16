@@ -64,6 +64,39 @@
     `peter`, password via `secrets copy /samba/muppet-peter` (copy, don't print).
     If `muppet.local` doesn't resolve on ChromeOS, fall back to `\\192.168.0.10\astro`
     (muppet's pinned static). Untested against real ChromeOS until then.
+  - **Android/VLC (2026-08-16, same day).** VLC for Android speaks SMB and works
+    on the home LAN — server `192.168.0.10` (the IP, NOT `muppet.local`:
+    Android mDNS is patchy and VLC's share dialog often won't resolve `.local`),
+    user `peter`, share `astro`. **Away from home does NOT work and won't
+    without a decision**: muppet is not on Tailscale (no `100.x`, tailscaled not
+    even installed), and `interfaces`/`hosts allow` are LAN-only by design.
+    Adding it = install tailscale on muppet + add `tailscale0` to BOTH lists;
+    deliberately not done unasked, it widens exposure. (Aside: pixel-6a has been
+    offline on the tailnet 9+ days.)
+  - **Password changed to a 4-word passphrase** (~55 bits, 27 chars) because the
+    24-char random string was unthumbable on a phone keyboard and VLC gives no
+    useful error on mistype. Rotation exercised the documented footgun for real:
+    the role only creates the account when absent, so it needed
+    `sudo smbpasswd -x peter` on muppet FIRST, then a re-run. Verified new works
+    / old gives LOGON_FAILURE.
+  - **`secrets copy` HANGS on pip** — blocked past a 120s timeout, so the
+    clipboard path is broken here, not just awkward for a phone. Notable because
+    `secrets hints` recommends `secrets copy` for exactly this
+    phone/web-login case. Worked around by writing the value to `~/z` (mode
+    600) for hand-copying; that file should be `trash`ed once the phone is
+    connected — secrets holds the authoritative copy. **Root cause not
+    investigated** — likely a clipboard-manager block under X11; worth a look
+    since it silently breaks the documented workflow.
+  - **Two real bugs found + fixed** while checking the phone question
+    (commit `b1ce3cf`): (1) the template *commented* that `bind interfaces only`
+    enforced LAN-only but **never emitted the directive** — smbd was on
+    `0.0.0.0:445`, docker0 included, with `hosts allow` the only gate; (2) the
+    handler **reloaded** smbd, which re-reads smb.conf but does **not re-bind
+    sockets**, so the fix showed in `testparm` while `ss` still had the old
+    bind — a network-exposure change silently not applying. Handler is now a
+    restart. Verified `ss`: `0.0.0.0:445` → `127.0.0.1` + `192.168.0.10` only.
+    Lesson worth keeping: **for samba, verify with `ss`, not `testparm`** —
+    testparm shows intent, ss shows reality.
   - **NB `super` was pushed on branch `cdf-astro-nav`, not main** — that branch
     was already checked out with unrelated unmerged work. The secrets hint rides
     along on it; needs merging to main with the rest of that branch.
