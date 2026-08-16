@@ -30,7 +30,54 @@
     ansible; only `authorized_keys` is, via the `users` role). If fleet key
     distribution ever gets automated, vole should be included.
 
+- **SMB share on muppet for the Chromebook: DONE + VERIFIED** (2026-08-16,
+  commit `c7b55e3` in `~/ansible`, pushed). Peter is getting a Chromebook, and
+  **ChromeOS has no NFS client** — its Files app speaks SMB only — so muppet's
+  astro store is published a second way. New `samba-server` role, wired into
+  `site.yml` behind `enable_samba_server`, live on muppet.
+  - **Share is `/mnt/bigstore/astro-data` only** (as `\\muppet.local\astro`,
+    rw), NOT the whole of bigstore or bigdisk. Peter's call: the NFS exports of
+    those whole disks expose personal dirs (audio/, Backup/, images/) and the
+    Chromebook has no reason to see them. This is the narrower of the two
+    postures now live on muppet.
+  - **Deliberately mirrors the nfs-server doctrine**: LAN-only
+    (`hosts allow 192.168.0.0/24` + `bind interfaces only`), and
+    `force user/group = peter` so an SMB write is indistinguishable on disk
+    from an NFS `all_squash` write. Verified: files land `peter:peter` 0664.
+  - Hardening: SMB1 off (min protocol SMB2 — ChromeOS/macOS/Windows all refuse
+    SMB1 anyway), `nmbd` disabled (mDNS/DNS resolve the fleet; NetBIOS is just a
+    broadcast listener), `map to guest = never`, smb.conf rendered under
+    `testparm` validate. Missing share paths *warn* rather than being served as
+    an empty writable dir — bigstore is a USB disk, the same failure mode the
+    nfs-server generator mask guards against.
+  - **Password is in secrets at `/samba/muppet-peter`** (hint added, `super`
+    commit `04235e0`). Non-obvious: samba keeps its **own** password database
+    via `smbpasswd`, so this is NOT muppet's login password. The role only
+    creates the account when absent, so rotation needs
+    `sudo smbpasswd -x peter` on muppet first. Passed at run time:
+    `-e "samba_password=$(secrets get /samba/muppet-peter)"` — never in the repo.
+  - **Verified from pip with smbclient**: browse, read, write, delete all work;
+    wrong password → `NT_STATUS_LOGON_FAILURE`, anonymous → `ACCESS_DENIED` at
+    tree connect, SMB1 → refused at negotiation.
+  - **Not yet done — the Chromebook itself.** The hardware hasn't arrived. When
+    it does: Files app → Add SMB file share → `\\muppet.local\astro`, user
+    `peter`, password via `secrets copy /samba/muppet-peter` (copy, don't print).
+    If `muppet.local` doesn't resolve on ChromeOS, fall back to `\\192.168.0.10\astro`
+    (muppet's pinned static). Untested against real ChromeOS until then.
+  - **NB `super` was pushed on branch `cdf-astro-nav`, not main** — that branch
+    was already checked out with unrelated unmerged work. The secrets hint rides
+    along on it; needs merging to main with the rest of that branch.
+
 ## Pending / loose ends
+
+- **puppy `/etc/default/astro-process` cleanup** (low prio, from astro-storage
+  mail 2026-08-03): the file still names `CAMERAS='--camera astrocam'`, stale
+  from before the bigdisk→bigstore cutover. astrocam stage-1+3 now runs on
+  muppet; puppy's astro-process/astro-state services are INACTIVE (only
+  astro-latest-links.timer runs), so it's a dormant artifact, not a live
+  conflict — but it violates the one-host rule on paper. Next time we touch
+  puppy config, clear `astrocam` from its `/etc/default/astro-process` (no
+  astro-state default file there).
 
 - **Fleet git-repos divergence sweep: DONE** (2026-08-03, prompted by
   housekeeping mail; results corrected after housekeeping VERIFY caught an
