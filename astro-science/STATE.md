@@ -827,6 +827,91 @@ regime); the ceiling lifting where the catalogue thins is itself information.
    in every frame header, so it is a measurable covariate, not a nuisance.
 5. **Then `design/refraction-quest.md`** stages 1–4.
 
+*(Geometry layer settled 2026-08-16 — see below. Step 1 is unchanged and still
+the next thing to do; nothing in the quaternion/projection work blocks it, and
+the roll solve's output feeds the same sphere either way.)*
+
+### THE MAP — geometry layer settled 2026-08-16
+
+**Three layers, each with the right tool: quaternion for the rotation,
+equal-area rings for the projection, drizzle for the fractional placement.**
+No code yet — this session was corrections and orientation.
+
+**The integer shift is WITHDRAWN** (`astro 394e9da`). The 24 × 2ⁿ ring
+quantisation paid +4% memory to keep a sidereal rotation an exact integer index
+shift. Two independent reasons it does not survive:
+
+1. **24 divides 360 for the SOLAR day.** The sky turns at the **sidereal** rate,
+   **15.041069°/h** (360/86164.0905 s), which lands on no nice fraction of a
+   24-divisible grid — so the exactness claim was never true of the real sky.
+   Implementing the literal "15°/h" would have been a live bug worth **+1.55
+   px/hour at astrocam's rim, +10.85 px over a 7 h night**.
+2. **Sub-pixel is the point** (Peter: *"we are aiming for subpixel resolution so
+   this is not important"*). Even correct-rate rounding leaves ~0.24 px at the
+   rim — larger than the measured **0.14 px** single-frame astrometric
+   precision, and position-dependent. It would quantise away the project's best
+   measurement, permanently (resampling error bakes in).
+
+Drizzle is already the stated resampling strategy and handles fractional offsets
+natively, so the integer shift bought cheapness for something that is not the
+bottleneck. **Consequence: prefer pure equal-area rings at the 1.81e7 floor** —
+take the 4% back.
+
+- **The design had already reached this on 2026-08-13** by a different route
+  (*"Neither gets a free shift"*, from the measured 11.28 cells per 59.9 s
+  exposure); the fallback section still advertised exactness, which is what was
+  withdrawn. The rate error is the genuinely new finding.
+- **The CODE was already clean** — every tool derives the rate
+  (`7.2921e-5 rad/s`, `2π/86164.0905`, `360.0/86164.0905`). The error was
+  confined to design prose, so no reprocessing is implied. A doc bug, not a
+  data bug.
+
+**Quaternions belong to the ROTATION layer only** (Peter raised them
+2026-08-16). They solve: no gimbal-lock singularity at the pole (which is where
+this camera points, with Polaris in the dead disc); correct composition and
+averaging of rotations — **two logged bugs share the root cause that angles are
+not a vector space** (the 11.58° circular-mean error, and the transients
+"0.4° vs 179.7° are the same direction" clustering bug); **epoch composition**,
+since `camera-moved-signal.md` needs every `(POSINDEX, MOVEID)` to land on ONE
+sphere, which is what makes an all-time sweep across the imx219→imx708 boundary
+well-posed; and the sidereal rotation as a one-parameter family
+`q(t)=[cos(ωt/2), sin(ωt/2)·n̂]` with `n̂` a unit 3-vector shared across cameras.
+**They do NOT help with unequal cell areas** (Peter's question) — a quaternion is
+an isometry, so it preserves area distortion rather than correcting it; composing
+one with an orthographic projection gives a rotated orthographic projection.
+`scipy.spatial.transform.Rotation` covers all of it — no new dependency.
+
+**`design/whole-sky-context.md` written** (`astro d9bc9e5`) — the field map, from
+Peter: *"I should know more about the whole-sky astronomy world."* Pixelisation
+(HEALPix + cousins), drift-scan/transit astronomy (**SDSS ran its whole imaging
+survey in TDI drift-scan** — remap-then-shift in silicon; **Evryscope** is the
+closest analogue; **GMN** publishes the meteor triangulation methodology
+`transients.md` wants), resampling (drizzle/ePSF already adopted by name;
+**IMCOM / optimal coaddition is the relevant unread work**, bearing on the open
+band-limiting question), and the standards.
+- **FITS WCS projection codes are declarable standards, not custom schemes**:
+  `SIN` = the orthographic-with-unequal-areas Peter asked about, **`ZEA` =
+  zenithal equal-area, the named fix**. (`TAN`'s divergence is also the standard
+  reason the design rejects a tangent plane for eclipticam's 102° field.)
+- **The HEALPix divergence has CLOSED.** We diverged only to buy the integer
+  shift; with that withdrawn, the reason not to use HEALPix proper has gone.
+  **Open question, worth revisiting.**
+- **Recommendations, in priority order:** (1) **BJD_TDB in frame headers now** —
+  light travel time across Earth's orbit is **±8 min** and Polaris's 3.97 d
+  Cepheid pulsation is exactly the target it corrupts; cheap now, painful to
+  retrofit across a year-scale archive. (2) Emit standard-WCS products so the
+  output is readable by every tool in the field. (3) Add `drizzle` (use) +
+  `astropy_healpix` (cross-check our ring areas against a reference impl) —
+  both **missing** on pip; astropy/numpy/scipy are present.
+  (4) **AAVSO** is the natural outside audience for the `zenith-quests.md`
+  variable-star targets, and an outside audience forces calibration rigour.
+
+**The all-time-sweep idea is LOST.** IDEAS.md carries Peter's *"I want to do all
+time sweeps of the data. I've got an idea..."* — the elaboration was never
+spooled and is in no session transcript (searched). Only Peter has it. NB the
+quaternion epoch-composition point above may be the same thought arriving by
+another road, but that is a guess, not a recovery.
+
 ### From 2026-08-13, still pending (details in `ideas/`)
 
 - **EOS capture is being interrupted — confirmed, and the sweep video shows it.**
@@ -929,4 +1014,12 @@ regime); the ceiling lifting where the catalogue thins is itself information.
 - Dither strategy is per-camera; drift is the always-on dither.
 - Accumulator lives on the **sphere** (projection from camera coords), not a flat
   grid; de-rotation is a rotation on the sphere.
+- **The map's geometry is three layers, not one** (2026-08-16): **quaternion**
+  for the rigid rotation, **equal-area projection** for the sphere→grid map,
+  **drizzle** for sub-cell placement. Each is the wrong tool for the others' job.
+- **No integer-shift optimisation.** Sub-pixel accuracy outranks shift
+  cheapness; equal-area rings sit at the theoretical floor and drizzle absorbs
+  the fraction.
+- **The sidereal rate is 15.041069°/h.** Never 15.000° — that is the solar rate
+  and it costs 1.55 px/hour at astrocam's rim.
 - Use LENSPREP (not LENSPOS) as the per-frame focus label (4-frame lag).
