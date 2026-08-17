@@ -566,25 +566,87 @@ hard-won lesson in this file (RUN_TAG, the wedge ladder, the `+6` margin, the
    camera. If bulb ever goes live the margin must be re-measured for
    CR2-sized transfers, or the recovery ladder will 12 V power-cycle all night.
 
-### Camera state left changed — and it cost ~3 s/frame
+### Camera state left changed — and my first diagnosis of the cost was WRONG
 
 I set `capturetarget=Memory card` during the probe **and left it there**;
 `shutterspeed` returned to `30` on its own because the nightly run sets it
 explicitly at startup, so the 1 s-subs risk never materialised (590 frames
 captured on 08-16).
 
-**But the change was not free.** 08-16 ran at **41-45 s** against 08-15's
-steady 39 s — writing the CR2 to the card *as well as* downloading costs
-~2-5 s/frame, taking duty from 77% back to **~71%**. That is a real regression
-I introduced, and it silently gave back half the `+6` win. Two readings, both
-worth holding: card-write is genuine insurance against a dropped download, but
-it is **not free**, and the earlier session's "restored to as-found state" note
-existed for this reason. **Decide deliberately: revert to `Internal RAM` for
-duty, or keep the card copy and accept ~71%.** Not reverted unilaterally —
-it is a real trade, not an obvious slip.
+**I recorded this as "card-write costs ~2-5 s/frame, duty 77% -> ~71%".
+That was wrong** — corrected 2026-08-17 by reading the card instead of
+inferring from the period distribution.
+
+Two nights of card-write left **5** CR2s on the card, not ~1000. So
+`capturetarget=Memory card` was **never duplicating every frame**. Correlating
+each stray CR2's timestamp against the JPEG sequence, every one sits in a
+**~90 s hole** where a frame is missing (`d00_p16_i29` -> `d00_p17_i00` across
+a pass boundary; `d00_p19_i18` -> `i19` 89 s apart against a ~42 s period).
+
+**The card CR2s are the frames whose DOWNLOAD failed** — the NO FILE / wedge
+tell events, caught by the card copy exactly as insurance is supposed to work.
+The 41-45 s period is those ~90 s stalls dragging the distribution, **not** a
+uniform per-frame card-write tax. Card-write is close to free; the stalls were
+always there.
+
+**Method lesson (the second one this session): I diagnosed a cost from an
+aggregate and attributed it to the change I happened to have made.** A period
+distribution shifting is a *symptom*; it does not name its cause. The cheap
+check — count what actually landed on the card — falsified it in one command
+and should have come first.
+
+**Now reverted to `Internal RAM` anyway** (2026-08-17), on Peter's decision to
+mothball: the camera moves to targeted ecliptic viewing plus normal
+photography, so **shutter actuations are the scarce resource** and the estate
+rule against RAM singles is outweighed by not leaving a card copy accumulating
+under a body that is no longer running unattended nightly. The 5 stray CR2s
+were pulled off to `muppet:~/tmp/eos-card-rescue/` first — they are the only
+copies, since no night dir keeps CR2s (every night on bigstore is `jpeg/` only).
 
 **Method lesson: the config readback lied.** `shutterspeed` reported `bulb`
 while the body shot 1 s in Manual. A `--get-config` echo confirms the *request
 was accepted*, never that the hardware honoured it. **Verify a capture setting
 against the resulting frame's EXIF, not against the config readback** — the
 same shape as "exit 0 is not delivery" above.
+
+## EOS MOTHBALLED — targeted ecliptic use only (Peter, 2026-08-17)
+
+**Decision: the EOS 2000D stops being a nightly unattended instrument.** It
+moves to *targeted ecliptic viewing* plus service as a **normal camera**.
+Peter's reasoning: **the shutter has a finite lifetime** and he wants the body
+back for ordinary photography. **Bulb is deprecated** — not "blocked pending
+someone turning the dial", but deliberately abandoned. Do not revisit it.
+
+This retires, in one stroke, most of the duty-cycle work above. The 77% ceiling,
+the `+6` margin, the ~9 s gap and the dotted trails are **no longer problems to
+solve** — they were only problems for all-night unattended meteor capture, which
+this camera has stopped doing. Keep the measurements (they are true, and they
+are the reference if another DSLR ever joins), but stop treating the ceiling as
+a frontier.
+
+**Consequences for this strand:**
+
+- **The dotting question is CLOSED.** Answer of record: ~9 s blind gap per 30 s
+  sub; unfixable in software; bulb was the only route and is deprecated.
+- **Shutter actuations are now the scarce resource**, replacing duty cycle as
+  the thing a capture change is judged by. Any future EOS run should justify its
+  frame count, not maximise it. This inverts the rule written above ("judge a
+  capture change by duty cycle first") **for this camera only** — that rule
+  still holds for the picamera2 instruments, which have no shutter to wear.
+- **astrocam remains the meteor instrument** (100% duty, 59.9 s cadence, zero
+  dropouts) — it always was the better one, and now it is the only one.
+- **The `eos-*` tool family is fully dormant**, not half. `eos-focus-cycle` was
+  "half dormant, do not disarm" because it ran nightly; that no longer applies.
+  **Before disarming `eos-focus.service`, check what else assumes a nightly
+  canon night exists** — `canon-nightly` delivery, the `/astro` face, and any
+  index that counts nights will start seeing gaps. Not done here; it is a
+  delivery-side change (astro-science), not capture's to make unilaterally.
+- **`eos-bulb-run` should be deleted or clearly marked deprecated.** It never
+  worked (see above), its mechanism is now abandoned, and leaving an armed-looking
+  bulb tool in `bin/` invites exactly the rabbit hole this session closed.
+
+**Mothball state left on the body (2026-08-17):** `capturetarget=Internal RAM`
+(reverted), `shutterspeed=30`, `imageformat=RAW`, `iso=1600`, mode dial still
+**M**. Card cleared of recent strays to `muppet:~/tmp/eos-card-rescue/`
+(5 CR2s; 13 older ones from March 2026 left in place, not this session's to
+judge).
