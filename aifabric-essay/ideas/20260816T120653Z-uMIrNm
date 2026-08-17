@@ -1,0 +1,50 @@
+TOOL SPEC + ESSAY MATERIAL — 'oncompute' and the frictionless-wrong-path problem.
+
+FOLLOW-UP TOOL (agreed 2026-08-16, skill written, tool deferred):
+  oncompute <path> -- <cmd...>
+Resolve the owning host from the mount table (findmnt -T <path> gives host AND
+remote path directly, so no hardcoded table needed), translate the pip-side path
+to the host-local path, then ssh + nohup + python -u against LOCAL storage.
+Decision: compute host is ALWAYS the data owner (not pog/nit) — confirmed by
+Peter. Log to ~/tmp/ never /tmp. Design questions left: progress streaming back,
+how to name/poll the job, whether it wraps or just prints the command.
+
+ESSAY POINT — why conventions break, and what that says about tooling:
+Peter: 'the convention is broken all the time'. Investigating WHY produced the
+best material of the session. The NFS mounts are x-systemd.automount, so
+/mnt/muppet/bigstore/... just works on pip — no mount step, no error, no
+ceremony, tab-completion walks straight into it. The WRONG PATH IS FRICTIONLESS
+AND INVISIBLE. So the 15GB-over-wifi mistake has no moment of decision at which
+to apply discipline. Measured cost: 4.9 MB/s I/O-starved on pip vs ~34 MB/s at
+90% CPU on muppet — 7x, plus it saturates the link Peter works over and cooks
+the laptop.
+
+The general claim: A CONVENTION THAT IS BROKEN CONSTANTLY IS USUALLY COMPETING
+WITH AN EASIER WRONG PATH. The fix is not more discipline, and not a louder
+rule in always-loaded context — it is either (a) a skill that fires on a
+MECHANICALLY VISIBLE TELL rather than on intent, or (b) removing the friction
+asymmetry so the right thing is the easy thing. Discipline is the most expensive
+and least reliable of the three, and it is exactly what a one-line rule in
+GLOBAL.md asks for.
+
+TRIGGER DESIGN — the transferable bit. My first instinct was to trigger on
+DURATION ('jobs over ~1min'), which is unworkable: duration is discovered at
+second 90, when the laptop is already hot and the skill's moment has passed.
+The working trigger is DATA LOCALITY — a path under /mnt/<host>/ — because it is
+visible in the command BEFORE it runs and is mechanically checkable. General
+rule: TRIGGER ON WHAT IS VISIBLE AT WRITE-TIME, NOT ON WHAT IS ONLY KNOWABLE AT
+RUN-TIME. Same reasoning applies to any 'expensive operation' guard.
+
+DEPRECATION AS A TRAP: Peter said 'use cpuworker to test this algorithm', but
+cpuworker is deprecated (2026-05-13) and does the OPPOSITE — replicated scp
+pushing files outward so every worker holds every file. Hanging the skill on
+that name would have taught both of us to reach for the wrong deprecated tool.
+The vocabulary Peter uses for an intention can outlive the tool that once served
+it. Worth a line in the essay: naming a skill after a tool binds it to that
+tool's lifecycle; naming it after the PRINCIPLE (compute-follows-the-data)
+survives the tool being replaced. The skill therefore triggers on the phrase
+'use cpuworker' but redirects.
+
+BURIED TRAP found while writing the path table: /home/peter/starcam-muppet is an
+NFS mount that looks like an ordinary home dir — nothing in the path says
+remote. Every other remote path starts /mnt/<host>/. That one will bite.

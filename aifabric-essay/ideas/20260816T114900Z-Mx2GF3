@@ -1,0 +1,42 @@
+ESSAY PASSAGE — 'two layers, one tool' / strands vs skills.
+
+Two instruments, one scarcity. Strands and skills both answer 'context is the
+scarce resource' but attack different halves: a strand amortises STATE (don't
+re-derive where you got to), a skill amortises PROCEDURE (don't re-derive how
+it's done). A strand is a noun with history; a skill is a verb without one. If
+it needs to know what happened last time it's a strand, not a skill.
+
+The cost asymmetry is the argument: a skill loads ON DEMAND, so it costs nothing
+in sessions that don't need it, whereas a strand's CLAUDE.md is paid in full at
+every launch. Anything in an always-loaded file that only matters occasionally is
+mis-filed — a procedure paying rent as state. Same push-cost-to-the-disposable-
+place move as the main thesis, applied to INSTRUCTIONS rather than sessions.
+
+The sharper version (Peter's observation 2026-08-16): a house tool is a TWO-LAYER
+artifact — the deterministic layer (the script) and the judgement layer (when to
+invoke it, in what order, what not to do instead). The house-tool convention is
+therefore both a skill AND a source of skills. The skill is 'the residue that
+doesn't fit in --help': a tool with good --help and no judgement around it needs
+no skill; a tool whose real difficulty is knowing when and in what order needs
+one. Test the ratio — dcp is nearly all judgement (super/bin/dcp is a one-line
+echo stub, the entire procedure lived in GLOBAL.md prose), idea is nearly all
+judgement (trivial tool, all 'when'), secrets is a substantial tool with one
+hard-won rule.
+
+Honest-evolution point (good for a hiring reader — reads as a real history, not a
+retrofitted design story): the method grew a TOOL layer first, and the judgement
+layer for those tools had nowhere to go until skills existed. So it got compressed
+into one-line imperatives in GLOBAL.md, losing everything except the imperative —
+paid for in every session, read in none. Corroborating evidence in the repo: the
+aicli SessionStart hook's own comments say it exists because 'the CLAUDE.md ritual
+prose kept getting forgotten'. That hook is a bespoke point-fix for exactly the
+problem skills solve generally. Independent convergence on the same diagnosis is
+strong material.
+
+Also worth the CV angle: skills are Anthropic's own vocabulary, so 'I factored my
+always-loaded context into on-demand skills' reads as fluency to a hiring reader,
+where a bespoke 'strand' reads as idiosyncratic until explained. Having both, and
+being able to say why each thing sits where it sits, IS the argument.
+
+Built 2026-08-16 as first house skills: house-tools, dcp, strand-ideas (in
+dotfiles/.claude/skills/). They are themselves usage-evidence for this passage.
