@@ -41,6 +41,20 @@ Observed in Peter's own speech (2026-08-10, first live driving):
   peer. Note he named the TOOL (`idea`) — the vocabulary reaches past deck
   geometry into fabric plumbing, which is a nudge that the deck-only scope may
   be too narrow.
+- **TERM HEIGHTS — three useful sizes, arrived at by feel (2026-08-17).** Peter
+  set these live, one instruction at a time; they are the floors the decay model
+  needs, and they are HIS numbers, not derived:
+  - **2 rows = a RIBBON.** Parked, alive, visible, clickable — not readable.
+    First real use of the prototype's ribbon idea, and horizontal (the original
+    imagined a vertical strip). Enough for the border label + one line.
+  - **9 rows = the driver's useful minimum.** Peter: *"this is a useful size
+    whilst 6 was not"* — so the readable/unusable boundary sits between 6 and 9,
+    NOT at the 5-vs-12 I had been bracketing. Tighter than I assumed.
+  - **5 rows = too small to type into.** Peter: *"I can't read the typing"* —
+    the input box and status line eat the term.
+  Consequence for attention-reflow: a quiet keeper may decay to 2, but a term
+  being TYPED INTO must never fall below ~9. Interactive and watched terms need
+  DIFFERENT floors; one global minimum will get it wrong either way.
 - **"expand as they are used"** / **"quiescent ones shrink over time"**
   (2026-08-11) → attention-driven reflow, stated as a STANDING PREFERENCE about
   how the deck should behave, not a command to execute now. Peter states desired
