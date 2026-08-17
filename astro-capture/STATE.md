@@ -503,3 +503,88 @@ already done and for starcam's retirement):
   disk and "should just work"; astro-science's adapter consumes that output and
   never reaches into it. A failure at delivery that turns out to be capture-side
   bounces back here / to the camera keeper.
+
+## Bulb DIAGNOSED — not unsolved, UNSOLVABLE over USB (2026-08-16)
+
+Peter: yesterday's streak images "still look dotty". They do, and the cadence
+change is not the cause — it is working exactly as measured. **The dots are the
+~9 s blind gap between 30 s subs, and no software change removes them.**
+Verified last night's real cadence from file mtimes: **453 frames at 39 s**
+(83 at 40 s, 7 at 38 s) — the `+6` margin live and steady, 77% duty as designed.
+
+**So the question became the one STATE.md already named as the only way out:
+solve bulb for longer subs. Probed the body directly. Bulb is dead over USB.**
+
+The `shutterspeed` list, read from the camera: **`30` is the longest timed
+value**, and `bulb` is choice 0. So longer *timed* subs are genuinely capped —
+that half of the old note is confirmed, not merely inherited.
+
+**Bulb looks available and is not.** `shutterspeed=bulb` sets *and reads back*
+as `bulb` — which is exactly why this looked tractable and why `eos-bulb-run`
+was written. Live test on the real body: `Press Full`, held **8.46 s**,
+`Release Full`. Result:
+
+| | |
+|---|---|
+| frame produced | ✔ `IMG_9682.CR2` on the card, correct timestamp |
+| **ExposureTime** | **1.0 s** — for an 8.46 s hold |
+| ShutterSpeedValue | `-2147483648` (INT32_MIN = invalid/bulb) |
+| **ExposureProgram** | **1 = Manual**, *not* Bulb |
+
+**On the 2000D bulb is a physical mode-dial position (B), and PTP cannot move
+the dial.** `autoexposuremode` advertises `Readonly: 0` and offers `Bulb` as
+choice 4, but setting it is **refused three ways** — by name, by
+`--set-config-index 4`, and by full config path — each time failing with a
+quoting error and *silently staying on Manual*. In M the body caps at 30 s and
+a `Press Full` just fires one ordinary shot.
+
+**Ruling: the "unsolved gphoto2 rabbit hole" is retired as a description.** It
+is not unsolved — it is **blocked by hardware**. The fix is to walk to the
+camera and turn the dial to **B**; only then does `eos-bulb-run`'s
+Press/Release mechanism become live. Until someone does that, 30 s subs at
+~78% duty is the ceiling and **the dotting is permanent**. *Do not spend
+another session hunting a software route to bulb.*
+
+Honest arithmetic before anyone makes the trip: at 120 s subs with the same
+~9 s gap, duty is **93%** and the dots nearly vanish — but it is also **4x
+fewer frames**, and for meteor work each gap is still a gap. Bulb narrows the
+blind fraction; it does not remove it.
+
+### `eos-bulb-run` is stale and has a latent bug
+
+Written 2026-07-23 (`c31bf83`) and **never touched since** — it predates every
+hard-won lesson in this file (RUN_TAG, the wedge ladder, the `+6` margin, the
+`Immediate` sweep). Two things to fix *before* it is ever armed:
+
+1. **It never sets `capturetarget`.** Its comment claims "keep on card +
+   download (both)" but no code does it — so it would inherit whatever the body
+   was left on, and `Internal RAM` singles are exactly what the estate rule
+   forbids.
+2. **Its download window is a fixed `=15s`.** My probe's 14 s window failed to
+   pull a **24 MB** CR2 while the *exposure itself succeeded* — shot on the
+   card, no file on disk. That is the **wedge tell** firing on a healthy
+   camera. If bulb ever goes live the margin must be re-measured for
+   CR2-sized transfers, or the recovery ladder will 12 V power-cycle all night.
+
+### Camera state left changed — and it cost ~3 s/frame
+
+I set `capturetarget=Memory card` during the probe **and left it there**;
+`shutterspeed` returned to `30` on its own because the nightly run sets it
+explicitly at startup, so the 1 s-subs risk never materialised (590 frames
+captured on 08-16).
+
+**But the change was not free.** 08-16 ran at **41-45 s** against 08-15's
+steady 39 s — writing the CR2 to the card *as well as* downloading costs
+~2-5 s/frame, taking duty from 77% back to **~71%**. That is a real regression
+I introduced, and it silently gave back half the `+6` win. Two readings, both
+worth holding: card-write is genuine insurance against a dropped download, but
+it is **not free**, and the earlier session's "restored to as-found state" note
+existed for this reason. **Decide deliberately: revert to `Internal RAM` for
+duty, or keep the card copy and accept ~71%.** Not reverted unilaterally —
+it is a real trade, not an obvious slip.
+
+**Method lesson: the config readback lied.** `shutterspeed` reported `bulb`
+while the body shot 1 s in Manual. A `--get-config` echo confirms the *request
+was accepted*, never that the hardware honoured it. **Verify a capture setting
+against the resulting frame's EXIF, not against the config readback** — the
+same shape as "exit 0 is not delivery" above.
