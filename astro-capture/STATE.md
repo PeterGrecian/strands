@@ -179,6 +179,10 @@ has no such flag — the flag is on `eos-focus-cycle`, and
 *delivery* chain (astro-science), not capture. This matters for the dormancy
 marking: `eos-focus-cycle` is **half dormant** — its focus-driving `d`-grid is
 retired, but the binary itself runs every night, so it must not be disarmed.
+> **SUPERSEDED 2026-08-17.** No longer half dormant and no longer armed: the
+> EOS is mothballed and `eos-focus.service` is `disabled`. See the mothball
+> section at the end. The paragraph above is kept for the `--no-focus` /
+> `eos-capture` distinction, which is still correct.
 
 **Consequence for the focus regime:** the `d`-schedule machinery
 (`eos-focus-cycle`, `eos-focus-sweep`, `eos-focus-tonight`, `eos-star-watch`) is
@@ -451,6 +455,8 @@ mode**, or if NTP can step the clock backwards mid-night.
   `eos-focus-cycle` is **half dormant** — its `d`-grid is retired but
   `--no-focus` is the live nightly path armed by `eos-focus.service`. The
   three wrappers are dormant outright. Nothing deleted.
+  *(**SUPERSEDED 2026-08-17**: fully dormant now, `eos-focus.service` disabled,
+  and `eos-bulb-run` deleted. See the mothball section.)*
 - ~~astro-canon left files staged-but-uncommitted~~ — checked, clean.
 
 **Next up (suggested):** eclipticam v1 → shared module, the multi-camera-per-host
@@ -550,6 +556,25 @@ Honest arithmetic before anyone makes the trip: at 120 s subs with the same
 fewer frames**, and for meteor work each gap is still a gap. Bulb narrows the
 blind fraction; it does not remove it.
 
+> **CORRECTION, same day.** The paragraph above frames longer subs as a clean
+> win gated only by hardware. **That is wrong on this mount**, and a parallel
+> session had the better argument (memory: `bulb-rejected-30s-is-resolution`):
+> on an unguided fixed mount **a sub is a sampling interval, not an
+> integration**. Stars drift ~15"/s, so at 13.8"/px a 30 s sub lays a ~5-8 px
+> trail — a time series written along the sensor. Doubling the shutter does not
+> deepen a point source, it lengthens the smear and averages away everything
+> finer than the trail. The ecliptic is the sharp case: planets and asteroids
+> are detected by how their motion *departs* from the sidereal trail, so
+> **along-track resolution is exactly the signal**. Bulb is a stack you cannot
+> unstack.
+>
+> So **bulb was the wrong thing to want even when it looked reachable**, and
+> the two rejections stack: mechanically blocked *and* scientifically
+> undesirable. The duty-cycle framing throughout this section is real but
+> incomplete — it is the right lens for the picamera2 meteor cameras and the
+> wrong one for a fixed-mount DSLR doing ecliptic work. **Shutter-life lever is
+> fewer nights, not longer subs.**
+
 ### `eos-bulb-run` is stale and has a latent bug
 
 Written 2026-07-23 (`c31bf83`) and **never touched since** — it predates every
@@ -644,6 +669,22 @@ a frontier.
 - **`eos-bulb-run` should be deleted or clearly marked deprecated.** It never
   worked (see above), its mechanism is now abandoned, and leaving an armed-looking
   bulb tool in `bin/` invites exactly the rabbit hole this session closed.
+
+**Shutter datum at mothball: 41361 actuations on 2026-08-17** (read by a
+parallel session via `gphoto2 --get-config /main/status/shuttercounter`; ~41% of
+the ~100k rating). Only ~5.3k of that is astro use — 22 shipped nights total
+5,337 CR2, so ~36k predates the project. **This is the baseline that makes
+"fewer nights" measurable**: record the counter WITH its date each time it is
+read, and derive the rate against the previous dated reading. Relevant here
+because the mothball stops a load that was about to grow — the nightly rate
+jumped ~5x (110 -> 590 frames/night) when focus was solved on 08-10, and
+midwinter nautical dark at 51.4 deg N is ~13 h against August's ~5 h, so the
+same behaviour would have cost ~1,500 actuations a night by December.
+
+*Caveat on a related note:* the shutter-count memory's closing line calls longer
+subs "the strongest lever" for wear (120 s = 4x the life). **That is superseded
+by the resolution argument above** — on this mount longer subs buy shutter life
+with the measurement itself. Fewer nights is the lever; longer subs are not.
 
 **Mothball state left on the body (2026-08-17):** `capturetarget=Internal RAM`
 (reverted), `shutterspeed=30`, `imageformat=RAW`, `iso=1600`, mode dial still

@@ -1,0 +1,50 @@
+BUG: `secrets copy` hangs on pip (X11) — reproduced 2026-08-16.
+
+SYMPTOM: `secrets copy /alerting/slack-webhook-url` never returns. No output,
+no error. From a non-interactive caller it blocks indefinitely (>120s observed,
+had to kill it). The secret IS fetched and IS placed on the clipboard — it is
+purely the return that never happens.
+
+CAUSE (super/bin/secrets, copy_to_clipboard(), lines ~53-55):
+
+    printf '%s' "$value" | xclip -selection clipboard 2>/dev/null
+    printf '%s' "$value" | xclip -selection primary 2>/dev/null || true
+
+xclip forks a daemon to hold the X selection (X11 requires the owning client to
+stay alive to serve paste requests — unlike wl-copy, which detaches cleanly).
+That daemon INHERITS the caller's stdout/stderr, so the pipe never sees EOF and
+the caller blocks until some other client takes the selection. Interactively you
+may get your prompt back and not notice; any non-interactive caller hangs.
+
+pip is X11 (XDG_SESSION_TYPE=x11, WAYLAND_DISPLAY unset) and has ONLY xclip
+installed (no wl-copy, no xsel) — so pip takes the xclip branch every time. The
+Wayland branch above it is clean, which is likely why this went unnoticed.
+
+FIX: detach xclip and close its inherited streams, e.g.
+
+    printf '%s' "$value" | xclip -selection clipboard >/dev/null 2>&1 &
+    disown
+
+(or add -quiet and background it). Note 2>/dev/null alone is NOT enough — stdout
+is inherited too, and that is what holds the pipeline open. The xsel branch has
+the same hazard in principle; xsel needs --nodetach handling or the same
+treatment.
+
+WORKAROUND until fixed: `secrets get <path>` works fine, but prints the
+plaintext to screen/transcript, which is exactly what `copy` exists to avoid.
+So on pip there is currently NO safe way to get a secret to the clipboard.
+
+WIDER POINT worth a look while in there: this is a house tool whose failure mode
+is a HANG rather than an error, so it fails silently in scripts and in AI
+sessions. Worth checking the rest of super/bin for other 'fork a daemon that
+inherits stdout' patterns (anything piping into xclip/xsel/at/setsid).
+
+CROSS-REF: this is the SAME bug independently reported from the ansible strand
+2026-08-16 as `20260816T120844Z-UjmySL` (hit while getting an SMB password onto
+an Android phone for VLC). That report has the impact framing — `secrets hints`
+opens by recommending `secrets copy` precisely so plaintext never lands in a
+transcript the OpenSearch archive ingests, so the broken tool is the one that
+exists to prevent printing secrets, and the natural workaround is the behaviour
+it guards against. It guessed the cause (X11 selection owner / clipboard
+manager) but did not confirm it. THIS report has the confirmed cause and the
+fix. Triage them together — one fix closes both.
