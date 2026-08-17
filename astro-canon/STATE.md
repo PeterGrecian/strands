@@ -2,6 +2,217 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+## ★★★ SHUTTER LIFE IS NOW THE BINDING CONSTRAINT (2026-08-17)
+
+**Shutter counter read from the body over PTP: `41361` actuations on
+2026-08-17.** Not an estimate — `gphoto2 --get-config
+/main/status/shuttercounter`. Record the reading with its DATE every time it
+is taken; two dated readings give a wear RATE, which is the number that
+actually matters and which no single reading provides.
+
+Against the 2000D's ~100k rating that is ~41% of rated life, ~59k remaining.
+Only ~5.3k of it is this project: the 22 shipped nights on bigstore total
+**5,337 CR2**, so ~36k predates astro use.
+
+**The rate changed sharply when focus was solved.** Fixed focus made the
+camera work well, and made it shoot 5× more:
+
+| period | frames/night |
+|---|---|
+| 07-26 → 08-08 | ~110 |
+| 08-10 → 08-16 | **460 → 590, climbing** |
+
+At 590/night that is ~100 clear nights of headroom — months, not years.
+
+**WINTER IS WHERE THE BUDGET GETS SPENT, and it is worse than it looks.** At
+51.4°N nautical dark runs ~5 h in mid-August but **~13 h in late December**.
+Same rate, same weather luck, and a midwinter night costs ~1,500 actuations —
+2.5× an August one. Any autumn/winter plan that leaves nightly survey capture
+armed spends the remaining life inside one season.
+
+*Not a crisis:* 100k is a median-ish design figure and these bodies routinely
+pass it; the shutter is also a replaceable part, and on a 2000D a used body is
+likely cheaper than the labour. The point is to stop spending actuations on
+nights when nothing is happening, not to nurse the camera.
+
+**Context worth keeping: the 08-10 burst-firing fix was a shutter-life rescue.**
+Before it, a held press on Continuous Shooting fired continuously through the
+whole download window (~20 frames per 2s hold, exactly one downloaded). At
+current run lengths that would have been ~9,000 actuations/night for 460 usable
+frames — 100k inside two weeks. The counter reading 41k rather than 150k is
+largely because that was caught when it was.
+
+## ⚠ BULB: THE TOOL EXISTS AND IS UNSAFE AS WRITTEN (2026-08-17)
+
+**Correction: "bulb >30s unsolved" (below, in the 2026-07-24 capture-design
+section) is WRONG and should not be trusted.** `astro/bin/eos-bulb-run` was
+built in `c31bf83` — bulb mode, RAW-only, download-as-you-go, optional focus
+bracketing. Accurate status: **written, never proven on hardware, not in the
+nightly path** (that is `eos-focus-cycle --no-focus`).
+
+**THE HAZARD — `eos-bulb-run` predates the 2026-08-10 fixes and reintroduces
+the worst one.** Its `bulb_expose()` is `Press Full` → `sleep(secs)` →
+`Release Full`: a **held full press for the entire exposure**, on a body whose
+drive mode is **Continuous Shooting**. That is exactly the burst-firing pattern
+that cost ~20 actuations per usable frame. A 120s hold could fire enormously
+more. **The tool built to save the shutter is, as written, plausibly the
+fastest way to destroy it. Do not run it against the camera before auditing
+it.**
+
+Likely fix: set drive mode to **Single Shot** before a bulb run — UNTESTED.
+Cheap to verify, and the verification is unambiguous: read the shutter counter
+before and after a single bulb exposure. One actuation means fixed; thirty
+means the burst is still there. `41361` is the baseline datum.
+
+**The prize is the largest on the table** — wear is per-ACTUATION, not per
+second:
+
+| sub | frames/5 h | actuations | nights per 59k |
+|---|---|---|---|
+| 30 s (now) | 590 | 590 | ~100 |
+| 60 s | 295 | 295 | ~200 |
+| 120 s | 148 | 148 | ~400 |
+
+120s buys **4× the remaining life for the same integration time**, and deeper
+frames. It is the only lever that costs no science.
+
+Two constraints on it:
+- **Trails grow proportionally** — 5–8 px/30s becomes ~20–32 px at 120s. Fine
+  for this short-trail fixed-mount regime, but derot cannot compensate:
+  `plate_scale_deg_px` and `pole_prior_xy` are still null in `canon/camera.json`.
+- **Long subs actively HURT meteor detection** (see below). A sub-second flash
+  in 240× more background weakens `find-transients`' single-sub discriminator.
+  Deep-sky wants long subs, showers want short. **Two separate capture
+  profiles, not one tunable pipeline.**
+
+## AUTUMN/WINTER PLAN — targeted observing, not nightly survey (2026-08-17)
+
+Peter's framing: shoot less, use the EOS for chosen targets, and let the free
+cameras decide when it is worth waking. Design session only — **nothing armed,
+no code changed, no captures taken.**
+
+**Reachability at 55mm is the gate on every target idea.** Per
+[[eos-is-53-55mm-not-18mm]] the lens is at 53/55mm ≈ **13.8"/px**, and star
+FWHM is already 2.25–2.63 px. So:
+
+| target | size | px | verdict |
+|---|---|---|---|
+| Jupiter | ~40" | ~3 | **out** — a fat star, no belts |
+| Saturn disc | ~18" | ~1.3 | **out** — rings need ~1"/px, 14× short |
+| Mars at opposition | ~25" | ~1.8 | **out** |
+| classic binaries (5–14") | — | <1 | **out** — splitting needs >~28" |
+| Uranus / Neptune | 3.7" / 2.3" | <1 | point sources — but see below |
+
+**Planetary and double-star work is NOT reachable on the current optics.** That
+is a focal-length problem needing glass (telephoto or scope), not software, and
+that hardware decision sits upstream of this strand. Do not re-derive this.
+
+What 55mm is genuinely GOOD for — wide field as an advantage, not a compromise:
+meteor showers, conjunctions and close approaches, bright comets, the Moon
+(~130 px, a real disc), ISS/satellite passes, constellation-scale fields.
+
+### ★ Meteor showers — the detection half is ALREADY BUILT
+
+`astro/bin/find-transients` detects meteors and satellites and documents
+`--camera canon` as a first-class usage example. Its design is already correct
+and hard-won: runs on **subs, never stacks** (stacking flattens the ablation
+curve and merges 10 minutes, both mistakes made by hand on 08-10 before falling
+back to subs); geometric classifier (**meteor = both ends interior, present in
+exactly ONE sub; satellite = touches a border, persists across consecutive
+subs**), geometric on purpose so it survives JPEG core saturation; star trails
+— the main false positive, which a bare length cut got wrong on 42 eclipticam
+frames — rejected by sidereal-angle agreement plus cross-sub persistence; plus
+a solar-altitude/Earth-shadow model to exclude sunlit satellites.
+
+**So the analysis side needs nothing. The gaps are capture-side:** no shower
+calendar exists anywhere (nothing knows when a peak is, or whether radiant
+altitude and moon phase make it worth arming), and shower nights want short
+subs, against bulb's long ones.
+
+Shutter case is strong — showers are naturally bounded: ~8–10 peak nights/year
+at 590 = **~5k/year, vs ~90k+ for nightly survey.** ~20× cheaper, spent on
+nights when something is actually happening.
+
+**Cheapest available next step, zero actuations: run `find-transients --camera
+canon` over 2026-08-10 → 08-16 — that window brackets the Perseid peak (~Aug
+12) at 460–590 frames/night, already adapted to FITS in `canon-frames`.** If
+there are Perseids in there it is a result for free, AND it validates the
+classifier on canon data, which may never have been run. Read-only; runs on
+**muppet** where the bytes are ([[compute-follows-the-data]]).
+
+### Uranus and Neptune — an ARCHIVAL problem, not a capture one
+
+Peter's split ("v3 if possible, EOS if beyond reach") is right, and it falls
+neatly on **magnitude, not resolution** — both are point sources at any focal
+length here, so detection is the only question:
+
+- **Uranus mag 5.7** — the rig has already reached **mag 6 with known
+  orientation** on the Pi cameras (took months). So Uranus is *likely already
+  reachable on a v3, and possibly already sitting in existing frames.*
+- **Neptune mag 7.8** — ~6× less light. This is where the EOS's big sensor and
+  real glass earn their place.
+
+**Identification is `find-transients` inverted: motion against the star field.**
+Uranus moves ~2.5"/day, Neptune ~1.4"/day — at 13.8"/px that is days-to-weeks
+per pixel, invisible in one night but ~5 px over a month. **The 22-night canon
+archive and the much longer astrocam archive ARE the instrument** — this is a
+differencing problem across frames already taken, costing zero actuations.
+`abs-diff`, `find-candidates`, `cross-match-gaia`, `solve-detections` already
+exist; `cross-match-gaia` is the discriminator (bright and NOT in Gaia = planet,
+asteroid, or artefact).
+
+**BLOCKER: canon has no plate solve.** `plate_scale_deg_px` and
+`pole_prior_xy` are both null/UNSOLVED in `canon/camera.json`, so pixel
+positions cannot be turned into sky coordinates — no ephemeris check, no Gaia
+cross-match. The fix is the known clear-night **trail-arc fit** (same method as
+the Pi cameras), runnable on **existing** frames for zero actuations, and wanted
+anyway to enable derot. **This is the prerequisite for the ice-giant hunt.**
+The Pi cameras presumably already have solves — another reason to start Uranus
+there.
+
+Both are well placed for autumn/winter evenings from 51°N (Uranus in Taurus,
+Neptune in Pisces).
+
+### The gating question: forecasts vs live sky
+
+Peter's instinct to gate on astrocam is right but needs inverting. **The cloud
+verdict cannot answer "is tonight worth it"** — per [[scs-clamps-the-stack-band]]
+it is a 10-minute trough-finder, retrospective, never a "good night" signal.
+And canon's own `sky_clear_max_stops = 11.5` is flagged in `camera.json` as
+**PROVISIONAL ON THE CLOUDY SIDE**: derived from one clear night (08-10), which
+bounds the ceiling from below only, so gating on it would be gating on an
+uncalibrated threshold. **A genuinely cloudy canon night still needs logging to
+re-derive it from both sides.**
+
+The sound form: **astrocam is a free live witness** (electronic shutter, no
+wear, runs continuously), so wake the EOS on *currently observed* dark clear
+sky rather than on a prediction. Precedent is the ceiling-light incident — "if
+the EOS lacks stars astrocam has, suspect the EOS rig".
+
+**Weather forecasts: no tooling exists** in `super/bin` or `astro/bin` — this
+would be new build. A forecast only decides whether to START and cannot stop a
+night that clouds over at 01:00, so against a live astrocam gate it is largely
+redundant. Worth at most a cheap pre-filter to avoid arming on hopeless nights.
+Lowest priority of the levers.
+
+### Pending, in order (three of four cost ZERO actuations)
+
+1. **Plate-solve canon** from an existing clear night (trail-arc fit) — zero
+   cost, unblocks the ice giants, enables derot.
+2. **`find-transients --camera canon` on 2026-08-10 → 08-16** (Perseid window)
+   — zero cost, validates the classifier on canon.
+3. **Uranus hunt in the Pi archive** — zero cost, mag 6 already proven there.
+4. **Audit `eos-bulb-run`** against the three 08-10 fixes (drive mode → Single
+   Shot), then a hardware test watching the counter across one exposure — tens
+   of actuations, unblocks affordable winter nights.
+5. Shower calendar (peak dates + radiant altitude + moon phase) — needed before
+   any shower night can be armed.
+6. Log a cloudy canon night to re-derive `sky_clear_max_stops` from both sides.
+
+**Nightly survey capture is still ARMED and still shooting ~590/night** — none
+of the above changes that. Decide deliberately whether it stays armed through
+the autumn, because that is the ~90k/year path.
+
 ## ★★★ BEST NIGHT YET — 460 frames, zero wedges (2026-08-10 → 11)
 
 **The camera worked all night, unattended, for the first time.**
@@ -672,7 +883,9 @@ frame with its exact focus coordinate, analyse offline. Tool:
   the daytime car estimate; stars at ∞ are near but not identical).
 - **FINE = Near-1** dither: 0–8 within each medium (Near-1 is sub-pixel — dead on
   coarse targets but moves the PSF fractionally; today's dither confirmed it).
-- **1 × 30s RAW sub per position** (30s = max reliable timed; bulb >30s unsolved).
+- **1 × 30s RAW sub per position** (30s = max reliable timed; bulb >30s was
+  "unsolved" here — **superseded 2026-08-17: `eos-bulb-run` exists but is
+  untested and unsafe as written; see the BULB section at the top**).
 - Grid = 9×9 = 81 positions/cycle ≈ 54 min; a ~90-min dark window ≈ 1.6 cycles,
   ~100+ subs. **Cycle repeats while the gap lasts** (repeats give statistics for
   the medium:fine ratio + hysteresis).
@@ -892,8 +1105,11 @@ patch of sky the EOS is pointed at.** Value:
 from **1-minute** subs (its 10-min frames are 10×1-min stacks). Our EOS streak
 test was only **20s** — too short to register trails through this LP, which is
 why it saw only hot pixels while the astrocam saw stars. Next EOS night wants
-**≥1-min subs**; the 2000D caps at 30s timed, so this needs **bulb mode**
-(`--set-config bulb=1` … hold … `bulb=0`) for minute-plus integration.
+**≥1-min subs**; the 2000D caps at 30s timed, so this needs **bulb mode** for
+minute-plus integration. (The `bulb=1` … `bulb=0` form guessed here is NOT how
+this body does it — `eos-bulb-run` uses `shutterspeed=bulb` +
+`eosremoterelease` Press/Release Full. See the BULB section at the top:
+built, untested, and unsafe as written.)
 
 ## Metric FIXED — wheel box + Tenengrad (2026-07-22)
 
