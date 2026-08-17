@@ -2,6 +2,76 @@
 
 *Curated state of the aifabric extraction. Prose, not a log. Updated at session end / on dcp.*
 
+## Session 2026-08-17 — retrospective dcp: `dcp-review` BUILT
+
+New tool `bin/dcp-review` (Python, house pattern: docstring help, `--hints`,
+config/env seam, no baked paths). Triaged in from two ideas spooled this morning
+— `Ur2Fpb` (the insight, from aifabric-pane-driver) and `Dx5d7c` (three design
+rulings, from ubersitrep). **Peter's split: aifabric owns the MECHANISM,
+ubersitrep owns the USE** (least-recently-reviewed rotation reads these reports).
+
+**The insight**: `dcp` need not be something a session does BEFORE it dies.
+Transcripts survive (JSONL per project + the OpenSearch archive via `sessions`),
+so a halted session's work can be written up afterwards. dcp becomes a thing
+performed **ON** a session's record, not only **BY** the session. That dissolves
+the anxiety that prompted it — "I'd close these terminals but I'm not sure I can
+restart from state, or whether dcp has run recently."
+
+**Built to the rulings, not to the raw signal list:**
+
+- **It emits candidates, it does NOT adjudicate.** The question is never "was it
+  recorded" but "would a future session be MISLED by its absence" — a judgement.
+  Same derivation-shortlists/gate-decides split `to-whom` enforces.
+- **No naive "in transcript but not in STATE" diff** — deliberately absent, and
+  said so in the source. STATE.md omits false starts *by design*; that is why it
+  is preferred to the transcript ([[state-md-over-transcript]]). Such a diff
+  would drown in the debris curation exists to remove.
+- **Signals are not peers.** Three *absences* (`no-checkpoint` — the halted case;
+  `undocumented`; `dirty`) degrade quietly and can wait for the rotation. One
+  *falsehood* (`misattribution`) actively misroutes and gets its own exit lane
+  (**exit 2**, vs 1 for absences, 0 clean) so a sweep can escalate it.
+- **Attribution is corroborated from cwd + commits, NEVER from a tag** — a deck's
+  `@strand` tag is written once at spawn and never re-verified
+  ([[pane-identity-divergence]]).
+- **"STATE contradicted by later events" is NOT implemented** and shouldn't be
+  here: detecting a falsehood in the prose needs a reader, not a timestamp. Left
+  to the meta-session.
+
+**Cost correction worth keeping**: the mining is mostly a *search* problem
+(local file reads — this tool needs no OpenSearch at all for the observation
+pass); the model is only wanted for the judgement step. So it is far cheaper than
+"batch-rate the corpus" assumed.
+
+**Crying-wolf caught in test, and tightened.** First cut fired `misattribution`
+on a `hardware` session that also worked in `rackinabox` (116 vs 105 records) —
+ordinary cross-strand work, exactly the noise ruling 2 warned about (cf. to-whom
+crying wolf on 08-14). Now requires a **decisive** margin (`MISATTRIB_RATIO=4.0`,
+`MISATTRIB_MIN=20`): the defect is work filed under a strand it *hardly touched*,
+not work that touched two. The near-miss vanished; exit dropped 2→1.
+
+**Verified across all 42 strands.** All four signals fire on real cases;
+spot-checked genuine, e.g. `pifleet` ran a session 2026-08-16 against a STATE
+last committed 2026-07-21 — ~4 weeks of drift, the exact case this was raised
+for. `no-checkpoint` has a 900s grace so a session still mid-dcp isn't flagged
+(correctly clears aifabric's own 08-03 session: STATE committed 17:31, session
+ended 17:40).
+
+**WATCH-ITEM, carried from ubersitrep and worth restating**: this is a **safety
+net, NOT a substitute** for dcp. It makes exiting without dcp feel safe, which
+could erode the habit that keeps STATE curated — degrading estate memory from
+curated prose to mined transcript, precisely what Peter does not want. The
+`--hints` says so explicitly, to the agent most likely to over-rely on it.
+
+**Not mine, flagged so it isn't duplicated**: the "dirty files AND stale STATE"
+join is being built in ubersitrep (`to-whom --list` already has liveness).
+`misattribution`'s root-cause fix (`pane reconcile`) belongs to
+aifabric-pane-driver — a report that keeps rediscovering a fixable bug is a cost,
+not a signal.
+
+**Pending**: wire it into ubersitrep's rotation (their call, their half); consider
+the `dcp <strand> --from-transcript` mode-2 write-up path (this tool is mode 1+3,
+observation only — it never writes STATE).
+
 ## Inbox backlog — awaiting triage (recorded 2026-08-02, NOT yet triaged)
 
 Seven ideas accumulated in `ideas/` unprocessed; recorded here so they survive,
