@@ -42,48 +42,52 @@ current run lengths that would have been ~9,000 actuations/night for 460 usable
 frames — 100k inside two weeks. The counter reading 41k rather than 150k is
 largely because that was caught when it was.
 
-## ⚠ BULB: THE TOOL EXISTS AND IS UNSAFE AS WRITTEN (2026-08-17)
+## ✘ BULB IS REJECTED — 30s is a RESOLUTION choice, not a cap (2026-08-17)
 
-**Correction: "bulb >30s unsolved" (below, in the 2026-07-24 capture-design
-section) is WRONG and should not be trusted.** `astro/bin/eos-bulb-run` was
-built in `c31bf83` — bulb mode, RAW-only, download-as-you-go, optional focus
-bracketing. Accurate status: **written, never proven on hardware, not in the
-nightly path** (that is `eos-focus-cycle --no-focus`).
+**Peter's call, and it is decisive: longer subs are not the answer, because on
+an unguided fixed mount 30s is good TEMPORAL resolution which becomes SPATIAL
+resolution along the ecliptic.** Do not reopen this as a shutter-saving idea.
 
-**THE HAZARD — `eos-bulb-run` predates the 2026-08-10 fixes and reintroduces
-the worst one.** Its `bulb_expose()` is `Press Full` → `sleep(secs)` →
-`Release Full`: a **held full press for the entire exposure**, on a body whose
-drive mode is **Continuous Shooting**. That is exactly the burst-firing pattern
+**Why 30s is a measurement, not a compromise.** Stars drift ~15"/s; at
+13.8"/px each 30s sub lays down a ~5–8 px trail (as recorded elsewhere here).
+That trail is **a time series written along the sensor** — the along-track axis
+is effectively hour angle. A longer shutter does not deepen a point source, it
+lengthens the smear, and every scale finer than the trail is averaged away.
+
+**The ecliptic is the sharp case.** Anything moving along the ecliptic —
+planets, asteroids, Uranus/Neptune — is picked out by how its motion DEPARTS
+from the sidereal trail, and that discrimination lives in the trail's
+structure. A 120s sub quadruples trail length and discards 4× the along-track
+resolution: precisely the axis the detection depends on. This is the same
+argument `find-transients` already makes for using subs over 10-minute stacks
+(stacking "smears the brightness profile flat" and merges 10+ minutes so
+simultaneity is unrecoverable). **Bulb is a stack you cannot unstack.**
+
+**Consequence — the "two capture profiles" idea is WRONG and withdrawn.** An
+earlier draft of this section had deep-sky wanting long subs and showers
+wanting short. On a fixed unguided mount **essentially every science case here
+wants SHORT subs**, because they all read the trail. There is one profile.
+
+**Consequence — the 4× shutter saving is not available.** It was never free: it
+buys life with the resolution the camera is here to collect. The levers that
+remain are the ones Peter named first — **shoot fewer nights, on chosen
+occasions, gated by a free witness** (see the autumn/winter plan below).
+
+### The tool, for the record (do not run it)
+
+`astro/bin/eos-bulb-run` exists (astro `c31bf83`) — so the older note "bulb
+>30s unsolved" was factually wrong, but the conclusion it implied (don't go
+long) is right for a better reason. Status: **written, never run against the
+camera, not in the nightly path** (that is `eos-focus-cycle --no-focus`).
+
+**It is also unsafe as written.** `bulb_expose()` does `Press Full` →
+`sleep(secs)` → `Release Full`: a held full press for the whole exposure, on a
+body in **Continuous Shooting** — exactly the 2026-08-10 burst-firing pattern
 that cost ~20 actuations per usable frame. A 120s hold could fire enormously
-more. **The tool built to save the shutter is, as written, plausibly the
-fastest way to destroy it. Do not run it against the camera before auditing
-it.**
-
-Likely fix: set drive mode to **Single Shot** before a bulb run — UNTESTED.
-Cheap to verify, and the verification is unambiguous: read the shutter counter
-before and after a single bulb exposure. One actuation means fixed; thirty
-means the burst is still there. `41361` is the baseline datum.
-
-**The prize is the largest on the table** — wear is per-ACTUATION, not per
-second:
-
-| sub | frames/5 h | actuations | nights per 59k |
-|---|---|---|---|
-| 30 s (now) | 590 | 590 | ~100 |
-| 60 s | 295 | 295 | ~200 |
-| 120 s | 148 | 148 | ~400 |
-
-120s buys **4× the remaining life for the same integration time**, and deeper
-frames. It is the only lever that costs no science.
-
-Two constraints on it:
-- **Trails grow proportionally** — 5–8 px/30s becomes ~20–32 px at 120s. Fine
-  for this short-trail fixed-mount regime, but derot cannot compensate:
-  `plate_scale_deg_px` and `pole_prior_xy` are still null in `canon/camera.json`.
-- **Long subs actively HURT meteor detection** (see below). A sub-second flash
-  in 240× more background weakens `find-transients`' single-sub discriminator.
-  Deep-sky wants long subs, showers want short. **Two separate capture
-  profiles, not one tunable pipeline.**
+more. If it is ever revisited for some other reason, set drive mode to **Single
+Shot** first (UNTESTED) and verify by reading the shutter counter before and
+after ONE exposure: one actuation means fixed, thirty means the burst survives.
+`41361` on 2026-08-17 is the baseline.
 
 ## AUTUMN/WINTER PLAN — targeted observing, not nightly survey (2026-08-17)
 
@@ -124,10 +128,11 @@ subs**), geometric on purpose so it survives JPEG core saturation; star trails
 frames — rejected by sidereal-angle agreement plus cross-sub persistence; plus
 a solar-altitude/Earth-shadow model to exclude sunlit satellites.
 
-**So the analysis side needs nothing. The gaps are capture-side:** no shower
-calendar exists anywhere (nothing knows when a peak is, or whether radiant
-altitude and moon phase make it worth arming), and shower nights want short
-subs, against bulb's long ones.
+**So the analysis side needs nothing. The gap is capture-side:** no shower
+calendar exists anywhere — nothing knows when a peak is, or whether radiant
+altitude and moon phase make it worth arming. (Exposure length is NOT a gap:
+showers want short subs and so does everything else here — see the bulb
+rejection above.)
 
 Shutter case is strong — showers are naturally bounded: ~8–10 peak nights/year
 at 590 = **~5k/year, vs ~90k+ for nightly survey.** ~20× cheaper, spent on
@@ -195,19 +200,23 @@ night that clouds over at 01:00, so against a live astrocam gate it is largely
 redundant. Worth at most a cheap pre-filter to avoid arming on hopeless nights.
 Lowest priority of the levers.
 
-### Pending, in order (three of four cost ZERO actuations)
+### Pending, in order (the first three cost ZERO actuations)
 
 1. **Plate-solve canon** from an existing clear night (trail-arc fit) — zero
    cost, unblocks the ice giants, enables derot.
 2. **`find-transients --camera canon` on 2026-08-10 → 08-16** (Perseid window)
    — zero cost, validates the classifier on canon.
 3. **Uranus hunt in the Pi archive** — zero cost, mag 6 already proven there.
-4. **Audit `eos-bulb-run`** against the three 08-10 fixes (drive mode → Single
-   Shot), then a hardware test watching the counter across one exposure — tens
-   of actuations, unblocks affordable winter nights.
-5. Shower calendar (peak dates + radiant altitude + moon phase) — needed before
-   any shower night can be armed.
+4. **Shower calendar** (peak dates + radiant altitude + moon phase) — needed
+   before any shower night can be armed. A full Moon ruins a peak regardless of
+   cloud.
+5. **Live astrocam gate** — wake the EOS on currently-observed dark clear sky
+   rather than nightly-by-default. This is now the PRIMARY shutter lever, since
+   bulb is rejected: fewer nights is the only saving that costs no resolution.
 6. Log a cloudy canon night to re-derive `sky_clear_max_stops` from both sides.
+
+**No bulb/long-exposure work is pending — bulb is rejected on resolution
+grounds** (above). `eos-bulb-run` stays unrun.
 
 **Nightly survey capture is still ARMED and still shooting ~590/night** — none
 of the above changes that. Decide deliberately whether it stays armed through
@@ -884,8 +893,10 @@ frame with its exact focus coordinate, analyse offline. Tool:
 - **FINE = Near-1** dither: 0–8 within each medium (Near-1 is sub-pixel — dead on
   coarse targets but moves the PSF fractionally; today's dither confirmed it).
 - **1 × 30s RAW sub per position** (30s = max reliable timed; bulb >30s was
-  "unsolved" here — **superseded 2026-08-17: `eos-bulb-run` exists but is
-  untested and unsafe as written; see the BULB section at the top**).
+  "unsolved" here — **superseded 2026-08-17: bulb is REJECTED outright. 30s is
+  a resolution choice, not a cap: the trail is the measurement and longer subs
+  discard along-track resolution. `eos-bulb-run` exists but stays unrun. See
+  the bulb section at the top**).
 - Grid = 9×9 = 81 positions/cycle ≈ 54 min; a ~90-min dark window ≈ 1.6 cycles,
   ~100+ subs. **Cycle repeats while the gap lasts** (repeats give statistics for
   the medium:fine ratio + hysteresis).
@@ -1106,10 +1117,13 @@ from **1-minute** subs (its 10-min frames are 10×1-min stacks). Our EOS streak
 test was only **20s** — too short to register trails through this LP, which is
 why it saw only hot pixels while the astrocam saw stars. Next EOS night wants
 **≥1-min subs**; the 2000D caps at 30s timed, so this needs **bulb mode** for
-minute-plus integration. (The `bulb=1` … `bulb=0` form guessed here is NOT how
-this body does it — `eos-bulb-run` uses `shutterspeed=bulb` +
-`eosremoterelease` Press/Release Full. See the BULB section at the top:
-built, untested, and unsafe as written.)
+minute-plus integration. (**Both halves superseded 2026-08-17.** The `bulb=1` …
+`bulb=0` form guessed here is not how this body does it; and the ≥1-min
+conclusion is REJECTED — 30s at 13.8"/px already trails 5–8 px, which was
+enough once the data was stretched from linear raw, and longer subs cost
+along-track resolution along the ecliptic. The real fix for the failed 20s
+streak test was RAW + stretching, not more integration. See the bulb section at
+the top.)
 
 ## Metric FIXED — wheel box + Tenengrad (2026-07-22)
 
