@@ -146,7 +146,7 @@ Surveyed `astro/bin/eos-*` (13 tools) 2026-08-11 and classified by layer. The
 |---|---|
 | `eos-capture` | the core: capture frames over gphoto2 with a sane workflow |
 | `eos-sequence` | long-exposure star sequence over gphoto2/USB |
-| `eos-bulb-run` | long-exposure (bulb) capture run |
+| ~~`eos-bulb-run`~~ | **DELETED 2026-08-17** (astro `752a4d4`) — bulb never worked and is deprecated; see the mothball section |
 | `eos-focus-cycle` | blind focus-experiment capture on stars — **holds `RUN_TAG`**, the only place in the estate it exists (see work unit 1) |
 | `eos-focus-sweep` | star-focus sweep over gphoto2/USB |
 | `eos-focus-tonight` | arms tonight's focus-cycle run, detached + logged (scheduling) |
@@ -650,3 +650,49 @@ a frontier.
 **M**. Card cleared of recent strays to `muppet:~/tmp/eos-card-rescue/`
 (5 CR2s; 13 older ones from March 2026 left in place, not this session's to
 judge).
+
+### Mothball executed 2026-08-17 — deleted + DISARMED
+
+**`eos-bulb-run` deleted** (astro `752a4d4`), trashed not `rm`'d
+(`~/.trash/2026-08-17/090427-trash/`, recoverable 14 days). No executable caller
+existed — only a stale comment in `eos-capture:100`, updated in the same commit.
+Muppet's `~/bin/eos-bulb-run` symlink went dangling on pull and was cleared
+(a broken link is not data, so `rm` was correct there; `trash` refuses it
+anyway, since its existence check fails on a dangling symlink — worth knowing).
+
+**`eos-focus.service` DISARMED** (`systemctl disable --now`, muppet): now
+`inactive` + `disabled`, no `eos-focus-cycle` process, will not return on
+reboot. Stopped while sun-gated and idle (`sun alt +36.4 deg; waiting for
+dark`), so no capture was in flight and nothing was lost. **2026-08-16 (590
+frames) is therefore the EOS's last unattended nightly capture.**
+
+**LEFT ARMED, DELIBERATELY: `canon-nightly.timer` is still `active
+(waiting)`.** It fires daily after dawn to deliver "last night's" EOS capture,
+and from tomorrow there will be no night for it to find. This is the coupling
+flagged before disarming, now live rather than hypothetical — and it is
+**astro-science's unit, not capture's**, so it was not touched. Two things the
+delivery side must decide:
+
+1. Whether the timer stops, or keeps running and no-ops cleanly on a missing
+   source dir.
+2. What `/astro` and any night-counting index should show for nights that will
+   never exist.
+
+**I flagged a "silent redelivery forever" risk here and then checked it —
+it does NOT happen.** Traced `bin/canon-nightly` for tomorrow's dawn run:
+`night_of()` finds no source dir, so it falls back to `last_completed_night()`
+**and prints an explicit warning** — *"if <night> was expected to have capture,
+THIS is a capture failure, not a delivery one"*. It then re-checks the source
+dir and the CR2 count, and since every night dir on bigstore is `jpeg/`-only
+with **zero CR2s**, the `N_CR2 -eq 0` guard exits 0 with "nothing to deliver".
+So the fallback is guarded twice over and announces itself. The 08-13 fix
+(`876a45c`) is holding. **Correction recorded because the earlier warning here
+was mine and was wrong** — the danger looked like the "exit 0 is not delivery"
+pattern, but this exit 0 is the correct one and it is not silent.
+
+**Strand consequence: astro-capture now has no live EOS capture path.** The
+`eos-*` family is fully dormant (calibration//re-characterisation only). What
+remains live in this strand is the picamera2 side: astrocam + eclipticam v3w on
+`streaming.py`, eclipticam v1 and skycam still unmigrated. The unification
+frontier is unchanged by the mothball — but the EOS is no longer the case that
+proves "wrap, don't absorb"; it is now a *historical* example of it.
