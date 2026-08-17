@@ -23,6 +23,62 @@ gets **extracted from live use, not designed up front**, which is the same
 manual-versions-teach-what-to-automate discipline as below. Meanwhile the astro
 line is healthy — `/astro/canon` live since 08-11.
 
+## RULING: exit is NOT the default — dcp is (2026-08-17)
+
+Peter: **"why do I exit sessions? They could remain and contribute low latency
+responses."** Right, and the previous framing here overstated the case for
+exiting. **dcp and exit are separable, and only dcp is load-bearing.**
+
+**The latency win is real.** A live session has STATE loaded, `dirs` mapped and
+its recent reasoning resident; waking it by mailbox skips the cold-start read.
+Under the MoE framing that is simply an expert with its context already paged in
+— and `dispatch`'s scalar-query lane exists to exploit exactly that.
+
+**The three costs, and only one of them argues for exiting:**
+
+1. **Drift.** A resident context is frozen at its last look. A four-day
+   `astro-canon` session still *believes* focus is pinned at d7. A cold session
+   reads current STATE and is correct by construction. So low latency can buy a
+   **confidently stale** answer — and staleness at the *expert* is worse than at
+   the gate, because the expert is the authority a fact gets routed to.
+2. **Uncommitted judgement.** Conclusions living only in a context window are a
+   bet that you get back before something kills it
+   ([[orphaned-session-unreachable]]: the process stays alive but inert, and no
+   route reaches it).
+3. **Dispatch ambiguity.** Two live `aifabric-pane-driver` sessions mean *"send
+   it to the driver"* has no single answer — a direct cost to the gate.
+
+**Only (1) is an argument for exiting; (2) and (3) are arguments for dcp and for
+one session per strand.** So the rule is **not** "exit when done" but *checkpoint
+often, and let the subject's rate of change decide whether to stay resident*:
+
+- **Keepers on slow subjects** (`cloud-init-init`, `xmatters`, `hardware`) —
+  staying live is nearly free; their facts do not move.
+- **Keepers on fast subjects** (`astro-canon` mid-run, `astro-storage`
+  mid-migration) — resident context goes wrong quickly; cheaper to re-read.
+- **Builders** — already *not routable for facts*, so their latency advantage is
+  worth little: route **work** there, and work deserves a fresh read.
+- **Anything uncommitted** — the liability is the dirty state, not the process.
+
+**BUILT: `to-whom --freshness`** makes this a reading rather than a judgement.
+**Session age alone is meaningless; age-since-checkpoint is the risk signal** — a
+4-day session that dcp'd an hour ago is fine, a 1-day session that never did is
+holding judgement nowhere else. Excludes `MAILBOX.md` and `ideas/` as dirty
+(transient by design — the mailbox is explicitly not-a-commit).
+
+**Correction made during the build, and it is ruling 2 applied to myself:** the
+first cut scored *stale STATE* unconditionally and flagged ~20 dormant strands
+(`splay-grid` 27d, `xmatters` 21d) that are simply not being worked on. That is
+not rot, it is a dormant strand behaving correctly — and it is precisely the
+noise-that-trains-you-to-skim failure this strand had just warned `aifabric`
+about. **A stale STATE only signals under a live session or dirty files.**
+Report went 32 rows → 10, all actionable.
+
+**First run's findings:** `aifabric-pane-driver` **7.0d live, ×2 sessions, dirty
+STATE.md** — the estate's worst row on every axis at once; `aifabric-essay` 16d
+stale under a live session; `home-work-comms` 23d stale with dirty STATE and
+nobody home.
+
 ## DESIGN: the retrospective sweep — what a discrepancy report must surface (2026-08-17)
 
 **Split settled at arrival.** `aifabric-pane-driver` spooled the mechanism to

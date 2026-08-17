@@ -235,6 +235,61 @@ def pending_mail(name):
     return int(m.group(1)) if m else 0
 
 
+# Files whose presence/change is transient by design and must NOT read as
+# uncommitted work: the mailbox is explicitly not-a-commit (messages live in a
+# tmpfs spool; MAILBOX.md is only the doorbell), and ideas/ is an inbox awaiting
+# triage, not work in progress.
+TRANSIENT = {"MAILBOX.md"}
+TRANSIENT_DIRS = {"ideas"}
+
+
+def _git(*args):
+    try:
+        out = subprocess.run(("git", "-C", str(STRANDS_DIR)) + args,
+                             capture_output=True, text=True, timeout=20)
+    except (subprocess.SubprocessError, OSError):
+        return ""
+    return out.stdout
+
+
+def dirty_files(name):
+    """Uncommitted real work in a strand -- transient droppings excluded."""
+    out = _git("status", "--porcelain", "--", f"{name}/")
+    files = []
+    for line in out.splitlines():
+        path = line[3:].strip().strip('"')
+        rel = path[len(name) + 1:] if path.startswith(name + "/") else path
+        if not rel:
+            continue
+        parts = rel.split("/")
+        if parts[-1] in TRANSIENT or (len(parts) > 1 and parts[0] in TRANSIENT_DIRS):
+            continue
+        files.append(rel)
+    return files
+
+
+def state_age_days(name):
+    """Days since the strand's STATE.md was last committed. None if never."""
+    out = _git("log", "-1", "--format=%at", "--", f"{name}/STATE.md").strip()
+    if not out:
+        return None
+    import time
+    return (time.time() - int(out)) / 86400.0
+
+
+def uptime_days(uptime):
+    """strand-ps uptime string -> days, as a float ('4d 04:48', '06:16', '9m')."""
+    d = 0.0
+    m = re.match(r"(?:(\d+)d\s+)?(\d+):(\d+)$", uptime.strip())
+    if m:
+        if m.group(1):
+            d += int(m.group(1))
+        d += int(m.group(2)) / 24.0 + int(m.group(3)) / 1440.0
+        return d
+    m = re.match(r"(\d+)m$", uptime.strip())
+    return int(m.group(1)) / 1440.0 if m else 0.0
+
+
 def route_for(name, sessions):
     """How to reach this strand right now."""
     running = sessions.get(name, [])
@@ -416,6 +471,78 @@ def audit(roster, sessions, live):
     return findings
 
 
+def freshness(roster, sessions):
+    """dcp-freshness: which strands carry uncommitted work over a stale STATE.
+
+    The estate-level question behind "can this session be safely closed" -- and,
+    inverted, "is this live session's context still trustworthy". The measure
+    that matters is NOT session age but **age since the last checkpoint**: a
+    4-day session that dcp'd an hour ago is fine; a 1-day session that never did
+    is holding judgement nowhere else.
+
+    Risk is read against the SUBJECT, not the clock (see STATE 2026-08-17):
+    builders churn, so a resident builder context goes stale fast; keepers on
+    slow subjects can sit live almost for free.
+    """
+    rows = []
+    for name, row in roster.items():
+        live = sessions.get(name, [])
+        dirty = dirty_files(name)
+        age = state_age_days(name)
+        oldest = max((uptime_days(s["uptime"]) for s in live), default=0.0)
+        # Uncommitted work is the hard liability; a stale STATE under a live
+        # session is the soft one (its context may have moved past the file).
+        risk = 0.0
+        if dirty:
+            risk += 3.0 + min(len(dirty), 5) * 0.5
+        # A stale STATE is only a risk under a LIVE session or dirty files. On a
+        # dormant strand it means nobody is working on it -- correct behaviour,
+        # not rot. Scoring it anyway floods the report with ~20 quiet strands and
+        # trains the reader to skim, the exact failure this strand warned
+        # aifabric about (STATE 2026-08-17, ruling 2).
+        if age is not None and age > 7 and (live or dirty):
+            risk += 2.0
+        if live and age is not None and oldest > age:
+            # session older than the last checkpoint: nothing written since it began
+            risk += 2.0
+        if live and row["verdict"] == "builder":
+            risk += 1.0
+        if len(live) > 1:
+            risk += 1.0
+        rows.append({
+            "strand": name,
+            "verdict": row["verdict"],
+            "live": len(live),
+            "session_days": round(oldest, 2) if live else None,
+            "state_age_days": round(age, 1) if age is not None else None,
+            "dirty": dirty,
+            "risk": round(risk, 1),
+        })
+    rows.sort(key=lambda r: (-r["risk"], r["strand"]))
+    return rows
+
+
+def print_freshness(rows, all_rows=False):
+    shown = rows if all_rows else [r for r in rows if r["risk"] > 0]
+    print("dcp-freshness — uncommitted work vs STATE age "
+          "(risk = dirty work, stale state, unwritten session)\n")
+    print(f"  {'STRAND':<24} {'KIND':<7} {'LIVE':<5} {'SESS':>6} "
+          f"{'STATE':>7}  {'RISK':>5}  DIRTY")
+    for r in shown:
+        live = f"x{r['live']}" if r["live"] else "-"
+        sess = f"{r['session_days']:.1f}d" if r["session_days"] is not None else "-"
+        age = f"{r['state_age_days']:.0f}d" if r["state_age_days"] is not None else "never"
+        dirty = ", ".join(r["dirty"][:3]) + ("…" if len(r["dirty"]) > 3 else "")
+        print(f"  {r['strand']:<24} {r['verdict'][:7]:<7} {live:<5} {sess:>6} "
+              f"{age:>7}  {r['risk']:>5}  {dirty}")
+    if not shown:
+        print("  nothing outstanding: no uncommitted work, no stale STATE.")
+        return
+    print("\n  SESS = oldest live session's age; STATE = since last STATE.md commit.")
+    print("  A session older than STATE means nothing has been written down "
+          "since it began.")
+
+
 def main():
     p = argparse.ArgumentParser(
         description="the keeper-keeper's routing lookup",
@@ -426,6 +553,10 @@ def main():
     p.add_argument("--live", action="store_true", help="only live strands")
     p.add_argument("--strand", metavar="NAME", help="one row in full")
     p.add_argument("--audit", action="store_true", help="roster vs reality drift")
+    p.add_argument("--freshness", action="store_true",
+                   help="dcp-freshness: uncommitted work vs STATE age")
+    p.add_argument("--all", action="store_true",
+                   help="with --freshness, show every strand not just risky ones")
     p.add_argument("--json", action="store_true", help="machine-readable output")
     p.add_argument("-n", type=int, default=5, metavar="N",
                    help="candidates to show (default 5)")
@@ -439,6 +570,14 @@ def main():
     roster = parse_roster()
     sessions = live_sessions()
     live = live_strands()
+
+    if args.freshness:
+        rows = freshness(roster, sessions)
+        if args.json:
+            print(json.dumps(rows, indent=2))
+        else:
+            print_freshness(rows, all_rows=args.all)
+        return
 
     if args.audit:
         findings = audit(roster, sessions, live)
