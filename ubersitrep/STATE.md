@@ -23,6 +23,85 @@ gets **extracted from live use, not designed up front**, which is the same
 manual-versions-teach-what-to-automate discipline as below. Meanwhile the astro
 line is healthy — `/astro/canon` live since 08-11.
 
+## DESIGN: the retrospective sweep — what a discrepancy report must surface (2026-08-17)
+
+**Split settled at arrival.** `aifabric-pane-driver` spooled the mechanism to
+`aifabric` (`20260817T082854Z-Ur2Fpb`) and the *use* here
+(`20260817T082908Z-hAwnTj`). Peter: **ubersitrep is about the design, as the meta
+session** — the tool is `aifabric`'s (possibly `aifabric-sessions`'), the
+question of *what is worth surfacing and why* is this strand's. Recorded before
+any build, so the mechanism is built against a spec rather than a hunch.
+
+**The premise, and it is sound.** Transcripts survive (per-project JSONL + the
+OpenSearch archive), so **dcp need not happen before a session dies** — a batch
+job can mine transcripts afterwards for gaps between what sessions *did* and what
+STATE.md files *say*. Why it lands here: the review ledger already says what has
+not been **looked at** recently; it cannot say what has silently **rotted**. A
+strand can sit high in the rotation while its STATE quietly stops matching
+reality. The discrepancy report is that missing signal.
+
+**RULING 1 — the four signals are not peers; (c) is a different kind of thing.**
+(a) decisions unrecorded, (b) work undocumented and (d) no-checkpoint endings are
+**absences**: something happened and was not written down. (c) STATE contradicted
+by later events is a **falsehood**: something is written down and is now wrong.
+An absence degrades quietly; a false STATE **actively misroutes**, because the
+gate and every future session read it as authoritative. Live instance already on
+file: `canon/camera.json` asserting focus *"PINNED at d7"* in three places after
+the whole `d` apparatus was retired — not a missing note but a confident lie,
+load-bearing for a downstream strand. **So (c) is not merely first in one list —
+it is a separate report on a different cadence.** Absences can wait for the
+rotation; contradictions surface as soon as they are detectable, because their
+cost compounds with every read.
+
+**RULING 2 — the naive-diff warning generalises, and it is the crux.** The idea
+correctly kills *"in transcript but not in STATE"* (STATE is *supposed* to omit
+false starts — that is why curated state beats raw history). But the same
+objection eats **(b)**: most commits should *not* move STATE, so flagging
+"commits with no STATE update" produces noise at exactly the volume that trains
+the reader to skim. That failure mode is already documented here — the routing
+rules that cried wolf on 08-14 had to be tightened for the same reason. **The
+distinguishing question is not *was it recorded* but *would a future session be
+misled by its absence*.** That is a judgement, not a diff. **Therefore the tool
+emits candidates and the meta-session rules** — the same
+derivation-shortlists/gate-decides split that `to-whom` enforces, and the same
+grain as [[deck-mechanics-deterministic]]. Say it in the spec so the tool is not
+built to adjudicate.
+
+**RULING 3 — there is a FIFTH signal, and the cited precedent is it.** The
+astro-storage mix-up (a deck term tagged `astro-storage` actually running
+home-automation; a whole session's work attributed to the wrong strand, and
+astro-storage not running at all) is **misattribution**, and **none of (a)–(d)
+catches it**. Both strands' STATEs could be perfectly accurate and the estate
+still wrong, because the *work was filed against the wrong owner*. Strictly
+external, undetectable from inside either strand — the cleanest demonstration
+that this belongs at this altitude.
+
+**And it is not new — it is the second sighting of one root cause.**
+[[pane-identity-divergence]] records the same defect from the other direction: a
+deck's `@strand` tag written once at spawn, going stale against argv. Two
+independent sightings say **the tag that says which strand a session belongs to
+is written once and never verified.** That wants fixing at the source (`pane
+reconcile`, `aifabric-pane-driver`'s), not merely reporting on — a report that
+keeps rediscovering a fixable bug is a cost, not a signal. Consequence for the
+mechanism: **attribution cannot be trusted as an input**, so the tool must
+corroborate a session's strand from cwd/argv/commits rather than from its tag.
+
+**Estate question worth making standing:** *which strands have dirty files AND a
+stale STATE.md* — Peter's ad-hoc run across the six deck strands found
+`aifabric-essay` and `cloud-init-init` both with uncommitted work and STATE ~2
+weeks stale. **dcp-freshness is the real gate on whether a session can be safely
+closed** — not resumability (full resume/synthesis exists in the archive and is
+*deliberately unused*; curated state is preferred). This one is cheap here:
+`to-whom --list` already has liveness, so "dirty + stale" is one join away from
+`--audit`. **Build it here rather than waiting on the batch job.**
+
+**Why the whole thing is affordable now:** [[we-always-deploy]]-style, it removes
+dcp from the critical path of ending a session. Note the tension to watch —
+retrospective dcp makes it *safe* to exit without dcp, which could erode the
+habit that keeps STATE curated. The report is a **safety net, not a substitute**;
+if it starts being used as one, the estate's memory degrades from curated prose
+to mined transcript, which is the thing Peter explicitly does not want.
+
 ## BUILT: `to-whom` — the gate stops being a reading exercise (2026-08-14)
 
 **First code this strand has owned.** `ubersitrep/to-whom` parses `keepers.md`,
