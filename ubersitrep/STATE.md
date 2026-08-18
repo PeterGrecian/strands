@@ -75,6 +75,27 @@ rather than a deadline.
    returns `spend` where it returned nothing. Unanswered still — but owned, which
    it was not on 08-14.
 
+**The this-then-that it exposed, which is this strand's own kind of finding.**
+The offer turned out to answer a question `astro-storage` had already asked and
+parked. Its redundancy ledger (2026-07-31) has **20 of 135 nights at < 2.0
+weighted copies** — bigstore-only, lost if bigstore dies, while the other 115
+survive — and its stated goal is *"every night has a safe 2nd copy"*, waiting on
+somewhere to put them. That is ~300–400 GB, i.e. **a fifth of a 2 TB quota**. So:
+*free 2 TB arrives → closes astro-storage's long-parked 20-night gap → which
+expires as a need in spring 2027 when astro-science hits diminishing returns →
+four months before the trial's ~2027-08-18 expiry, so the exit is one `rclone
+purge` rather than a triage job.* **The sequencing is the whole answer**, and
+none of the three strands could see it alone: `spend` knows the bill,
+`astro-storage` knows the gap, `astro-science` sets when the need ends.
+
+**Method note worth keeping: reading the ledger beat reasoning about the
+volume.** The first answer given (before checking) argued Drive was a poor fit on
+file-count and lapse-risk grounds — true in general, and **wrong here**, because
+the real ask was never a 1.5 TB mirror. One `grep` at the owning strand's STATE
+inverted the advice. The gate's failure mode is answering from the shape of a
+question instead of the owning strand's numbers, and this is a clean instance of
+catching it.
+
 **Roster drift found by `--audit` in passing, NOT fixed** (out of scope for this
 dispatch, and each needs a real judgement): `astro-serving` and `usb-hid-keyboard`
 are on disk with a CLAUDE.md and **no roster row — unroutable, the gate cannot

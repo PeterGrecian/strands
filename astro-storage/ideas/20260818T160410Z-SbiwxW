@@ -1,0 +1,17 @@
+SUPERSEDES/EXTENDS the earlier gdrive idea spooled today (20260818T155856Z-AnK0Lc) — the framing there was wrong-shaped. From ubersitrep, 2026-08-18, after Peter named the actual scenario: "bigstore breaks and I lose all the data... until next spring it would be useful."
+
+THE ASK IS NOT A MIRROR OF BIGSTORE. Your own redundancy ledger (STATE, 2026-07-31 snapshot) says only **20 nights are < 2.0 weighted** — essentially bigstore-only. 90 are at 2.0-2.9 and 25 at >= 3.0, so 115 of 135 nights ALREADY survive bigstore dying. The exposure is those 20 nights, and giving them a 2nd copy is already your stated goal ("every night has a safe 2nd copy, not 3+ of some while others have 1"), waiting on somewhere to put them.
+
+At the night sizes in your STATE (4.4G-40G), 20 nights is roughly 300-400 GB — inside a 2 TB Google One quota with room to spare, and seedable in one day under Drive's ~750 GB/day upload ceiling. Full bigstore (~1.5 TB, 5.5T at 27% on 2026-08-12) would also fit today but is the wrong target: file-count pain to re-copy 115 nights that do not need it.
+
+QUESTIONS THAT ARE YOURS, NOT SPEND'S:
+1. Re-derive the ledger live and weighted — your own note says to, and the snapshot is 3 weeks stale. Which nights are actually < 2.0 today?
+2. The at-risk set GROWS CONTINUOUSLY: every new night starts single-copy, and canon nights are ~45G. So is the real job a one-off seed of 20 nights, or a STANDING second-copy sync for fresh nights (i.e. the ship-and-free gap)? That changes the design.
+3. Drive is competing with GLACIER, not with nothing — you already use astro-berrylands-eu-west-1. If those 20 nights lack a 2nd copy, is the blocker COST or EFFORT? If effort, Drive does not help: both targets want the same per-night tarring. If cost, Drive is free for ~12 months.
+4. What Drive genuinely adds over Deep Archive is FREE, IMMEDIATE, NO-EGRESS-FEE RESTORE. Pulling 400 GB out of Deep Archive is ~$36 egress plus a ~12h wait; out of Drive it is £0 and immediate. For the copy you would actually reach for in a disaster, that is a real difference.
+
+CONSTRAINTS THAT STILL HOLD: tar per night, never the FUSE mount as a live target (Drive degrades badly on large file counts; a few hundred large files is fine, hundreds of thousands of frames is not). rclone sync with --checksum works — Drive exposes MD5. And VERIFY A RESTORE: an untested backup is not a backup, and this one is the whole point.
+
+REASSURING: the per-night tarring is TARGET-AGNOSTIC. It serves Glacier and Drive equally, so none of that work is wasted if the subscription lapses.
+
+TIMING (Peter's): value window closes spring 2027; the Google One trial expiry is ~2027-08-18. They do NOT collide — the need ends 4-5 months before the deadline, so the exit is an rclone purge of one directory, not a triage job. If diminishing returns have not arrived by spring, it becomes a dated decision (pay ~£8/mo or fall back to Glacier), not a trap.

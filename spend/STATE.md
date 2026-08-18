@@ -76,6 +76,34 @@ the `~/gdrive` rclone mount inherits it). So the Chromebook is only how the offe
   question reached from the other side (fine as redundancy, wrong as a tier), and
   it **generalises past this offer** — it is the right posture toward any free
   storage tier the estate is ever given.
+- **2026-08-18 — the offer has a REAL use, and it is disaster recovery.** Peter
+  named the scenario: *"bigstore breaks and I lose all the data… until next
+  spring it would be useful."* Checking `astro-storage`'s redundancy ledger
+  (snapshot 2026-07-31) sharpened it and **corrected the framing above**: only
+  **20 of 135 nights are < 2.0 weighted copies** — 115 already survive bigstore
+  dying. So the ask is not a 1.5 TB mirror, it is **a second copy for ~20 nights,
+  roughly 300–400 GB** — which is a goal astro-storage had already stated and was
+  waiting on space for. That is a much better fit than the tiered-storage use I
+  argued against, and the difference came entirely from reading the ledger rather
+  than reasoning about the volume.
+- **2026-08-18 — the value window closes BEFORE the obligation, and that
+  dissolves the deletion worry.** Value ends ~spring 2027; trial expiry
+  ~2027-08-18. Four to five months of slack, so the exit is one `rclone purge`
+  of one directory, not the systematic triage Peter was picturing. If diminishing
+  returns have *not* arrived by spring it becomes a **dated decision** — pay
+  ~£8/mo or fall back to Glacier — not a trap. **⏰ Put a spring 2027 review
+  somewhere it will fire.**
+- **2026-08-18 — Drive competes with Glacier, not with nothing, and the honest
+  advantage is RESTORE cost.** astro-storage already ships to Deep Archive
+  (`astro-berrylands-eu-west-1`), which holds 400 GB for well under $1/month — so
+  on pure storage price Drive wins nothing, and if those 20 nights still lack a
+  second copy the blocker is almost certainly **effort, not cost**. What Drive
+  genuinely adds: pulling 400 GB back out of Deep Archive is **~$36 in egress
+  plus a ~12 h wait**; out of Drive it is **£0 and immediate**. For the copy you
+  would actually reach for in a disaster that is a real difference — and it is
+  the first case found where a consumer subscription beats the cloud path on
+  something that matters. *(Both figures need checking against live pricing
+  before anyone acts on them.)*
 - **2026-08-18 — consumer subscriptions are in scope, not just cloud.** They are
   the ones no console shows. GLOBAL.md's "three billed providers" table
   undercounts for exactly this reason.
