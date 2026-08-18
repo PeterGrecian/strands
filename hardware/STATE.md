@@ -160,6 +160,51 @@
   clone was **stale** (configure-sd-card.sh dated May 30 vs pip's Jun 5) with
   **no `--armhf` support** → `git pull` before writing armhf cards for deskpi.
 
+- **zog** (recorded 2026-08-18) — **Lenovo Chromebook Plus 14**, ARM64, bought
+  as **travel / portable dev and relief for pip as a main driver**. The second
+  strand of the renewal push alongside nit: nit renews the *server*, zog renews
+  the *daily driver*. **MediaTek Kompanio Ultra 910** (1× Cortex-X925 + 3×
+  Cortex-X4 + 4× Cortex-A720, ARMv9 with SVE2/bf16/i8mm), **16 GB LPDDR5x
+  soldered**, **128 GB internal**, ~68 Wh battery, fanless. Genuinely fast —
+  ahead of pip single-core and in a different league from muppet or vole. Full
+  spec in memory `reference_zog_hardware`.
+
+  **The structural fact that governs everything: work happens inside a Crostini
+  VM, not on the metal.**
+  - **Hostname inside is `penguin`, always** — never `zog`. Anything keying off
+    `hostname` gets the wrong answer here.
+  - **NAT'd behind ChromeOS** on `100.115.92.26/30`. Outbound to the LAN works
+    (pings puppy, 5.7 ms); **inbound does not** — sshd runs but only on the NAT
+    address. **No fleet host can reach zog.** Tailscale not installed.
+  - **zog is a client of the fleet, never a member of it.** It cannot host a
+    service or be addressed by another host. **Do not add it to ansible
+    inventory or pi-fleet as a normal host.** If it ever needs reaching, the
+    route is Tailscale on the *ChromeOS* side, not container port-forwarding.
+  - Linux sees only a **10 G virtual root disk** (2.8 G used) — growable from
+    ChromeOS settings, but it will not grow itself when it fills. With 128 G
+    total shared with ChromeOS, **zog holds no data**: fetch–work–ship only.
+  - **No GPU, thermal, cpufreq, SMART or DMI exposed.** `lspci` claims an Intel
+    440FX on an ARM machine (virtio behind a fake QEMU bus) — ignore it.
+    `systemd-detect-virt` says `none`; that is a lie of omission.
+  - **Battery wear is invisible from Linux** (`cycle_count` 0, `health`
+    Unknown) — check it on the ChromeOS side.
+  - **Kernel is ChromeOS's** (6.6.119, built 2026-05-30) — updated by ChromeOS,
+    not apt. Fleet kernel practice does not apply. Userland is Debian 13.5.
+  - **Toolchain gap:** `git`/`gh`/`python3`/`stow` present; **`aws`, `gcloud`,
+    `node`, `rclone` all MISSING.** Strand machinery works (super, strands,
+    ansible, dotfiles, aifabric, osd all cloned) but nothing touching AWS, GCP
+    or gdrive does yet. All four have arm64 builds — just not installed.
+  - **RAM is the one unfixable spec:** 16 GB soldered, ~9.8 GiB to the
+    container, **no swap**, and it was at 7.7 G used after ~3 h. Watch it.
+
+  **In use (Peter, 2026-08-18): battery life and screen are both excellent** —
+  and those are the two things you feel daily, so they, not the core count, are
+  the real case for zog as pip-relief. The one regret is that **the screen is
+  glossy** — "might not be entirely suitable, but swings and roundabouts".
+  Worth being conscious of for bright-room or outdoor work, and for anything
+  where a dark image is on screen. A known trade against the panel quality, not
+  a deal-breaker.
+
 ## Pending / loose ends
 
 **Priority order as of 2026-08-10** (the session that closed the migration and
