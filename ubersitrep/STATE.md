@@ -23,6 +23,67 @@ gets **extracted from live use, not designed up front**, which is the same
 manual-versions-teach-what-to-automate discipline as below. Meanwhile the astro
 line is healthy — `/astro/canon` live since 08-11.
 
+## FOUNDED: `spend` — the second missing keeper, found by the gate failing twice (2026-08-18)
+
+**The first real dispatch, and it produced a strand instead of a route.** Peter
+asked *"I need a strand to look at the chromebook plus gemini and storage offer I
+have — is that related to GCP?"*. `to-whom` returned **`astro-storage` [13]** —
+matched on the word *storage*, and wrong. That is the **second** time the gate
+has come up empty on money: *"how much is R2 costing"* returned **no candidate at
+all** on 08-14, recorded below as the missing-keeper signal arriving on day one.
+
+**Two independent mis-routes on one subject is the signal being legible.** So
+`spend` was scaffolded — cloud costs (AWS/GCP/Cloudflare) *plus* the per-account
+subscriptions no cloud console can see. **Keeper from day one**, against the
+maintenance rule that a new strand joins as builder: the subject is bounded,
+steady-state, and exists to serve answers. The rule is right in general and
+should not be softened; this is a scaffolded-to-serve exception, which the rule
+already allows for.
+
+**Peter's ruling set the remit, and it came from a single fact.** *"I think I can
+use it on my phone too. And pip."* — Google One AI Premium is **account-level,
+not device-level**, so the Chromebook is only how the offer *arrived*. That
+killed the narrow `chromebook` framing mid-question and set the strand at **the
+bill, not the device**. Worth noting as a routing lesson: the deciding input was
+not one of the three options offered, it was a fact that made two of them
+incoherent.
+
+**Then Peter found the strand's first real finding himself:** *"I would have to
+systematically delete from gdrive leading up to 18/8/2027."* **Free storage is a
+deferred deletion obligation** — the price of the 2 TB is a triage job against a
+hard date, or a subscription you are locked into. The rule that dissolves it is
+in `spend`'s Decisions and **generalises beyond this offer**: nothing may live in
+a free tier that does not live somewhere else too, so lapsing costs one delete
+rather than a deadline.
+
+**Three lessons for the gate, which is why this is here and not only there:**
+
+1. **A mis-route is evidence — keep the failures.** Both missing keepers found so
+   far (`considered-prose`, `spend`) came from the gate coming up empty or wrong,
+   never from an audit. And `spend` needed **two sightings** before it was
+   legible, so a nothing-returned query is worth writing down *at the time*:
+   cheap then, unrecoverable later. The archive diff automates this; it was never
+   the only source. Added to `keepers.md` Maintenance.
+2. **A new routing rule was needed immediately, and the ranking still gets it
+   wrong.** Post-founding, the original query *still* ranks `astro-storage` [13]
+   over `spend` [6] — *storage* is astro-storage's strongest weight and beats
+   `spend` on almost any money question mentioning bytes. Rule recorded: **what
+   they cost is `spend`, where they live is `astro-storage`; both at once is a
+   hand-off, not a contest.** Third confirmation that lexical overlap cannot know
+   a decision.
+3. **The R2 question is finally answerable.** *"how much is R2 costing"* now
+   returns `spend` where it returned nothing. Unanswered still — but owned, which
+   it was not on 08-14.
+
+**Roster drift found by `--audit` in passing, NOT fixed** (out of scope for this
+dispatch, and each needs a real judgement): `astro-serving` and `usb-hid-keyboard`
+are on disk with a CLAUDE.md and **no roster row — unroutable, the gate cannot
+see them**. `manim` reports PHANTOM, which is a **bug in `to-whom`, not the
+truth**: the dir exists but has only `STATE.md` + `blurb`, and the audit's
+on-disk test requires a CLAUDE.md, so the message *"no strand dir on disk"* is
+actively misleading. Two things to fix: distinguish *dir missing* from *dir
+present without a mission*, and write `manim` a CLAUDE.md.
+
 ## RULING: exit is NOT the default — dcp is (2026-08-17)
 
 Peter: **"why do I exit sessions? They could remain and contribute low latency

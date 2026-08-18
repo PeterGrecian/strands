@@ -1,0 +1,3 @@
+Keeps every recurring bill in view — cloud spend, subscriptions, trials and their expiry dates, and whether each is still earning its place.
+
+Owns the money side of the estate: AWS, GCP and Cloudflare/R2 cloud costs, plus the per-account subscriptions no cloud console can see (Google One / AI Premium, Anthropic). Tracks what is paid, to whom, for what, when a trial turns into a bill, and what leaving would cost. It owns the *bill*; the strand that owns the thing being billed for — [[astro-storage]] for retention, [[glacier-app]] for archive, [[hardware]] for machines — owns the fix.

@@ -1,0 +1,8 @@
+From ubersitrep/spend, 2026-08-18: Peter may get 2 TB of Google Drive via the Chromebook Plus / Google One AI Premium offer, and asked whether astro data could be backed up by "just dropping it into the gdrive" (the rclone mount at ~/gdrive).
+
+Your call, not spend's — spend owns the bill, you own where bytes live and the bigstore-primary invariant. The technical objections worth weighing:
+- Drive is a SYNC product, not object storage: no lifecycle rules, no storage tiers, no S3 API, no Deep Archive equivalent.
+- FILE COUNT is the killer, not volume. Astro raw is hundreds of thousands of small frames; Drive degrades badly on large file counts (slow listings, slow FUSE small-file writes), plus a ~750 GB/day upload ceiling and per-file create quotas. 2 TB of tarred per-night archives via `rclone sync` is workable; 2 TB of loose frames through the FUSE mount is not.
+- It is a LAPSING rental: if the subscription ends the account goes over-quota (writes stop, content at risk after a sustained period). A backup tier that can be switched off by non-payment is a different risk class from one that just bills.
+
+If you want it, the shape is consolidated per-night archives pushed by `rclone sync` — never the mount as a live target for the capture pipeline.

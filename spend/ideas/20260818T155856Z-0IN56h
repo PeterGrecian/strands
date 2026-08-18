@@ -1,0 +1,11 @@
+FIRST WORK UNIT — the Chromebook Plus / Google One AI Premium offer (from Peter via ubersitrep, 2026-08-18).
+
+Establish, with figures checked against one.google.com rather than remembered:
+- What exactly is bundled: Gemini Advanced in the app + 2 TB Drive quota (account-wide, shared across Gmail/Drive/Photos), and for how long.
+- The expiry date, and what the monthly cost becomes when it lapses.
+- What "lapse" does: you do not lose data, you go OVER-QUOTA — uploads stop, Gmail sending stops, and content is at risk after a sustained period over quota. If we have grown into the 2 TB by then, lapsing is WORSE than the 15 GB free tier we have today. Put the date somewhere it will be seen.
+- Whether Peter's existing 15 GB nag is what this is really solving, and what that is worth on its own.
+
+Scope note ruled at founding: this is an ACCOUNT-level subscription, not a device perk — it works on Peter's phone, on pip, and anywhere he signs in. The Chromebook is only how the offer arrived.
+
+Three conflations to keep straight when reporting: Google One is NOT GCP (separate billing relationship); Drive is NOT GCS (no S3 API, no lifecycle rules, no cold tier); the Gemini APP is NOT the Gemini API (Vertex/AI Studio bills through GCP; no API credit comes with this).

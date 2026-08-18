@@ -1,0 +1,7 @@
+Second: can the 2 TB be used to back up astro data? Peter asked "I just drop it into the gdrive?" (2026-08-18).
+
+Mechanically yes via the rclone FUSE mount at ~/gdrive. The costing/judgement questions this strand owns:
+- Is 2 TB of rented, LAPSING storage an acceptable backup tier at all? It degrades by ACCESS when the sub ends, where Glacier degrades by BILL. That is a materially different risk.
+- What is the honest alternative cost — Deep Archive / R2 for the same bytes — so the comparison is a number, not a preference?
+
+The where-bytes-live half is astro-storage's, not this strand's; spooled there too.

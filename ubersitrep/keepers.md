@@ -117,6 +117,7 @@ blurbs, not by the `keeper` grep. That gap is the roster's reason to exist.
 | `electronics` | **keeper** | circuits, actuator drive, the bench layer | bounded charter, sits between home-automation and hardware |
 | `ubersitrep` | **keeper** | the whole-estate picture **+ the gate** | this strand; both an expert and the keeper-keeper |
 | `considered-prose` | **keeper** | how wording gets chosen — the prose-quality loop | **added 2026-08-13**, the first row since the roster was written. Found as a *missing keeper*: export prose was being re-derived independently by aifabric-essay, cv, aifabric, testbook and owned by none of them |
+| `spend` | **keeper** | the money: cloud costs + subscriptions + trials and their expiry | **added 2026-08-18**, the second missing keeper found. Keeper from day one (bounded, steady-state, exists to serve "what does X cost and is it worth it") — the usual builder start does not apply. **Found by the gate's own failures, twice**: "how much is R2 costing" returned no candidate (08-14) and "the Chromebook Gemini + storage offer" mis-routed to `astro-storage` on the word *storage* (08-18) |
 | `calendaralarm` | **builder** | un-ignorable calendar alarms | ✅ live but still active effort |
 | `rackinabox` | **builder** | the laser-cut enclosure | design locked, unfabricated — **one step from done** |
 | `testbook` | **builder** | the sleep-listening app | mid-pivot 2026-07-25 |
@@ -152,6 +153,13 @@ the ranking, the rule wins — the gate applies them, `to-whom` only shortlists.
   making a deck *do* something goes to the driver.
 - **Subject-matter routing is never delegated to a surface agent.** The driver
   owns the surface; ubersitrep owns the subject matter (STATE, 2026-08-13).
+- **Cost / billing / subscription questions → `spend`, even when they say
+  "storage".** Verified 2026-08-18: *"chromebook gemini google one storage
+  subscription offer"* ranks `astro-storage` **[13]** over `spend` **[6]** — the
+  word *storage* is astro-storage's strongest weight and will beat `spend` on
+  almost any money question that happens to mention storing something. The test
+  is **what is being asked about the bytes**: what they *cost* is `spend`, where
+  they *live* is `astro-storage`. Both at once is a hand-off, not a contest.
 
 ## Contested rows — resolve at the archive diff
 
@@ -181,3 +189,10 @@ the ranking, the rule wins — the gate applies them, `to-whom` only shortlists.
 - **Watch for the missing keeper**: a subject recurring across sessions that no
   row here owns. Unfindable from blurbs — every blurb says it is someone else's
   job — which is the whole case for the archive diff.
+- **A mis-route is evidence, so keep the failures.** Both missing keepers found
+  so far (`considered-prose`, `spend`) were found by the gate coming up empty or
+  wrong, not by an audit — and `spend` needed **two** sightings before the
+  pattern was legible. So a query that returns nothing, or returns something
+  obviously wrong, is data worth writing down at the time; it is cheap then and
+  unrecoverable later. The archive diff automates this, but it is not the only
+  source and never was.
