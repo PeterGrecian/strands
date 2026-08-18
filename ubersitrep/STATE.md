@@ -105,6 +105,78 @@ on-disk test requires a CLAUDE.md, so the message *"no strand dir on disk"* is
 actively misleading. Two things to fix: distinguish *dir missing* from *dir
 present without a mission*, and write `manim` a CLAUDE.md.
 
+## FINDING: the spool is a queue with no consumer — ideas are invisible until a session runs (2026-08-18)
+
+**Found by accident, and it is the sharper half of the day.** Peter asked to
+spool a whole-dataset quality pass to astro-science. Listing that spool first
+showed **he had asked for the same thing on 08-13** —
+`20260813T093021Z-EdDfan`: *"we can workout the epocs from the images, it's just
+that I want to do all time sweeps of the data. I've got an idea…"*. Five days
+old, untriaged, alongside four others. **He re-raised it because nothing had
+happened.**
+
+**The mechanism is working exactly as designed and that is the problem.** `idea`
+spools; `IDEAS.md` drains *at the next session of that strand*; astro-science has
+not run since 08-13. So a spooled idea is **write-only until someone launches the
+owning strand** — there is no notification, no ageing signal, and nothing that
+says a queue is backing up. The mailbox has a doorbell; the spool has none.
+
+**Why this lands here rather than in `aifabric`.** The gate is now the thing
+Peter types into, so it is the only place with a view across all 44 spools. A
+per-strand tool cannot see that astro-science has six pending ideas while others
+have none, and Peter cannot see it without running each strand. **`to-whom`
+already joins the roster to liveness and the mailbox spool — pending-idea count
+and oldest-idea age are one more column**, and they are the estate's clearest
+*neglect* signal. Note the contrast with `--freshness`, which measures strands
+that are *live and drifting*; this measures strands that are **not running while
+work accumulates for them**. Different failure, same report.
+
+**It also re-reads the 08-14 finding.** `--freshness` was tightened so a stale
+STATE only signals under a live session or dirty files — correctly, because a
+dormant strand is behaving properly. But astro-science is dormant **with a
+growing queue**, and that is *not* correct behaviour. So the guard needs the
+refinement: **dormant-with-pending-input is a signal; dormant-and-empty is not.**
+
+**Second-order, and worth stating because it bears on the whole dispatch design:**
+the gate routing work into a strand that never runs is **indistinguishable from
+doing nothing**. Every idea spooled today (spend ×2, astro-storage ×3,
+astro-science ×2) inherits that. Spooling is not delivery; it is a bet that the
+strand gets launched. `dispatch` should probably close that loop — but until it
+does, **the gate should report queue depth back to Peter at the point of
+spooling**, which costs nothing and is the whole fix in the interim.
+
+**MEASURED, 2026-08-18 — 36 pending ideas across 14 of 44 strands.** A one-liner
+over `*/ideas/`, and the ages matter more than the counts:
+
+| Strand | Pending | Oldest | Age |
+|---|---|---|---|
+| `aifabric-essay` | 7 | 2026-08-01 | 17d |
+| `astro-science` | 6 | 2026-08-13 | 5d |
+| `housekeeping` | 3 | 2026-07-29 | **20d** |
+| `aifabric-sessions` | 2 | 2026-07-27 | **22d** |
+| `astro-polecam` | 3 | 2026-08-03 | 15d |
+| `hardware` | 3 | 2026-08-15 | 3d |
+
+**`aifabric-sessions` is the one that stings**, and it closes a loop on this
+strand's own backlog: it owns the session archive, and the **archive-diff
+deriver** — the thing that would replace `keepers.md`'s blurb-derived,
+self-declared verdicts with evidence — is waiting on it. Its queue has sat 22
+days. So the roster's headline caveat ("BLURB-DERIVED, UNCONFIRMED") is not
+blocked on difficulty or on a decision; **it is blocked on a strand not being
+launched.** That is a much cheaper problem than it has been treated as.
+
+`aifabric-essay` (7 pending, 17 days) was *also* the worst row in the 08-17
+freshness run — 16d stale STATE under a live session. **Both signals point at the
+same strand from opposite directions**, which is the first evidence the two
+measures are complementary rather than redundant.
+
+**Blocked on Peter since 08-13, surfaced again today:** was there a **third
+astrocam camera**? Registry has two entries, headers show two sensors, but a
+v3→v3 module swap would be invisible in the data. It blocks the epochs page,
+which in turn blocks epoch-aware sweeps over the archive — a three-deep chain
+stalled on one unanswered question, which is exactly the this-then-that this
+strand exists to make visible.
+
 ## RULING: exit is NOT the default — dcp is (2026-08-17)
 
 Peter: **"why do I exit sessions? They could remain and contribute low latency
