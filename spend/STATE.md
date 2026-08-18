@@ -24,6 +24,25 @@ the `~/gdrive` rclone mount inherits it). So the Chromebook is only how the offe
 *arrived*; it is not what the offer is *about*. That ruling killed the narrow
 `chromebook` framing and set this strand's remit at **the bill, not the device**.
 
+## The device is `hardware`'s — this strand owns only the subscription
+
+A parallel `hardware` session recorded the machine the same afternoon
+(`aeaf259`, 2026-08-18): **zog**, Lenovo Chromebook Plus 14, Kompanio Ultra 910,
+16 GB, 128 GB, fanless, bought as travel dev and pip-relief. Clean boundary, and
+it arrived without collision: **`hardware` owns zog, `spend` owns the Google One
+subscription it came bundled with.**
+
+Two facts from that record that constrain this strand's work:
+
+- **zog cannot be the sync host.** It is Crostini-bound — hostname `penguin`,
+  NAT'd behind ChromeOS so nothing on the LAN reaches it, and Linux sees a **10 G
+  virtual disk**. Explicitly *a client of the fleet, never a member*. Any Drive
+  sync of astro data runs from **muppet**, where bigstore is; the Chromebook is
+  merely where the entitlement was earned.
+- A Chromebook Plus of that generation is consistent with the **12-month** AI Pro
+  bundle, which is where the assumed 2027-08-18 expiry comes from. Consistent is
+  not confirmed — still check it.
+
 ## What exists
 
 - `CLAUDE.md` mission, `blurb`, `colour` (`8f4700`), `dirs` (`~/super`).
