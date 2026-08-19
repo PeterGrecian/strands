@@ -1008,6 +1008,44 @@ the third camera was a v3→v3 swap it is invisible in headers AND currently
 invisible in fingerprints — fixing the hot-pixel pipeline is what would
 settle it.
 
+## `scan-brightness` is silently broken for the whole imx219 era (2026-08-19)
+
+Found while filling the two unmeasured astrocam nights (2026-06-11, 06-12).
+The scan ran for ~190 s per hour-dir, reported `wrote … brightness.csv`, and
+produced **header-only files — 0 rows, 13 hour-dirs in a row.** Success
+message, no data: worse than an error.
+
+**Cause.** `epoch_ms_from_name()` rejects short integer filenames as
+non-timestamps (guard `64c5d5e`) and falls back to `epoch_ms_from_header()`,
+which only reads `EPOCH_MS`. But **`EPOCH_MS` is absent from every imx219-era
+frame**, and those frames are exactly the renumbered ones (`0009.fits.fz`).
+Both paths return None, and the caller `continue`s past the frame silently.
+So the tool cannot measure any e1-era night — the existing e1 CSVs were
+written by an older version, before the guard landed. **origin/main has the
+same bug**; it is live, not a local-checkout artefact.
+
+**Fix (written and TESTED, not committed):** fall back to `DATE-OBS`, which
+is present on all of them. Validated on 2026-06-11 in a scratch dir with the
+originals untouched — rows now emitted with correct timestamps
+(`1781222401501 / 2026-06-12T00:00:01.501`). Patch at
+`~/tmp/sbfix/scan-brightness-patched` **on muppet**. Purely additive: it only
+runs where the current code returns None and skips, so it cannot change the
+working path. Needs Peter's go-ahead to land, being shared pipeline tooling.
+
+### Which host should process? muppet, on both counts.
+
+Answering Peter's *"are we processing where the data is? muppet?"*:
+
+- **muppet holds everything** — `/mnt/bigstore/astro-data` 1.7 TB, all five
+  trees. puppy holds astrocam only.
+- **muppet runs current code** — `~/astro` on main, **0 behind origin/main,
+  clean**. puppy is **86 behind**, with a stale `pedestal 105` where the
+  measured floor is 86.7.
+
+puppy's astrocam copy is an exact mirror, so this pass's astrocam numbers are
+unaffected — but muppet is the right processing host going forward, and the
+one place a tooling fix can actually be committed.
+
 ## Pending / loose ends
 
 ### THE MAP — next steps, in order (2026-08-14)
