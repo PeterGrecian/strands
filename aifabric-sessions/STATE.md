@@ -11,14 +11,17 @@
   installed via `install-ingest-timer --os https://192.168.0.11:9200`, lingering
   enabled. `python3-boto3` added to the ansible laptops profile — **pip has the
   same gap** and needs the same roll-out.
-- **⚠ OPEN: 318 docs are indexed under host `penguin`, not `zog`.**
-  `ingest-sessions` defaults `--host` to `socket.gethostname()`, and crostini's
-  kernel hostname is `penguin` regardless of what the fleet calls the machine.
-  Because `_id` is `sha1(host|session_id|uuid)`, **re-running with `--host zog`
-  duplicates rather than corrects** — the mislabelled docs must be deleted by
-  query first. Proposed fix: default `--host` to `$OSD_HOST`, matching the seam
-  `OSD_URL` already uses, so `/etc/default/osd-ingest` carries `OSD_HOST=zog`
-  and no unit needs editing. Not yet done.
+- **Host label fixed: `$OSD_HOST`** (2026-08-19, osd `de0ff6b`, pushed).
+  `ingest-sessions` defaulted `--host` to `socket.gethostname()`, and crostini's
+  kernel hostname is `penguin` whatever the fleet calls the machine — so zog
+  shipped **1,278 docs labelled `penguin`** before it was caught. Because `_id`
+  is `sha1(host|session_id|uuid)`, re-running with the right `--host`
+  *duplicates* rather than corrects; the mislabelled docs had to be deleted by
+  query first (1278 deleted, 0 failures) and re-ingested. `--host` now defaults
+  to `$OSD_HOST` before the kernel hostname — the same seam as `OSD_URL` — with
+  `OSD_HOST=zog` in `/etc/default/osd-ingest`, so no unit editing. Index now
+  reads pip 74,730 / muppet 3,096 / zog 1,305. **Any future host whose fleet
+  name differs from its kernel hostname needs `OSD_HOST` set at install time.**
 - **Streaming (fluent-bit) considered and rejected for sessions** (2026-08-19).
   `ingest-sessions` is idempotent by construction (content-hashed `_id`), which
   makes freshness a *scheduling* problem, not an architecture one. Fluent-bit's
