@@ -47,14 +47,32 @@
   - **Side effect worth having:** this was zog's first `network` converge, so it
     also picked up the managed `/etc/hosts` block — muppet, puppy, cloudcam and
     vole resolve by name from crostini for the first time (it has no mDNS).
-  - **Trap found, not yet fixed:** the role's `nsswitch.conf` task inserts
-    `resolve` into the hosts chain gated on `/etc/systemd/resolved.conf`
-    *existing*, not on systemd-resolved *running*. zog was spared only because
-    the file is absent. Any host with the config but an inactive daemon would
-    lose name resolution outright on converge.
+  - **Resolver gate fixed** (`~/ansible` `d98563c`, pushed). The role's
+    systemd-resolved tasks keyed off `/etc/systemd/resolved.conf` *existing*,
+    which is a different question from whether resolved is the resolver;
+    they now hang off `systemctl is-active systemd-resolved`.
+    **The severity was measured, and the nsswitch line is not the dangerous
+    one** — tested on zog with resolved inactive and nss_resolve not installed,
+    the `resolve [!UNAVAIL=return]` chain still resolved everything, because an
+    absent module returns UNAVAIL and falls through. It bites only when resolved
+    *runs* without upstream DNS: NOTFOUND hits the `return`. The genuinely
+    unsafe one was the avahi task — masking avahi for a daemon that isn't there
+    leaves no mDNS responder at all; latent only because pip alone sets
+    `network_mdns_responder`, and to `avahi`. No behaviour change on any
+    reachable host: old and new gates agree everywhere today (muppet/puppy conf
+    + daemon both present, pip/vole/zog neither).
   - `playbooks/set_hostname.yml` is now redundant cruft: hardcoded to
     `192.168.4.138` (puppy's old address) and carrying an unrelated sudoers
     task. Fold or delete.
+
+- **Pending drift seen in a fleet-wide `--check`** (2026-08-19, from zog, so
+  laptops only — the Pis are unreachable from crostini, which has no mDNS for
+  their `.local` names): muppet, puppy and vole are all missing the managed
+  `/etc/hosts` block, and puppy's NetworkManager static IPv4 is off-profile.
+  Not applied — the session was scoped to the hostname work. Also worth a look:
+  muppet and puppy run systemd-resolved *and* avahi at once (the
+  `network_mdns_responder: both` default, whose own comment says they fight over
+  :5353), and pip has neither, so nothing on pip answers `.local` locally.
 
 - **Still hand-managed:** the pre-existing host-to-host keys (vole carries
   muppet's, muppet its own) are outside `fleet:*` and undescribed anywhere — the
