@@ -4,7 +4,8 @@
 
 ## What exists
 
-- (new strand — nothing recorded yet)
+- **Help flag audit**: All 56 scripts in `~/super/bin/` (and `~/splay/`) now robustly support `-h` / `--help` (exiting `0`), with safe early-exits to prevent hanging on network/SSH commands, and deferred imports in Python scripts to ensure `--help` works even if third-party modules are missing.
+- **Unified `cleft`**: The AI usage calculator `cleft` now supports both Anthropic API (`-c`) and AGY/Gemini API (`-a`). Running it with no flags automatically checks `aicli -d` to show usage for the current default backend.
 
 ## Pending / loose ends
 
