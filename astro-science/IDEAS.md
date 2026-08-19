@@ -162,3 +162,11 @@ crosses the 2026-07-29 imx219->imx708 boundary, and quaternion epoch
 composition (camera-moved-signal.md's "all epochs land on ONE sphere") is what
 makes that well-posed. See STATE "THE MAP — geometry layer settled 2026-08-16".]
 
+
+[TRIAGED 2026-08-19 — the WHOLE-DATASET QUALITY PASS and its CROSS-REF are
+now folded into STATE.md ("Whole-dataset quality pass"). The epoch model they
+asked for is MEASURED: three capture modes, identified by saturation ceiling
+(the POSINDEX-absent fallback this entry needed), and the epochs are on one
+photometric scale via a single 1.54 scalar. Still open from below: the THIRD
+ASTROCAM CAMERA question (Peter only), the epochs PAGE itself, and Peter's
+unstated "I've got an idea" for the all-time sweep.]

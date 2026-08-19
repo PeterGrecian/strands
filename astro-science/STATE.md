@@ -800,6 +800,114 @@ regime); the ceiling lifting where the catalogue thins is itself information.
 - **Unresolved:** the 23:51:42 canon candidate (~54 px by hand) isn't recovered;
   the eclipticam pair Peter screengrabbed isn't yet located in the subs.
 
+## Whole-dataset quality pass — brightness over the whole archive (2026-08-19)
+
+Peter's ask: *"sort by brightness, find useless images, maybe delete, and
+practice all-project image handling."* The measurement half is done for
+**astrocam**: 87,615 frames over 65 nights, ranked. The delete half is
+astro-storage's and **nothing was deleted**.
+
+**It cost almost no compute.** Every night already carries a
+`brightness.csv` at its root (65 of 68 nights; 2026-06-08 is empty, 06-11 and
+06-12 were unmeasured and are being filled with the house `scan-brightness`).
+And `EXPTIME`/`GAIN` are **constant within each capture mode** — probed over
+10-frame samples of all 68 nights — so normalisation needs two constants per
+mode, not a header read per frame. The whole pass is CSV arithmetic.
+
+### Three wrong turns, each caught by looking at the picture
+
+The strand's "grade FIRST, tune second" lesson held for a fourth time.
+
+1. **Raw brightness ranks TWILIGHT, not cloud.** The 500 brightest frames in
+   the archive are *all* `sun_alt > -12`. Quality is only meaningful below a
+   dark gate; this pass scores at `sun_alt < -15`.
+2. **"Flat at the pedestal" is not a dead frame.** ~900 frames over three
+   nights sit dead-flat at the electronic floor in long contiguous mid-night
+   runs — which reads exactly like a closed cover. Rendered on a fixed
+   absolute stretch they are **superb clear star fields**. Those three nights
+   (**2026-06-17, 06-19, 08-07**) are the *clearest in the archive*. Culling
+   the "zero-signal" end would have destroyed the best data we have.
+3. **A whiteout frame is not necessarily cloud.** The first two whiteouts
+   picked as "cloudy" were at `sun_alt` −5.7 and −8.1: **dawn**. The cloud
+   test only means something at matched solar altitude.
+
+### The metric
+
+Within a mode `EXPTIME`/`GAIN` are constant, so raw mean already ranks
+correctly; normalisation is needed *only* to put modes on one axis. Two
+anchors that are the same physical thing in both:
+
+    cloud_index = (mean - floor) / (median_dark - floor)
+
+0 = clearest sky that mode ever saw, 1 = typical dark frame, >1 = cloud.
+Dimensionless, so it sidesteps the étendue problem that makes raw ADU/s
+incomparable. Anchors measured, not taken from config: floor/median_dark =
+**512.98 / 518.62** (imx219 co-add) and **86.88 / 98.58** (imx708).
+
+Validated by eye on a contact sheet spanning ci 0→20 in both modes: stars
+survive to ci≈1–2, cloud dominates by ci≈3, whiteout by ci≈10 — **and the two
+modes look alike at the same index**, which is the cross-epoch normalisation
+confirmed visually rather than only arithmetically. Independent check: the
+config's own note names **2026-06-15** as the known fully-cloudy night; the
+ranking puts it 4th cloudiest of 65 without being told.
+
+### THREE capture modes, not two
+
+The 2026-07-29 imx219→imx708 swap is the known boundary, but **2026-06-09
+carries 560 frames of a third mode** — single 1.2 s subs (`max` 1023,
+pedestal ~64) mixed into that night's 8× co-adds (`max` 8184, pedestal ~512).
+Mode is identifiable from the frame's own **saturation ceiling**, which also
+gives the epoch-assignment fallback the archive needs: `POSINDEX` is absent
+from 76 % of it.
+
+### The confound — and the fix
+
+**Per-night minimum solar altitude runs monotonically −15.17° (solstice) to
+−25.77° (18 Aug), and the sensor swap sits exactly on that ramp.** Epoch 1
+spans −15.2…−19.8, epoch 2 spans −20.1…−25.8: **zero overlap**. A raw
+epoch-vs-epoch brightness comparison therefore measures *season*, not camera.
+(Also: at 51.4°N the sun only reaches −15.2° at midsummer, so the June nights
+contain **no astronomical darkness at all** — 61 % of all archived frames are
+above the −15° gate. The darkness budget per night is itself a year-scale
+result this strand should publish.)
+
+**Fix: compare at matched *instantaneous* solar altitude**, where the epochs
+do overlap. Median sky rate ratio imx708 : imx219 over five 1° bands from
+−15 to −20 is **1.44, 1.51, 1.54, 1.65, 1.92 — median 1.54**. Its stability
+across bands says this is an instrumental scalar, not weather; and
+**(1.4 µm / 1.12 µm)² = 1.562**, the pixel-area ratio. So the two sensors
+agree photometrically once étendue is accounted for, and **a single scalar
+puts both epochs on one photometric scale** — which is what makes the
+all-time sweep well-posed.
+
+### Cull candidates — measured, NOT actioned
+
+Deep-dark frames only (33,824 of 87,055). At ci>10: **2,644 frames (7.8 %)
+over 19 nights**; at ci>3: 6,297 (18.6 %). Six nights are essentially
+all-cloud: **2026-08-18 (100 %), 06-22 (100 %), 06-15 (95 %), 06-29 (88 %),
+08-16 (86 %), 07-06 (69 %)**. Frames are 3.8 MB (e1) / 13.9 MB (e2).
+
+**Threshold not set, nothing deleted.** Setting it from plausibility is the
+exact mistake the inverted detector calibration documented; it wants Peter's
+eye on the contact sheet first. And an overcast night is still a weather
+record — "useless for stacking" is not "useless".
+
+### Working files
+
+`~/tmp/qualpass/` on **zog** (`quality.py`, `skyrate.py`, the ranked
+`quality-frames.csv`) and on **puppy** (`probe_headers.py`, `contact.py`,
+`render_pair.py`, `look/contact-sheet.png`). `quality.py` wants promoting into
+`~/astro/bin` — but see the puppy drift below first.
+
+### Found in passing: puppy's astro checkout is 86 commits behind origin/main
+
+The **processing** host is running pre-map code, and its `astrocam/camera.json`
+still has `pedestal 105` / `sky_clear_max_stops 4.0` where origin/main has
+50 / 8. Measured floor over 21 imx708 nights is **86.7**, so puppy's 105 is
+*above* the real floor — it would clip genuine dark sky to zero. Not touched:
+pulling 86 commits onto the processing host changes processing behaviour and
+is Peter's call.
+
 ## Pending / loose ends
 
 ### THE MAP — next steps, in order (2026-08-14)
