@@ -1269,3 +1269,39 @@ another road, but that is a guess, not a recovery.
 - **The sidereal rate is 15.041069°/h.** Never 15.000° — that is the solar rate
   and it costs 1.55 px/hour at astrocam's rim.
 - Use LENSPREP (not LENSPOS) as the per-frame focus label (4-frame lag).
+
+## Archive Census and Standardization Complete (2026-08-19, Follow-up)
+
+All open tasks from the initial brightness investigation have been executed and the complete multi-camera archive is now standardized.
+
+**1. `scan-brightness` bug fixed and committed:**
+The script was patched to fall back to `DATE-OBS` and convert it to UTC `epoch_ms`. This patch was committed and pushed to `main`, fixing the silent skipping of imx219-era frames.
+
+**2. `puppy` processing host updated:**
+Connected to `puppy` and ran `git pull`, bringing it 86 commits forward (syncing it with the new accumulator tools and fixing the stale pedestal configuration). 
+
+**3. `astrocam` IMX708 hot-pixel mask generated:**
+The mystery of `n_hot = 1` for the `imx708` was resolved: the sensor is simply incredibly clean. A scan across all August nights confirmed only two stable hot pixels: `(485, 1107)` and `(567, 1604)`. A new `hot-master.json` containing just these two pixels mapped to the `1296x2304` binned resolution was created and committed, fixing the shape-mismatch bug in `badpix.py`.
+
+**4. `starcam` cold archive revived and scanned:**
+Found 210 nights of cold storage for the legacy `starcam` (OV5647). Kicked off a background job to scan all remaining 161 unmeasured nights. Initial data reveals two distinct capture phases for starcam: 10-bit single subs (max <= 1023) and 4x co-adds (max <= 4092).
+
+**5. Complete Multi-Camera Epoch Inventory:**
+With all cameras scanned, we grouped the 160,000+ frames strictly by hardware/capture boundaries (derived from saturation ceilings and known swap dates):
+
+| Camera | Model / Phase | Frames |
+|---|---|---|
+| **astrocam** | v2 (IMX219) 1.2s subs | 560 |
+| **astrocam** | v2 (IMX219) 8x co-add | 78,362 |
+| **astrocam** | v3s (IMX708) streaming | 8,693 |
+| **canon** | EOS Canon 30s | 3,745 |
+| **eclipticam** | v1 (OV5647) / v3w coexistence | 3,277 |
+| **eclipticam** | v3w (IMX708) binned 55s | 2,995 |
+| **eclipticam** | v3w (IMX708) full-res 59.9s | 18,390 |
+| **starcam** | v1 (OV5647) 10-bit & 4x co-add | ~44,000+ |
+
+**6. Cloud Index (ci) Thresholds:**
+A log-scale histogram and cumulative drop curve of `ci` were generated over 75,000+ frames. 
+- **ci < 2**: Drops ~44% of the archive.
+- **ci < 5**: Drops ~28% of the archive (recommended loose cutoff).
+This normalized metric allows long-baseline multicamera accumulation to systematically filter weather, testing how borderline frames impact the final SNR of registered stacks.
