@@ -65,14 +65,39 @@
     `192.168.4.138` (puppy's old address) and carrying an unrelated sudoers
     task. Fold or delete.
 
-- **Pending drift seen in a fleet-wide `--check`** (2026-08-19, from zog, so
-  laptops only — the Pis are unreachable from crostini, which has no mDNS for
-  their `.local` names): muppet, puppy and vole are all missing the managed
-  `/etc/hosts` block, and puppy's NetworkManager static IPv4 is off-profile.
-  Not applied — the session was scoped to the hostname work. Also worth a look:
-  muppet and puppy run systemd-resolved *and* avahi at once (the
-  `network_mdns_responder: both` default, whose own comment says they fight over
-  :5353), and pip has neither, so nothing on pip answers `.local` locally.
+- **Pending drift applied to muppet, puppy and vole** (2026-08-19, from zog, in
+  two waves). All three now carry the managed `/etc/hosts` block, so muppet,
+  puppy, cloudcam and vole resolve by name on each; re-run `changed=0`.
+  - **puppy's nmcli drift was one field, not the IP.** The `--check` `changed`
+    looked alarming on the sole NFS server, so it was inspected before applying:
+    method/address/gateway/DNS were already correct and only
+    `connection.autoconnect-priority` differed (-999 vs the role's 100). The
+    module `con modify`s without reactivating — NetworkManager's audit line
+    confirms only `connection.timestamp,connection.autoconnect-priority`
+    changed, the link never dropped (uptime 2w6d intact), and NFS stayed active
+    with all exports. Worth remembering: an nmcli `changed` is not by itself a
+    reason to fear a bounce, but it is always worth reading first.
+  - Each host's own name still resolves to `127.0.1.1` locally (the distro's
+    own line, above our block). Normal, left alone.
+- **Clones across the fleet were well behind; managed ones now current**
+  (2026-08-19). Measured before pulling rather than assumed: strands was **162
+  behind** on both muppet and puppy, aifabric 20, ansible 9, super 1, plus astro
+  86 behind on puppy and Berrylands 109 on muppet. Nothing was *ahead*
+  anywhere, so no unpushed work was at risk. `--tags git-repos` on muppet then
+  puppy brought every managed repo to origin/main.
+  - **The two worst stragglers are unmanaged and stayed behind**: puppy has an
+    `astro` clone and muppet a `Berrylands` clone that are **not in those hosts'
+    `git_repos`** — so no ansible run will ever pull them. That, not the run
+    cadence, is why "clones are behind generally". Decision needed: add them to
+    host_vars, or delete them as leftovers.
+  - muppet's astro tree had one untracked `.bak`; `safe_pull` stashed it as
+    designed. Note muppet:astro now carries **six** stashes going back to
+    2026-06 — the auto-stash is accumulating, and nobody is popping them.
+- **Unrelated cruft noticed, not fixed:** puppy warns
+  `Permissions for /etc/netplan/01-network-manager-all.yaml are too open` on
+  every NetworkManager reload, and site.yml's `always`-tagged "Pull super
+  repository" pre-task clones the *ansible* repo into `/opt/super_repo` on
+  puppy alone (legacy; fires on every playbook run whatever the tags).
 
 - **Still hand-managed:** the pre-existing host-to-host keys (vole carries
   muppet's, muppet its own) are outside `fleet:*` and undescribed anywhere — the
