@@ -4,6 +4,34 @@
 
 ## What exists
 
+- **zog ships to the cluster** (2026-08-18/19). New crostini laptop; full chain
+  now works: `python3-boto3` → `~/.aws/credentials` → `secrets get
+  /osd/admin-password` → TLS auth to `https://192.168.0.11:9200`. Verified by
+  indexing and deleting a scratch doc (`created`, 2/2 shards). Hourly timer
+  installed via `install-ingest-timer --os https://192.168.0.11:9200`, lingering
+  enabled. `python3-boto3` added to the ansible laptops profile — **pip has the
+  same gap** and needs the same roll-out.
+- **⚠ OPEN: 318 docs are indexed under host `penguin`, not `zog`.**
+  `ingest-sessions` defaults `--host` to `socket.gethostname()`, and crostini's
+  kernel hostname is `penguin` regardless of what the fleet calls the machine.
+  Because `_id` is `sha1(host|session_id|uuid)`, **re-running with `--host zog`
+  duplicates rather than corrects** — the mislabelled docs must be deleted by
+  query first. Proposed fix: default `--host` to `$OSD_HOST`, matching the seam
+  `OSD_URL` already uses, so `/etc/default/osd-ingest` carries `OSD_HOST=zog`
+  and no unit needs editing. Not yet done.
+- **Streaming (fluent-bit) considered and rejected for sessions** (2026-08-19).
+  `ingest-sessions` is idempotent by construction (content-hashed `_id`), which
+  makes freshness a *scheduling* problem, not an architecture one. Fluent-bit's
+  OpenSearch output cannot reproduce that `_id` (only `Generate_ID`, a hash of
+  the whole record), so a restart or re-tail would duplicate messages, trading
+  the exactly-once property for latency obtainable by shortening the timer. It
+  also cannot do the structural work (one doc per message from nested JSONL,
+  strand from path, explicit mapping). Filebeat is a non-starter regardless:
+  Beats ≥7.13 refuse to talk to OpenSearch. Hourly kept for now, by choice.
+  fluent-bit stays where it earns its place — container/app logs in
+  `osd/docker-compose.yml`, still the stock example config, never pointed at
+  anything real.
+
 Strand born 2026-07-18, forked from the aifabric strand session that
 discovered the 30-day reaping and recovered the muppet trove. Nothing built
 yet. OpenSearch is NOT currently running on pip (checked 2026-07-18);

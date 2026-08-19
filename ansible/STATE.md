@@ -4,6 +4,33 @@
 
 ## What exists
 
+- **zog onboarded; fleet SSH keys made declarative** (2026-08-18, `~/ansible`
+  `21fd607`, pushed). zog is a new ChromeOS crostini laptop (Debian 13, arm64,
+  hostname `penguin`). Onboarding it by hand exposed that adding a machine meant
+  N manual `ssh-copy-id` runs and a chicken-and-egg on the GitHub key. Four
+  changes:
+  - **`fleet_authorized_keys`** in `group_vars/all.yml` + additive
+    `ansible.posix.authorized_key` tasks in `roles/users`. One entry per machine;
+    applied to muppet, puppy, vole and verified idempotent (second run
+    `changed=0`). Deliberately **not** gated on `users`, which laptops never
+    define. Note the module will not prune a key merely deleted from the list —
+    revocation goes through **`fleet_revoked_keys`** (`state: absent`).
+  - **`bootstrap.sh` pulls over HTTPS** with the gh credential helper instead of
+    `git@github.com:`, so `gh auth login` (browser, no key) is the only human
+    step on a fresh machine.
+  - **muppet/puppy addressed by static IP.** `.local` does not resolve from
+    crostini (no mDNS resolver), so the statics are pinned like vole already was.
+    vole added to `network_hosts_entries`.
+  - **`tailscale` role added**, wired into site.yml but **off everywhere** —
+    needs `enable_tailscale` plus an auth key at runtime. Motivated by zog being
+    NAT'd behind ChromeOS on `100.115.92.x`: it can dial out to the LAN, but
+    nothing on the LAN can dial in. Undecided, deliberately.
+  - `host_vars/zog.yml` trims the laptops profile to what a container can own
+    (no xfce/tlp/power, no docker/smartmontools/powertop).
+- **Still hand-managed:** the pre-existing host-to-host keys (vole carries
+  muppet's, muppet its own) are outside `fleet:*` and undescribed anywhere — the
+  gap if a true "who can reach what" inventory is ever wanted.
+
 - Strand scaffolded 2026-07-20. Mission: apply & maintain config across the
   fleet (edit `~/ansible`, roll out, verify). See CLAUDE.md.
 - **aifabric + strands provisioned across laptop-class hosts** (2026-07-22,

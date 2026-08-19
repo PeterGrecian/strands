@@ -107,6 +107,19 @@ that mailbox, else 1. Wired into `settings.json` + durable
 `dotfiles/.claude/settings-shared.json`. (Live pickup may need `/hooks` or a
 restart once — the settings watcher only loads Stop on reload.)
 
+**Strands root resolution tolerates the standalone-clone layout.** The chain is
+`$STRANDS_DIR` → `~/.config/aicli/config` → `~/.config/idea/config` →
+`bin/../strands` → **`~/strands`** → derived from `$PWD`. The `~/strands` step was
+added 2026-08-18: `bin/../strands` only resolves when aifabric sits *beside*
+strands inside a parent (the `~/super/aifabric` layout), so a host that clones
+each repo straight into `~` matched nothing and aicli died with "can't locate
+strands" — first seen on zog. The same chain is duplicated in
+`aicli-completion.bash` (`_aicli__strands_dir`), which broke independently and in
+a quieter way: completion silently offered nothing for `aicli`, `cld -s` and
+`idea`, since `_idea_complete` shares the helper. Both are fixed; the two copies
+now cross-reference each other in comments, but a single resolver (or the
+completion calling aicli for the answer) would end the drift.
+
 ## Pending / loose ends
 
 - **`/exit` guard prompt.** The doorbell hook means every strand session has a
