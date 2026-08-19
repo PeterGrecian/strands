@@ -27,6 +27,35 @@
     nothing on the LAN can dial in. Undecided, deliberately.
   - `host_vars/zog.yml` trims the laptops profile to what a container can own
     (no xfce/tlp/power, no docker/smartmontools/powertop).
+- **zog now calls itself zog** (2026-08-19, `~/ansible` `9ce87c7`, pushed).
+  ChromeOS names every crostini container `penguin`, so zog had never been told
+  what machine it is — and tools stamp the *kernel* name, not the inventory
+  name. osd-ingest had already been patched round it with `OSD_HOST=zog`;
+  `alert` (`hostname -s`) was the next to bite. Pinned once in the `network`
+  role rather than seam by seam: `network_hostname_manage` /
+  `network_hostname` (defaults to `inventory_hostname`) / `network_hostname_aliases`,
+  off by default, opted in from `host_vars/zog.yml`.
+  - **`/etc/hosts` line is written before the rename, and keeps *both* names**
+    (`127.0.0.1 zog penguin`). Sudo can then resolve whichever name it finds,
+    so the open question — whether ChromeOS re-stamps `/etc/hostname` when the
+    container restarts — degrades to "the rename quietly reverted" instead of a
+    `unable to resolve host` warning on every sudo. **Untested until the next
+    ChromeOS reboot**; check `hostname` then, and if it did revert the fix is a
+    user-level oneshot, not more ansible.
+  - Verified on zog: hostname / `hostname -s` / `/etc/hostname` all `zog`, sudo
+    silent, both names resolve, re-run `changed=0`.
+  - **Side effect worth having:** this was zog's first `network` converge, so it
+    also picked up the managed `/etc/hosts` block — muppet, puppy, cloudcam and
+    vole resolve by name from crostini for the first time (it has no mDNS).
+  - **Trap found, not yet fixed:** the role's `nsswitch.conf` task inserts
+    `resolve` into the hosts chain gated on `/etc/systemd/resolved.conf`
+    *existing*, not on systemd-resolved *running*. zog was spared only because
+    the file is absent. Any host with the config but an inactive daemon would
+    lose name resolution outright on converge.
+  - `playbooks/set_hostname.yml` is now redundant cruft: hardcoded to
+    `192.168.4.138` (puppy's old address) and carrying an unrelated sudoers
+    task. Fold or delete.
+
 - **Still hand-managed:** the pre-existing host-to-host keys (vole carries
   muppet's, muppet its own) are outside `fleet:*` and undescribed anywhere — the
   gap if a true "who can reach what" inventory is ever wanted.
