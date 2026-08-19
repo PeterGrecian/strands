@@ -933,6 +933,81 @@ still has `pedestal 105` / `sky_clear_max_stops 4.0` where origin/main has
 pulling 86 commits onto the processing host changes processing behaviour and
 is Peter's call.
 
+## Three cameras on one axis, and astrocam's camera/placing history (2026-08-19)
+
+Extended the quality pass to **eclipticam + canon** (their `brightness.csv`
+were already there, 28,407 rows, so it was the same near-free arithmetic):
+**116,022 frames, three cameras, one axis.**
+
+`cloud_index` is **dimensionless and self-normalising**, which is what makes
+this tractable — as long as EXPTIME/GAIN/resolution are constant within a
+group it needs no photometric model, so the messy mode history is handled by
+GROUPING rather than by modelling each sensor. eclipticam alone has four
+modes (59.9 s full-res ×57 nights, 59.9 s **binned 2304×1296** ×7, 55 s ×2,
+and a 30 s **v1/v3w coexistence** era in early June where ov5647 and imx708
+frames share a night). canon is clean: 30 s, gain 16, 6020×4015, two POSINDEX
+epochs. Groups with too few dark frames are excluded, not forced.
+
+**The three cameras independently agree**, which is the real validation —
+on the 8 nights all three were running, median dark `ci`:
+
+| night | astrocam | eclipticam | canon |
+|---|---|---|---|
+| 2026-08-12 | 0.15 | 0.15 | 0.11 |
+| 2026-08-13 | 0.29 | 0.21 | 0.36 |
+| 2026-08-14 | 5.17 | 2.69 | 6.97 |
+| 2026-08-16 | **14.38** | **7.09** | **14.19** |
+
+Three separate optical systems calling the same nights good and bad. Note
+eclipticam reads systematically **lower on cloudy nights** (7.09 vs ~14.2) —
+consistent with it being the WIDE lens, averaging in more clear sky.
+
+### Astrocam's camera identity — measured, not asked (Peter, this session)
+
+*"astrocam is one host but 3 different cameras and possibly more camera
+placings … important for brightness scaling."* Both are testable from data.
+
+**Sensor fingerprint (hot-pixel mask = a serial number).** 63 per-night
+`badpixel.fits` exist. Epoch 1 is provably **ONE physical imx219**: after the
+mask converges the Jaccard overlap holds **0.84–0.98 from 2026-06-17 to
+07-28**, six unbroken weeks. Epoch 2 cannot be tested this way — **its masks
+are empty, `n_hot = 1` every night**. That is a live bug, not a null result:
+`hot-master.json` was built at imx219 resolution (1232×1640, 2,879 px,
+20 nights to 2026-07-05), so it **cannot apply to the imx708 at all** and
+epoch 2 is running with **no bad-pixel masking**.
+
+**Scene fingerprint (foliage + vignetting + skyglow gradient = where it
+points).** Correlate one clear dark frame per night, coarse-gridded and
+brightness-normalised. Cloud washes out scene structure, so this must compare
+**clear night to previous CLEAR night** or weather masquerades as motion.
+Done that way the imx708 era is stable at 0.94–0.999 — with one exception:
+
+> **A RE-PLACING ON 2026-08-08.** corr 0.379 vs 08-07, and it *persists*
+> (0.803, then 0.99+ in the new configuration). Flagged independently by the
+> hot-pixel mask the same night (11,922 vs 1). Confirmed visually: from 08-08
+> on, a bright diagonal enters the **top-right corner** (lit roofline or
+> mount edge) plus new blobs along the bottom edge, and the left foliage
+> changes. So epoch 2 contains **two placings**, not one.
+
+**Consequence, and it is material.** My e2 anchors pooled both placings.
+Split at 08-08: floor 86.76→87.61, median_dark 100.65→96.91, so the **span —
+the unit of `ci` — changes by 33 %**. A frame at mean 200 scores **ci 8.16**
+on placing-A anchors, **12.09** on placing-B, 9.67 pooled: wrong for both.
+*Caveat:* span is `median − floor` and median_dark is weather-sensitive, so
+part of that 33 % may be placing-B simply having clearer nights. Either way
+**pooling across a placing boundary is unsafe** — anchors belong per
+(mode × placing) segment, and segment boundaries should be *detected* by the
+scene fingerprint rather than trusted from config.
+
+Epoch 1 has candidate placing changes too (clear-to-clear dips at 07-13/07-14
+and 07-27, corr 0.82–0.90) — weaker, unresolved, worth a pass at finer grid.
+
+**Still open:** the third *physical* camera. Epoch 1 is one sensor; epoch 2's
+silicon is unverifiable until bad-pixel detection is fixed for the imx708. If
+the third camera was a v3→v3 swap it is invisible in headers AND currently
+invisible in fingerprints — fixing the hot-pixel pipeline is what would
+settle it.
+
 ## Pending / loose ends
 
 ### THE MAP — next steps, in order (2026-08-14)
