@@ -800,12 +800,37 @@ regime); the ceiling lifting where the catalogue thins is itself information.
 - **Unresolved:** the 23:51:42 canon candidate (~54 px by hand) isn't recovered;
   the eclipticam pair Peter screengrabbed isn't yet located in the subs.
 
-## Whole-dataset quality pass — brightness over the whole archive (2026-08-19)
+## Quality pass — brightness over the ASTROCAM archive (2026-08-19)
 
 Peter's ask: *"sort by brightness, find useless images, maybe delete, and
 practice all-project image handling."* The measurement half is done for
 **astrocam**: 87,615 frames over 65 nights, ranked. The delete half is
 astro-storage's and **nothing was deleted**.
+
+**Scope correction (Peter, same session: "are we processing where the data
+is? muppet?").** This covered astrocam only — ~37 % of the archive. The
+archive host is **muppet**, `/mnt/bigstore/astro-data` = **1.7 TB** in five
+trees. puppy's astrocam copy is an *exact* mirror (68 night dirs, zero diff
+either way), so reading from puppy did read all of astrocam, and the heavy
+decompression correctly ran there with only 12 MB of CSV shipped to zog. But
+three trees were never touched:
+
+| tree | nights | size | brightness.csv |
+|---|---|---|---|
+| astrocam-frames | 68 | 639 G | 65 — **done** |
+| eclipticam-frames (`night/` layout) | 71 | 390 G | 71 = 24,662 rows, ready |
+| canon-frames | 10 | 139 G | 8 = 3,745 rows, ready |
+| eos-frames | 22 | 170 G | 0 — unmeasured |
+| eos-frames-live | 8 | 7.9 G | 0 — unmeasured |
+
+**eclipticam and canon are the same near-free pass** — identical CSV schema,
+28,407 rows already measured, no frame re-read. Only the eos trees need real
+compute (CR2-derived, large). Doing those two is exactly IDEAS entry *"the 3
+live cameras are difficult to compare currently"*, and the machinery here is
+what makes it well-posed: per-camera anchors + matched instantaneous solar
+altitude. That control matters MORE across cameras than across epochs —
+eclipticam-v3w is the wide lens (`lens_position` 3.15 vs astrocam 1.0) and
+canon is a different system, so raw means are meaningless between them.
 
 **It cost almost no compute.** Every night already carries a
 `brightness.csv` at its root (65 of 68 nights; 2026-06-08 is empty, 06-11 and
