@@ -27,6 +27,79 @@ which is enough for the machine and nothing else — no hand-room to lift it out
 Portrait leaves ~96 mm. **The lift-out grip is the property the whole rack is
 for**, so orientation is load-bearing, not cosmetic.
 
+## THERMAL MEASUREMENT — the theory is finally being tested (2026-08-19)
+
+**puppy lives in the box with a 140 mm fan either side of it, so the cooling
+architecture now has a prototype.** The budget in "Cooling architecture" is
+arithmetic resting on three *guessed* derating factors; this measures it.
+
+**Routing (settled by Peter 2026-08-19): rackinabox RUNS the thermal
+experiments as part of the design process; `hardware` CURATES the findings.**
+An earlier instruction in the hardware session said the opposite — this is the
+later call and it stands. Send results to hardware for curation.
+
+**The instrument:** `~/rackinabox/thermal/` — `thermal_probe.py` (logger +
+load + safety), `run_arm.sh` (runs puppy and muppet simultaneously, collects),
+`analyse.py`, and a README recording the traps. Committed.
+
+**Method — and why it is built this way:**
+
+- **The output is °C/W, never bare °C.** Bare temperature on a 28 W laptop
+  part does not transfer to nit's 65 W; thermal resistance does, and inverts
+  straight into the budget's units (`W/K = 1 ÷ °C/W`).
+- **The figure is the SLOPE between two power steps, because ambient cancels
+  in a slope.** This is not elegance, it is necessity: **puppy has no
+  air-temperature sensor** — `acpitz` tracks silicon, not air — so an absolute
+  rise above ambient is not measurable on this hardware.
+- **Power is PINNED via RAPL, not left free-running.** See the finding below.
+- **puppy and muppet run simultaneously**, which makes muppet a *drift
+  reference* (if its slope moves between arms, the room moved, not the box)
+  rather than merely an outside-the-box comparison.
+- **Safety:** puppy is a live NFS + OpenSearch node that has already halted, so
+  it is never run to halt. 4 of 8 threads at nice 19, capped power, abort at
+  85 °C *held* and immediately at 97 °C.
+
+### Findings already banked (independent of any arm completing)
+
+- **⚠ puppy ships PL1 = 200 W on a 28 W part** — i.e. **no sustained power cap
+  at all**. Under load it boosts until *temperature* stops it. That is very
+  likely the mechanism of the 2026-07-29 halt, and it is a config-level fix
+  (`hardware` should own it): a sane PL1 would make puppy thermally
+  self-limiting regardless of what the box does. muppet, same CPU, ships 64 W.
+- **puppy's internal fan is healthy** — it reads 0 RPM at idle (normal
+  fan-stop, not a fault) and ramps to ~3500 RPM under sustained load. It is an
+  *active element* in every measurement: the laptop's own fan curve responds to
+  temperature, so measured °C/W is not a constant. Comparisons between arms
+  must therefore use identical power steps.
+- **Calibration:** 10 W → ~53 °C steady; 20 W → 77 °C and still climbing at
+  30 s. Steps set to **8 W / 16 W** so the fans-off arm has abort headroom.
+- **⚠ Air-side numbers are NOT obtainable from onboard sensors.** Intake vs
+  exhaust ΔT, and therefore the ×0.7 recirculation derate, need physical
+  probes. Recirculation is the single most valuable air-side number: **intake
+  air warmer than room ambient IS the derate, measured directly.**
+
+### The caveat that limits what any of this can claim
+
+**puppy's two fans blow SIDEWAYS at the machine in an open box. The design is
+bottom-intake / top-exhaust vertical through-flow.** As found, the rig measures
+"fans help", not "this architecture works". Arm C exists to close that gap and
+is the arm worth having.
+
+### Arms
+
+| Arm | Configuration | Needs |
+|---|---|---|
+| **A** | both 140 mm fans ON, side-blowing (as found) | nothing — running 2026-08-19 |
+| **B** | both fans OFF | Peter to unplug; run **last and shortest** (recreates halt conditions) |
+| **C** | fans in the DESIGN topology: one low blowing in, one high drawing out | Peter to rearrange |
+
+**No lid-open/closed arm** while the lid switch reads `closed` regardless of
+the lid's actual position — that sensor is untrustworthy and it is the exact
+variable implicated in the halt.
+
+**Also wanted while the lid is off: the box's internal W and H** (never
+measured; depth came in 2 mm under design; the comb is cut to W).
+
 ## PLATE RACK — the holding scheme (designed 2026-08-16)
 
 The draining-board plate rack: parallel slots, machines on edge, top-loaded.
@@ -472,6 +545,11 @@ Then `platerack.py` emits the comb + fin DXFs directly.
 - Fixings in the composite: does a screw hold, or are cast-in inserts / embedded
   timber corner blocks needed? Plan before pouring — it must be done wet.
 - Corner post material + section (timber vs aluminium angle).
+- **✅ IN PROGRESS 2026-08-19 — the puppy prototype is being measured.** See
+  "Thermal measurement" above. The original spot reading proved nothing (idle,
+  and confounded by puppy's workload dropping when the fans arrived); a real
+  instrument now exists and arm A has run. What still gates a *conclusion* is
+  arms B and C, both of which need hands on the box.
 - ~~Thermals un-re-derived~~ **✅ DONE 2026-08-13** — see "Cooling
   architecture". What it leaves open: **(a) settle the real load figure**
   (80 W vs 130–160 W); **(b) intake area vs cast-wall structure** — 4 holes is
