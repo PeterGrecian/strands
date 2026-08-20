@@ -1,0 +1,14 @@
+strand-mailbox peek/drain are silently CWD-SENSITIVE — wrong-strand reads look like empty mailboxes.
+
+Hit for real in an ubersitrep session (2026-08-20). Bash cwd had drifted to ~/strands (parent of the strand dirs); `strand-mailbox peek` then reported 'strands: 0 pending message(s)' — a confident empty answer for a strand named 'strands' that does not exist as a mailbox. The real ubersitrep message was sitting unread the whole time. I only caught it because I had peeked from the right cwd moments earlier and knew mail existed.
+
+WHY IT'S BAD: the failure mode is a FALSE NEGATIVE that reads as reassurance. 'You have no mail' is exactly the answer that makes a session stop looking. The session-start ritual tells every strand session to peek/drain, so any session whose cwd has wandered (very common mid-session after cd'ing into a repo to do the actual work) can silently go deaf while believing it checked.
+
+SUGGESTED FIX, in rough order of preference:
+1. Resolve the strand the way aicli does (the launcher already knows the strand identity — env var / --export), not from cwd.
+2. Failing that, VALIDATE: if the cwd-derived name is not an existing strand dir, ERROR rather than reporting zero. 'strands' is not a strand; that should be loud.
+3. At minimum, print the strand name being peeked on every invocation, so a wrong-strand read is visible rather than silent.
+
+Note (2) alone kills the observed case and is cheap.
+
+Related: this is the mailbox twin of the pane-identity-divergence defect — an identity inferred from an ambient signal that drifts, rather than read from the thing that actually knows.

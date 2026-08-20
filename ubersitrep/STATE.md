@@ -22,6 +22,61 @@ until a pattern arises as well as actually doing it"*) — the dispatch pattern
 gets **extracted from live use, not designed up front**, which is the same
 manual-versions-teach-what-to-automate discipline as below. Meanwhile the astro
 line is healthy — `/astro/canon` live since 08-11.
+**Update 2026-08-20 — the MoE's routing cost is now measured, and it is cheap.**
+Cold start is **~95% Claude acquisition**; a strand's own context is **2–7%**,
+and *nearly independent of its size* because `STATE.md` is read on demand, not
+loaded at startup. So keepers are cheap to have and cheap to start — the 42-row
+roster costs nothing while dormant, and the exit-vs-resident question collapses
+to **drift**, as the 08-17 ruling already argued. `coldstart-probe`
+(`aifabric/bin`) is the tool.
+
+## MEASURED: cold start is ~95% acquisition — strand context is nearly free (2026-08-20)
+
+The **exit-vs-stay-resident** question (the 08-17 ruling below) rested on an
+unmeasured assumption: that a keeper's curated context is what makes cold start
+expensive. **It is not.** Measured with `coldstart-probe` (`aifabric/bin`, built
+this session), splitting cold start into three layers:
+
+| Layer | Cost | Share |
+|---|---|---|
+| **Claude acquisition** — tools, system prompt, harness | ~32,700 tok | **~93–99%** |
+| **Fixed prompting** — `GLOBAL.md` + `LOCALCLAUDE.md` + loader (14.2 KB) | ~3,500 tok, *inside* the floor | — |
+| **Strand prompting** — the strand's own `CLAUDE.md` (+ what its brief pulls in) | **+568 … +2,518 tok** | **2–7%** |
+
+**The decisive number: `astro-canon` carries 109 KB of strand files and pays
+~900 tokens for them.** `cloud-init-init` carries 4.6 KB and pays ~570. A **24×
+difference in strand material makes a 1.5× difference in cold start** — so the
+cost is *nearly independent of strand size*.
+
+**Why: `STATE.md` is not loaded at startup.** It is *named* in the brief and read
+on demand. A big STATE.md is therefore **a big READ when something reads it, not
+a per-session tax**. This is the load-bearing correction, and it cuts against the
+intuition that a 100 KB STATE is a burden on every session that opens the strand.
+
+**Consequence for the 08-17 ruling: the latency argument for staying resident is
+weaker than it looked.** If paging in a keeper's context is ~2–7% of a cold
+start, then cold-starting a keeper is nearly as cheap as any session, and
+**drift (cost 1) is left as effectively the only consideration** — which is where
+that ruling already landed, now on measured rather than assumed ground. It also
+means the 42-row roster is cheap to *have*: dormant keepers cost nothing until
+routed to.
+
+**`ubersitrep` is the honest exception** at +2,518 — its `CLAUDE.md` is 6.3 KB
+(2.5–6× the others) and it is the one strand whose brief pulls in `keepers.md`.
+**Being the gate costs more at the gate**, exactly as this strand's own brief
+predicts. Still ~7%.
+
+**Method notes** (both worth keeping — they are the reason to trust the numbers):
+- Values are **stable to the token** across reps within a strand. If reps
+  disagree, suspect the harness before believing the strand varies.
+- The first cut of the probe measured **the probing session's own transcript** —
+  it grows while the probe runs, so "newest `*.jsonl`" always selects it,
+  producing identical bogus 41,126 readings for two different strands. Fixed by
+  deriving the project dir from the strand path (as `dcp-review` does) and
+  matching on first user message. Same class as [[astrocam-two-layouts]]: *"pick
+  the obvious file" quietly picks the wrong one.*
+- Small strands show ~1,000 tok rep-to-rep jitter at cache boundaries, so
+  **single-rep readings of small strands are not trustworthy**; take medians.
 
 ## FOUNDED: `spend` — the second missing keeper, found by the gate failing twice (2026-08-18)
 
