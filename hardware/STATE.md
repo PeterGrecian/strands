@@ -4,7 +4,7 @@
 
 ## What exists
 
-- **muppet** (X1 Carbon Gen 9, headless NFS/compute node) carries external
+- **muppet** (ThinkPad X13 Gen 2i, headless NFS/compute node) carries external
   disks over USB: bigdisk (ST31000528AS, 838G XFS + 93G XFS, ~15yo, distrusted),
   photodisk (360G-class ext4), and a 360GB ST3360320AS. All on a shared USB
   power feed. See memory `project_muppet_hardware`.
@@ -205,6 +205,116 @@
   where a dark image is on screen. A known trade against the panel quality, not
   a deal-breaker.
 
+### Laptop identity, cooling geometry and rackinabox mounting (2026-08-20)
+
+**Two model records were wrong or missing, corrected from DMI over SSH:**
+
+- **muppet is a ThinkPad X13 Gen 2i (20WK00AVUK), NOT an X1 Carbon Gen 9.**
+  Recorded wrong here (3 places) and in `project_muppet_hardware`; both fixed.
+  `product_version` says X13 Gen 2i and 20WK is the X13 Gen 2 machine type.
+  **Matters for the dead-screen repair** — panel assemblies, bottom covers and
+  fans are not interchangeable with an X1 Carbon.
+- **pip is a ThinkPad X390 (20Q1000LUK)**, i5-8265U Whiskey Lake. Its model was
+  recorded nowhere before — only the CPU.
+
+**Cooling geometry of the five laptops.** All the fanned ones take air in
+through a grille on the **bottom cover** — a face, not an edge. None has a
+hinge intake. What sits at or near the hinge is *exhaust*, on some of them.
+
+| Host | Model | Exhaust | Vertical mount: edge UP |
+|---|---|---|---|
+| pip | ThinkPad X390 | left side, rear | left edge up (sideways) |
+| muppet | ThinkPad X13 Gen 2i | left-rear | left edge up (sideways) |
+| vole | Acer C720 | left-rear (lower confidence) | left edge up (sideways) |
+| puppy | ASUS VivoBook X515EA | rear, through the hinge gap | hinge up (trackpad down) |
+| zog | Lenovo Chromebook Plus 14 | **fanless** | any; both faces clear |
+
+**Rule: exhaust edge up.** Two effects align — the vent joins the rising column
+instead of fighting it, and the fin stack ends up above the CPU so the heat
+pipe gets gravity-assisted condensate return instead of pumping uphill through
+the wick. Hinge-down is the one to avoid: on puppy it points exhaust straight
+into the incoming air.
+
+**Applied by Peter 2026-08-20.** ⚠ **Provenance caveat:** the vent positions
+above are model-level knowledge, not eyeballed. A bench check (load the CPU,
+feel which edge blows hot) was proposed and Peter reported the orientation done,
+but the per-machine findings were never relayed — so treat the table as
+*predicted and adopted*, not measured. Cheap to confirm next time the machines
+are handled; vole is the least certain and the least important (15 W Haswell
+Celeron, headless, idle).
+
+**Rack: a stainless wire dish drainer, adjustable pitch, FORCED bottom-to-top
+airflow** (Peter, 2026-08-20). Wire is nearly pure open area, so the slots
+barely obstruct flow, and vertical mounting means dust falls out rather than
+settling on the intake grilles.
+
+- **Pitch ~40 mm uniform** = thickest laptop (~20 mm: puppy, vole) + ~20 mm
+  clear gap. pip/muppet are ~17 mm so they get a little more. **Keep the gaps
+  equal** — in forced air the flow takes the widest channel, so unequal gaps
+  starve the narrow slots.
+- **Space-saving variant if slots run short:** the intake is on one face only,
+  so laptops can be paired lid-to-lid with a narrow gap and bottom-cover-to-
+  bottom-cover with a wide one. The flow bias then works *for* you. Costs
+  simplicity; only worth it if pitch is actually tight.
+- **Blank the empty slots and the end gaps.** Bypass air is usually what
+  decides whether a forced-air box works — if there is an easier path from
+  inlet plenum to outlet than through the laptop gaps, the air takes it and the
+  machines sit in dead zones.
+- **Fan sizing.** At 0.57 W/K per CFM: ~100 W of laptops + 2 spinners needs
+  ~20 CFM for a 10 K bulk rise; with nit later (~250 W total) ~50 CFM. Free-air
+  fan ratings collapse under the back-pressure of a loaded rack, so derate ~half
+  → **2× 120 mm running slow**, not one fan at speed.
+- **Cost of the vertical scheme:** fan axes become horizontal, so rotor weight
+  side-loads the bearings. Blowers tolerate it; expect slightly earlier bearing
+  noise over years. Applies to all orientations equally, so it did not affect
+  the choice.
+
+**Storage does NOT go in the wire rack.** This is the open part of the build.
+
+- **Orientation spec.** 3.5" drives are rated for any of the six standard
+  orientations but only within ~±5° of true. Dish drainers are usually *raked*
+  by design. Out of spec, and the lean is the worst case for the next point.
+- **Vibration is the real risk, not heat.** bigdisk and bigstore are consumer
+  Barracudas with **no rotational-vibration sensors** — no compensation for
+  being shaken by a neighbour. A springy undamped wire frame with laptop fans
+  coupled into it is close to the worst shared mount. Degrades sustained
+  throughput and seek accuracy; not a survival threat, but avoidable.
+- **So: rigid deck, elastomer-isolated, sharing no load path with the wire
+  rack.** Grommeted standoffs, or foam under a ply/ali shelf.
+- **Disks low, in the inlet air; laptops above.** Laptops answer heat by
+  throttling — visible, recoverable. Disks answer by dying quietly. Give the
+  coldest air to the component that cannot report distress. Costs the laptops
+  little (~6–9 W per spinner into the stream). Target 30–45 °C on the drives.
+- **Turn the enclosures to face the flow.** IcyBox / ASM1051 / Seagate shells
+  are designed as free-standing passive coolers with vents at the ends — inside
+  forced air they do *better* than on a desk, but only if the box blows
+  *through* them rather than across them.
+
+**⚠ The IcyBox shuck is now a PREREQUISITE, not a parallel job** (was pending
+item 3, "before/during the rack build"). Once bigstore is inside a sealed
+forced-air enclosure, **drive temperature is the number you most need — and the
+Seagate bridge (0bc2:2038) will not give it to you.** 1.4 TB of astro data,
+SMART-blind, in a box whose thermal behaviour is unproven. Restore the
+instrument before you need to read it. See [[seagate-expansion-blocks-sat]].
+
+**⚠ OPEN ARCHITECTURE QUESTION the rack forces — decide before cutting panels.**
+nit is specced with 3× 3.5" SATA and an ATX PSU; there are exactly two external
+3.5" spinners. Moving them onto nit's SATA would delete in one move the USB
+bridges, the wall-warts, the pending £15 powered hub **and** the SMART
+blindness — precisely the interface/power/thermal failure class rackinabox
+exists to fix. **But** STATE has muppet as the *archive of record*, with nit
+processing and shipping to it; hanging the archive off nit inverts that —
+muppet would reach its own archive over the network, and **nit stops being
+disposable / casually power-cyclable**. Assessment: native SATA with real SMART
+on a machine with a proper PSU is structurally better than four cheap bridges
+on a shared feed, and "archive of record" can follow the disks. Peter's call.
+It determines whether the build needs a disk deck for USB enclosures or drive
+bays for a board, so it gates the panel work.
+
+**Flagged, not chased:** muppet's fan was at **3478 RPM with CPU at 61 °C**, and
+puppy's at **3500 RPM**, on machines that should have been near idle. Noticed
+while checking fan presence; not investigated.
+
 ## Pending / loose ends
 
 **Priority order as of 2026-08-10** (the session that closed the migration and
@@ -219,8 +329,10 @@ solder items, so the old "disk emergency" framing is gone):
    **Must be paired with the offsite subset — it is consolidation, not
    redundancy.** Now also **nit's enclosure** — the panel set needs a board
    deck, drive mounting and I/O cutout before any laser quote.
-3. **IcyBox shuck (£0)** — 1.4 TB of astro data is SMART-blind. Do it
-   before/during the rack build, when disks are handled anyway.
+3. **IcyBox shuck (£0)** — 1.4 TB of astro data is SMART-blind. **PROMOTED
+   2026-08-20 to a prerequisite of the rack build**, not a parallel job: a
+   sealed forced-air box makes drive temperature the critical number, and the
+   Seagate bridge cannot report it. See the 2026-08-20 mounting section above.
 4. **Offsite copy of the irreplaceable subset** (R2, free egress) — waiting on
    astro-storage to size it. Mailed 2026-08-10.
 5. **Powered hub (~£15)** for the tether — site it in the rack.
@@ -712,7 +824,7 @@ disk sprawl down to one live drive + two cold copies; nothing to landfill):
 - **muppet's dim screen: WON'T FIX — flogging a dead horse (2026-07-22).**
   Symptom is dim, worse on the *left-hand side* → classic backlight/LED-driver
   (edge-lit panel not propagating light across), not GPU (no artefacts) and not
-  software. Realistic fix = whole panel-assembly swap on an X1 Carbon Gen 9
+  software. Realistic fix = whole panel-assembly swap on an X13 Gen 2i
   (cheap-ish part, fiddly job). But muppet is **deliberately headless** (NFS/
   compute, driven over SSH) — a working screen adds nothing to its role. Decision
   stands: leave it headless, don't diagnose or swap the panel.
@@ -770,7 +882,7 @@ disk sprawl down to one live drive + two cold copies; nothing to landfill):
     offsite subset, which is the only copy not on this pair.
 
   **The evidence this is built on — two machines, ONE CPU, both cooked.**
-  puppy (ASUS VivoBook X515EA) and muppet (ThinkPad X1 Carbon Gen 9) both run
+  puppy (ASUS VivoBook X515EA) and muppet (ThinkPad X13 Gen 2i) both run
   the **same i5-1135G7**. So the fleet's compute problem was never silicon
   speed — it is that a 28 W laptop part in a laptop chassis cannot hold a
   sustained load:
