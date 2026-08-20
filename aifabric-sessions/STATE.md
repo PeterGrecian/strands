@@ -252,6 +252,102 @@ snapshots retired to S3; export + raw backups live + timered; redact tool built;
 live files + index scrubbed; bucket locked down; reboot auto-recovery fixed.
 Cluster GREEN 3 nodes.
 
+## Session 4 (2026-08-17/20) — archive sized; corpus shape measured; review path costed
+
+No build this session — measurement and analysis. Peter asked how big the
+archive is, then how many strands it holds, then whether reviewing it needs
+summarisation. The answers changed what the retrieval story should be.
+
+**Size of record (2026-08-17):**
+- Index `claude-sessions`: **79.1 MiB primary** (82,965,422 B), 158.2 MiB with
+  replica, **77,392 docs**. The index roughly *doubles* the raw text — inverted
+  index + doc values + stored `_source`.
+- Actual text in `_source`: **51.0 MiB / 53,487,038 chars ≈ 13.4 M tokens**.
+- Raw JSONL on disk: live pip tree 239.6 MiB (190 files); archives 145.0 MiB
+  (pip snapshot, 74) + 27.5 MiB (homepi, 67) + 11.9 MiB (muppet extracted, 23).
+  Naive total 424 MiB **double-counts** — the pip snapshot overlaps the live
+  tree. Deduplicated corpus ≈ **279 MiB**. So index ≈ 3.5× reduction on raw.
+
+**Date range — the archive starts 2026-03-03, not at the beginning.** Peter
+started using Claude in **November 2026**; the index's earliest doc is
+2026-03-03T08:49Z, latest 2026-08-17. So **Nov–Feb is missing entirely**, and
+there is a further hole at **May 2026** (buckets: Mar 2525 docs/7 sessions, Apr
+571/1, **May none**, Jun 14901/28, Jul 38945/125, Aug 20450/93). This is the
+30-day reaper's damage, and it is worse than this strand's own CLAUDE.md
+implies — the muppet tarball's 2026-03-03–04-21 window IS the earliest surviving
+material, not a partial recovery of something older. **Pre-March is almost
+certainly gone from disk too** (the reaper ran unnoticed for months before
+2026-07-18). **UNTESTED:** no sweep has been done for older copies on other
+fleet hosts / older tarballs / rsync backups — offered, not yet run. That sweep
+is the only thing that could move the true start date, and it is cheap.
+
+**Strand cardinality: 104 distinct `strand` values, but only ~55–60 real
+strands**, across 239 sessions. The rest is location-noise, which confirms the
+`strand_of()` fix already flagged under Decisions is a real defect, not a
+cosmetic one:
+- ~20 non-strands: date strings (`2026-07-26`, `2026-07-27`, `2026-07-31`,
+  `2026-08-15`), encoded paths (`-home-peter-strands`,
+  `-home-peter-strands-ubersitrep` — duplicates of `strands`/`ubersitrep`),
+  and generic dirs (`peter` = $HOME, 2976 docs/32 sessions; `tmp`, `bin`,
+  `projects`, `memory`, `template`, `Downloads`, `archive`, `cluster`).
+- ~25 plain repo names (`ansible`, `mywebsite`, `dotfiles`, `gardencam`…).
+- **Near-duplicates needing reconciliation**: `pifleet` vs `pi-fleet`;
+  **`aifrbric-strandchat`** (413 docs — a typo'd cwd that became a permanent
+  label); possibly `astro-storage` vs `astro-storage-discussion`.
+- Every doc carries a `strand` value (the `exists` filter returns all 77,392),
+  so a null-for-non-strand-sessions fix has no gaps to fill, only relabelling.
+
+**Corpus shape — why whole-archive review is smaller than 13.4 M tokens
+implies.** Measured by scrolling `_source` (this OpenSearch rejects
+`runtime_mappings` in search — use a scroll, not a script field):
+
+| bucket | docs | chars | ~Mtok | % |
+|---|---:|---:|---:|---:|
+| assistant | 46,109 | 29.4 M | 7.4 | 55.0 |
+| user:typed | 28,017 | 14.4 M | 3.6 | 26.9 |
+| user:tool-output | 364 | 5.2 M | 1.3 | 9.7 |
+| sidechain | 2,717 | 2.8 M | 0.7 | 5.2 |
+| meta | 185 | 1.7 M | 0.4 | 3.2 |
+
+- Median message is **311 chars**; p99 is 4,444. The top **1% of docs hold 17.9%
+  of all text**. Largest single doc is 922,899 chars (tool output carried under
+  the `user` role — the role field does NOT mean "Peter typed this").
+- Tool output is only **9.7%** — less dead weight than assumed; assistant
+  narration at 55% is the compressible bulk.
+- **Session sizes make this tractable**: median session 123,242 chars (~31 K
+  tokens), largest **3,558,667 chars (~890 K tokens)** — which still fits a 1 M
+  window *whole*. Only **9 sessions exceed 1 M chars**. There is no session that
+  cannot be read in one pass.
+
+**Consequence — review is ONE map + ONE reduce, not a tree.** 239 sessions
+summarised independently (median call ~31 K in), ~2 K summary each → ~500 K
+tokens, which fits a single 1 M window for the reduce. Not designed or costed
+in detail yet; nothing built.
+
+**Open question Peter has NOT answered — do not build past it.** Two live
+objections to a summarisation pass:
+1. **Summarise for what?** A summary is lossy in a chosen direction. "What did
+   we conclude about X" wants decisions + rationale; "when did this break" wants
+   a timeline. A generic pass serves one and silently fails the other, and the
+   failure only shows up months later as an empty answer. Recommended bias if it
+   is built: decisions, rationale, dead ends; drop narration.
+2. **Retrieval may already cover most of it.** Full-text search over 77,392
+   messages plus reading the ~5 matching sessions is cheaper AND more faithful
+   than a lossy layer. The summary only earns its place for corpus-wide
+   questions (recurring themes, what got re-decided, a strand's arc). Note this
+   sits directly against memory [[state-md-over-transcript]], which records that
+   full resume/synthesis exists and is *deliberately* unused in favour of
+   curated STATE.md — so the first question is whether this is a real gap or a
+   decision already taken.
+
+**Operational gotcha (cost me several probes):** the osd tools default
+`OSD_URL` to **localhost**, and the real endpoint lives only in
+`/etc/default/osd-ingest` (`https://192.168.0.11:9200`). `OSD_NODES` is set
+nowhere. Any osd tool run interactively without sourcing that file aims at a
+nonexistent local cluster and fails silently-ish. This is exactly the loose end
+already logged under "OSD endpoints → `~/.config/osd/config`" — it is still
+open, and it still bites.
+
 ## Session 2 (2026-07-21) — OSD admin-password rotation (authorised, DONE)
 
 Handoff from home-work-comms keeper: rotate the OSD admin password off the
@@ -400,6 +496,32 @@ Older spool items (2026-07-19), still TODO — kept here now the spool is trashe
    must populate `fields[]` from `_field_caps`. Weekly date_histogram buckets
    anchor to Monday → the current partial week looks empty; use daily.
 3. Watch puppy root disk (89%, index competes; OpenSearch flood-blocks at 95%).
+3b. **`strand_of()` relabel + re-ingest — now evidenced, promote from "open
+   option" to a real defect.** Session 4 measured 104 distinct values for ~55–60
+   real strands: dates, `$HOME`, encoded paths, and the `aifrbric-strandchat`
+   typo are all permanent labels. Agent queries filtered on `strand` will
+   silently miss or over-match. Fix at source (null for non-strand sessions,
+   canonicalise `pifleet`/`pi-fleet`), then re-ingest — `_reindex` reads stored
+   `_source`, so this is reap-proof and can run whenever. Fixes CLI + dashboards
+   together, retiring the per-chart peter/tmp excludes.
+3c. **Sweep for pre-March transcripts (cheap, unrun).** Archive starts
+   2026-03-03 but Peter started in November. Check other fleet hosts'
+   `~/.claude/projects`, older tarballs, any rsync backup. Only thing that can
+   move the true start date; likely comes back empty, worth knowing for certain.
+3d. **Ship, don't pipe** (idea 20260817T093106Z, Peter: "we could pipe sessions
+   into opensearch but shipping I think is more reliable"). Keep ingest as
+   ship-and-forward. A live pipe couples the producing session to cluster
+   uptime — a write lost exactly when the record matters most. Corroboration:
+   dcp-review's observation pass needs no OpenSearch at all (local JSONL + git),
+   and that session found on-disk probe transcripts the archive search did NOT
+   surface — **the disk was fresher than the index**. Confirms the local
+   transcripts are the system of record and the cluster is an index over them.
+   Matches the estate's per-stream ship-and-free pattern. This is a ratified
+   direction, not a task: current ingest already ships. Guard against drift.
+3e. **MCP bridge to OpenSearch — open question, undecided** (idea
+   20260817T110504Z). Would give agents the archive without shelling out to
+   `sessions --json`. Weigh against the existing `--hints` contract, which
+   already works and adds no infra.
 4. **Semantic search: embeddings + kNN, APPROVED — build after the CLI**
    (Peter, 2026-07-18: he's done embeddings+kNN before; embedding compute on
    the two data-node laptops is cheap, so don't defer-for-evidence). Shape
