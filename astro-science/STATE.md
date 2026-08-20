@@ -1334,9 +1334,21 @@ is self-describing and nothing downstream has to infer it from pixel values
 again. `bin/repack-msb --csv` reconciles each night's `brightness.csv` *against
 its frames' headers*, correcting in either direction.
 
-**IMX708 black level ≈ 64 confirmed independently** — astrocam's `imx219_coadd`
-floor is 512.585 with `max_adu` 8184 = 8×1023, i.e. an 8-frame coadd →
-512.585/8 = **64.07**.
+**Black levels, per sensor** — from coadd arithmetic, which divides out the sky
+along with everything else:
+
+| sensor | black level | evidence | confidence |
+|---|---|---|---|
+| IMX219 | **64.07** | astrocam `imx219_coadd` floor 512.585, `max_adu` 8184 = 8×1023 → /8 | measured |
+| OV5647 | **~15.3–15.9** | starcam `ov5647_4x_coadd` 61.184/4 = 15.30; eclipticam-v1 10180/10/64 = 15.9 | measured, two independent |
+| IMX708 | **~64** (≤64.8) | earliest v3w floor 64.82, an upper bound (includes sky) | **inferred, not measured** |
+| EOS 2000D | **2048** | per-channel 2046–2052 on real sky, 2026-08-11 | measured |
+
+⚠️ **Correction (same day):** an earlier draft of this section cited the 64.07
+figure as confirming **IMX708**. It does not — `imx219_coadd` is astrocam's *v2
+IMX219* era. IMX708's black level is still only inferred, and the one way to
+settle it is a lens-capped master dark. Exactly the class of error this session
+was auditing, made while writing the audit.
 
 ### What was wrong
 
@@ -1489,7 +1501,71 @@ Pending, in order:
 
 ## Pending from this session
 
-- **`pedestal` 68 → 50 (commit 1b5a703) is unresolved.** It is convention, not
+### RESOLVED 2026-08-20: pedestal split three ways
+
+The whole muddle came from one field carrying three different meanings. Split
+in every `camera.json`:
+
+| field | what it is | may be chosen freely? |
+|---|---|---|
+| `pedestal` | **chart floor** — the `log2(mean/pedestal)` axis reference, set low for footroom | yes, it is arbitrary by design |
+| `black_level` | **sensor electronic zero** — what a photosite reads with no photons | no, it is physics |
+| `blackest_observed` | **darkest sky ever recorded** = black_level + minimum real sky | no, it is data |
+
+`blackest_observed - black_level` is the **footroom**: eclipticam **7.29 ADU**,
+astrocam ~19.8, canon ~542. That number is the whole argument about gain, and
+previously it was unstateable because one field was being asked to be all three.
+
+This also settles the 68 → 50 argument: under the split `pedestal` **is** the
+chart floor, so 50 is correct and consistent with astrocam, while the measured
+value moves to `black_level: 64` where nothing can quietly redefine it. Nothing
+was lost, and the stale notes that claimed 4380 was a "BINNED-BASIS 2×2 sum ~4×
+too high" are corrected — 4380 was simply 68.4 MSB-aligned, proven by the binned
+and full-res floors differing by ~4 ADU rather than 4×.
+
+`black_level` is wired through capture and stamped into every frame as
+**`BLACKLVL`** (verified on eclipticam hardware), so downstream arithmetic
+subtracts the physical zero and never the chart floor. A split nothing reads
+would just be documentation.
+
+`starcam` gained a `black_level` but deliberately **no** `pedestal` — it has no
+live chart. Its two modes are also not on a common scale (`ov5647_4x_coadd`
+floors at 61.18 on a 4-coadd basis; `ov5647_10bit_subs` floors at 0.001, so its
+black level was already subtracted upstream). Resolve before using starcam in
+cross-camera accumulation.
+
+### Gain: don't bracket — move it (Peter, 2026-08-20)
+
+Peter: *"the only loss in increasing the gain will be in bright stars which are
+not an issue anyway."* Correct, and it collapses the plan. Bright stars already
+clip at gain 1.0 (astrocam's G and B top pixels read 1023 today), so raising
+gain loses nothing not already lost. **Bracketing exists to preserve both ends
+of a dynamic range; if the bright end does not matter there is no second end,
+and alternating just halves the frames in each stream for nothing.**
+
+The real ceiling is not stars but **the sky on a bright night** — brightest
+eclipticam deep-night frame mean is 166.16 ADU:
+
+| gain | sky mean clips above | vs brightest recorded night |
+|---|---|---|
+| 4 | 303.8 | fits, 1.8× margin |
+| 8 | 183.9 | fits, 11% margin |
+| 16 | 123.9 | **clips** |
+
+**Gain 4 is the safe choice; 8 is the aggressive limit; 16 loses bright nights.**
+
+How much it buys is still unmeasured and hinges entirely on conversion gain
+`g` (e⁻/ADU). Sky sits 7.29 ADU above black level, quantization noise is
+1/√12 = 0.289 ADU, shot noise is √(7.29/g): at g ≈ 6 quantization inflates total
+noise ~3%, at g ≈ 20 ~11% — i.e. worth between 7% and 23% more exposure time.
+Worth having, not transformative. **The PTC is still step one**, because it
+measures `g` and read noise directly and settles which end we are at; it also
+tests whether black level moves with gain, which `black_level` now has a home
+for. Then set the gain once, rather than bracketing.
+
+### Still open
+
+- **`pedestal` 68 → 50 (commit 1b5a703) — superseded by the split above.** It is convention, not
   data: it touches only `stops_above_pedestal`, a derived column recomputable
   from `mean`, and `state.py` currently decides on `sun_altitude` anyway. But it
   discards the one *measured* value (4380/64 = 68.4, corroborated by 64.07 from
@@ -1508,3 +1584,17 @@ Pending, in order:
   Calibration decision, not mechanical.
 - The 39 originals are still in muppet's `~` and copied to `~/tmp/muppet-orphans`
   on pip. Once confirmed, `trash` them — not `rm`.
+- **IMX708 black level wants a real measurement.** Cap the lens, take a master
+  dark. It is the only sensor of the four still inferred, it is the one carrying
+  99% of the data, and the same run settles whether black level moves with gain.
+
+### The 2026-06-22 gap is explained (Peter, 2026-08-20)
+
+`night/2026-06-22` does not exist and `06-23` holds just 2 frames. **Storage
+problems that night, and it was cloudy** — so nothing of value was lost, and the
+gap needs no investigation. Recorded because it sits right on the binned →
+full-res boundary and looks exactly like a capture regression to anyone reading
+the archive cold. (Resolution actually went full-res 06-10…06-14, *back* to
+binned 06-15…06-21, then full-res from 06-23 — so `build_db.py`'s date-range
+mode labels get the resolution boundary wrong too, a third instance of the same
+label-by-date flaw.)
