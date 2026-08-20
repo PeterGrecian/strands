@@ -1552,7 +1552,41 @@ eclipticam deep-night frame mean is 166.16 ADU:
 | 8 | 183.9 | fits, 11% margin |
 | 16 | 123.9 | **clips** |
 
-**Gain 4 is the safe choice; 8 is the aggressive limit; 16 loses bright nights.**
+**Gain 4 is the safe choice; 8 is the aggressive limit; 16 is out.**
+
+⚠️ **Superseded within the hour by the right measurement.** Frame means are the
+wrong ceiling — *pixels* clip long before the frame mean does. On a dark clear
+frame (2026-08-19, sky 14 ADU above black):
+
+| gain | headroom above sky (gain-1 ADU) | pixels clipped |
+|---|---|---|
+| 1 | — | 77 (0.0006%) |
+| 4 | 225.8 | 3,352 (0.028%) |
+| 8 | 105.9 | 7,763 (0.065%) |
+| 16 | 45.9 | **523,006 (4.38%)** |
+
+A cliff, not a slope: 16 clips **67× more pixels than 8**. The p99.9 pixel sits
+86 ADU above sky while gain 16 leaves only 45.9, so it eats the whole top of the
+star field. Winter does not rescue it — the floor has stopped falling (twilight
+exhausted below ~−12°), so even the darkest frame only improves the headroom to
+~52.6 ADU.
+
+**Peter's cloud argument holds per NIGHT, not per FRAME.** 6.8% of deep-night
+frames would clip whole-frame at gain 16, and they are not all cloudy:
+2026-08-10 had a near-record floor of 72.1 (clear) yet 23% of its frames would
+clip. That is the Moon crossing an otherwise clear night — a separate cull from
+cloud.
+
+And one bright star is load-bearing: **polefit takes the pole from Polaris's own
+arc**, which beat both existing tools. At 4.4% of pixels saturated, bright-star
+centroids stop being trustworthy, so "bright stars don't matter" has an exception
+that happens to carry our astrometry.
+
+**Settled: gain 4.** Most of the benefit (4× quantization headroom) for 0.028%
+clipped pixels and 1.8× sky margin on the brightest recorded night. 4 → 16
+quadruples headroom but multiplies clipped pixels by 156×, for a total payoff of
+only ~3–11% noise. Gain 8 stays open if the PTC shows quantization really is the
+limiting term.
 
 How much it buys is still unmeasured and hinges entirely on conversion gain
 `g` (e⁻/ADU). Sky sits 7.29 ADU above black level, quantization noise is
