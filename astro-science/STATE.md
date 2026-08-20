@@ -1729,10 +1729,8 @@ for. Then set the gain once, rather than bracketing.
   `pedestal_notes` say so explicitly. `pedestal` now means "chart floor" on every
   camera and no field records the measurement. **Decide: revert, or split the
   field into `pedestal` (chart) + `black_level` (measured).**
-- **Rebuild the quality DB.** `build_db.py` still lives in muppet's `~`, still
-  `os.remove`s the DB and rebuilds from CSVs — re-running it reverts the ÷64
-  correction. Fold into the repo with `night_of`, honest mode labels, error
-  counts, and `exptime`/`npix` columns (absorbing `get_pixel_seconds.py`).
+- ~~Rebuild the quality DB.~~ **DONE 2026-08-20 — `bin/build-quality-db`.** See
+  the section below.
 - **Per-night derived products** (`max/min/sum.fits.fz`, 198 files) — `sum` is
   float32 on the old scale, needs regenerating post-repack.
 - **eclipticam-v1** (2,929 files, 9.3 GiB) deliberately *not* repacked: they are
@@ -1754,3 +1752,97 @@ the archive cold. (Resolution actually went full-res 06-10…06-14, *back* to
 binned 06-15…06-21, then full-res from 06-23 — so `build_db.py`'s date-range
 mode labels get the resolution boundary wrong too, a third instance of the same
 label-by-date flaw.)
+
+
+---
+
+## The census is trustworthy now — `bin/build-quality-db` (2026-08-20)
+
+`build_db.py` is out of muppet's `~` and into the repo, with all five defects
+fixed: sensor and geometry now come from a FITS header rather than a date range,
+nights from `night_of`, every skip counted into a `scan_log` table, and the
+output written to a temp and swapped atomically with `RAWSHIFT` per frame — so a
+rebuild *reproduces* the repack correction instead of reverting it. Rebuilt at
+**160,918 rows**, matching the old DB exactly.
+
+**The counters earned themselves immediately.** 8,795 astrocam rows threw
+KeyError, and the instinct was to relax the parser and "recover" them. Checking
+first: **8,780 of the 8,795 were already in the DB** via the other CSV schema —
+`scan-brightness` writes one format into the night tree, the capture daemons
+write another into `YYYY/MM/DD/<cam>/`, and they describe the SAME frames.
+Ingesting both would have inflated astrocam's census by 10%. Now skipped
+deliberately as `skip:capture_schema_dup`, documented so nobody "fixes" it.
+
+### `cohort` — pooling is now structural, not remembered
+
+Peter (2026-08-20): *canon and starcam will be inserted into the series when we
+understand them better; they need to be treated separately.* The `cohort` column
+makes that a property of the schema. It keys on everything that must MATCH before
+frames may be pooled, all measured: sensor, geometry, exposure, gain, raw
+alignment, coadd depth.
+
+| cohort | frames |
+|---|---|
+| `astrocam/-/imx219/3280x2464/9.6s/g4/rs0/x8` | 77,904 |
+| `starcam/-/starcam/2592x1944/2.9s/g16/rs0` | 36,863 |
+| `eclipticam/v3w/imx708/4608x2592/59.9s/g1/rs6` | 18,653 |
+| `astrocam/-/imx708/4608x2592/59.9s/g1/rs0` | 9,153 |
+| `starcam/-/starcam/1296x972/2.9s/g16/rs0` | 7,129 |
+| `canon/-/canon/6020x4015/30s/g16/rs0` | 3,490 |
+
+17 cohorts in all. `GROUP BY cohort` is now the honest unit for any census,
+pixel-second total or accumulation.
+
+### ⚠️ The "Gain 4.0 hallucination" was a MISATTRIBUTION, not an invention
+
+Correcting this morning's account. The 2026-08-19/20 session's Gain 4.0 was read
+from a **real** header: astrocam's v2 imx219 era genuinely ran at
+`GAIN = 4.0, EXPTIME = 9.6, NCOADD = 8`. The error was attaching it to the
+**imx708** v3s that replaced it. The number was true; the sensor was wrong —
+which is the same failure mode as the OV5647 and resolution mislabels, and it
+argues for reading identity from headers rather than from era assumptions.
+
+### We already own the gain experiment
+
+The gain question does not need a new capture to get started — **the archive
+already contains it**:
+
+- **78k frames at gain 4** (astrocam v2, imx219, 8x1.2s coadd)
+- **37k frames at gain 16** (starcam, ov5647, 8x2.9s coadd)
+
+Cautionary and confounded, but pointed: of starcam's 36,863 gain-16 frames only
+**698 are flag-clean**. The cause is the clipped pedestal rather than the gain
+itself, so this is not proof — but "the one camera we ran at gain 16 produced
+almost nothing usable" is worth understanding *before* raising eclipticam's gain.
+Mine these two cohorts before running a PTC from scratch.
+
+### v2 is next — and it is a familiar problem
+
+Peter: *the v2 frames are probably the next to understand; it took a while to
+grip the two v3 cameras because of the Pi 4/5 differences.* The good news is that
+the thing that made v3 hard does not apply — astrocam has always been a Pi 4, so
+it has been LSB-aligned throughout. What replaces it is exactly analogous:
+
+| | v3 (eclipticam) | v2 (astrocam) |
+|---|---|---|
+| the multiplier | bit-shift x64 (Pi 5 MSB) | **coadd x8 (`NCOADD`)** |
+| ceiling | 65472 = 1023 x 64 | 8184 = 1023 x 8 |
+| consistency | was mixed, now uniform | **uniform across all 77,904 frames** |
+| recorded? | `RAWSHIFT` header | `NCOADD` header — explicit, now in the cohort |
+
+Both eras are "the numbers are N x what you think", but v2's N never varied,
+which is why it yields the **best-measured black level in the estate** (64.07,
+the only Pi sensor measured rather than inferred).
+
+**The one real v2 puzzle:** the 666 `1.2s` sub frames floor at **69.888** while
+the coadd arithmetic gives **64.07**. Short subs collect *less* sky, so they
+should sit closer to the black level, not 5.8 ADU above it. Different gain, a
+different capture path, or the subs are not what the label says. Same error class
+as the two mislabels found today — start there.
+
+### Known limitation in the new tool
+
+`dir_metadata` reads `ext=-1`, which is not always the image HDU: 326 astrocam
+frames from `2026-06-09/00` report a nonsensical 7x30 shape and land in a `?`
+cohort. Harmless (they are excluded from pixel-second totals by having no npix)
+but it should select the image HDU explicitly.
