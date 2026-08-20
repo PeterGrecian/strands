@@ -4,6 +4,13 @@
 
 ## What exists
 
+- **AGY sessions included in backup and redact** (2026-08-20). Updated
+  `osd/bin/backup-raw-sessions` and `aifabric/bin/redact-from-sessions` to point
+  at `~/.gemini/antigravity-cli/brain` (the AGY path) alongside `~/.claude/projects`.
+  Ingest was already picking them up, but the S3 raw backup and the exact-match
+  redaction pass were missing them. Tested locally: `backup-raw-sessions` now packs
+  both directories into its `tar.gz`, and `redact-from-sessions` searches the
+  `.system_generated` dot-folders correctly via `os.walk`.
 - **zog ships to the cluster** (2026-08-18/19). New crostini laptop; full chain
   now works: `python3-boto3` → `~/.aws/credentials` → `secrets get
   /osd/admin-password` → TLS auth to `https://192.168.0.11:9200`. Verified by
