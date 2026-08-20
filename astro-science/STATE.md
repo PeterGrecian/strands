@@ -94,6 +94,80 @@ error is fixed in *image* space; a timing/pole error is fixed in *sky* phase.
 Opposite signatures, so they separate — and one star sweeping its arc samples
 the field at hundreds of positions.
 
+### Bootstrapping strategy — earn the right to accumulate (Peter, 2026-08-20)
+
+The hierarchy above is not just an identification ladder, it is the **nightly
+operating procedure**. Nothing goes into the precious accumulator until the night
+has earned it.
+
+**1. Daily health gate, before anything accumulates.** Has the camera been
+nudged? Is there a smear on the window? Is temperature a factor tonight? Only
+then start. This is a *gate*, not a weighting — see the noise/bias split below.
+
+**2. Climb the ladder at gain 1, brightest first.** ~10 brightest stars → gather
+their PSFs → build a first-level mapping into the accumulator. **Check that for
+irregularities.** Then ~100 stars, still gain 1, fitting with respect to the
+already-known stars. And so on: each rung's mapping makes the next rung's
+identifications trustworthy.
+
+**3. Raise gain only as depth demands it.** Once light pollution dominates, use
+the fix already achieved to brighten stars, and increase gain to reach fainter.
+
+**4. Re-accumulate retrospectively.** As the mapping's resolution improves,
+redo the accumulation of earlier data at the higher resolution. Then fold in
+previous nights, until ultimately all measurements are accumulated.
+
+**5. Ordering and stopping.** Add the **darkest frames first**, and **stop when
+the addition makes things worse**.
+
+#### Why the gate and the stop rule must be separate mechanisms
+
+This is the load-bearing part of the design, and it is already right:
+
+- **Cloud, moonlight, faintness are NOISE.** Noise is weightable. With proper
+  inverse-variance weighting you never strictly need to stop — a poor frame
+  simply earns a weight near zero. "Stop when it makes things worse" is the
+  unweighted special case of that, and is the robust choice.
+- **A nudge, a smear, a thermal shift are BIAS.** No weighting saves you: a
+  smeared frame is *systematically* wrong, and adding it with any positive
+  weight corrupts the accumulator in a way more data cannot undo.
+
+So the daily gate exists to catch **bias**, and the darkest-first-with-a-stop
+rule exists to handle **noise**. Conflating them is how a precious accumulator
+gets quietly poisoned.
+
+#### Three consequences worth stating now
+
+**The gain ladder collides with the anchor ladder.** Measured 2026-08-20: Altair
+saturates at any gain >= 2, and 40 real sources saturate at gain 4. But the
+bright anchors are needed at EVERY rung, not just the first — they are what the
+mapping is fitted against. So the ladder cannot simply raise gain as it descends;
+it needs unsaturated anchors throughout. This is exactly the asymmetric bracket
+arrived at independently from the gain analysis: **~1 frame in 10 at gain 1** for
+anchors, the rest deep. Two routes, same answer.
+
+**Retrospective re-accumulation makes the accumulator a CACHE, not the archive.**
+If accumulation is redone at higher resolution whenever the mapping improves,
+then the raw frames must survive to be re-projected. ⚠️ **This is in direct
+tension with the cull** spooled to astro-storage ("sort by brightness and delete
+the entirely cloudy ones"). *Stop* is a runtime decision and is reversible;
+*delete* is not. A frame excluded tonight may be wanted once the mapping is
+better, or once its bias is understood and correctable. Resolve before deleting
+anything: the safe form is to keep the frames and record the verdict.
+
+**Temperature now has a proxy, and a caveat.** `black_level` / the per-frame
+`BLACKLVL` header (added 2026-08-20) is the natural thermal monitor — dark
+current roughly doubles per ~6-7 degC. CAVEAT: picamera2 does not expose the
+sensor's optically-black reference rows, so a frame's own dark percentile is
+black level PLUS minimum sky, not a true dark. Absolute values need a capped
+lens; but night-to-night *changes at matched sun altitude* are informative, and
+that is what the gate needs.
+
+**The stop metric already exists.** The de-rotation work uses matched-moving-star
+sharpness (single frame 4.452 = ceiling; plain sum 1.358; Polaris-arc pole
+2.549). Reuse it as the "is this addition making things worse" test rather than
+inventing a second metric.
+
 ## The thrust — sidereal-space static accumulator
 
 The framing that ties all the sub-pixel work together, and the strand's next
