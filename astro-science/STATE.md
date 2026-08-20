@@ -1582,11 +1582,45 @@ arc**, which beat both existing tools. At 4.4% of pixels saturated, bright-star
 centroids stop being trustworthy, so "bright stars don't matter" has an exception
 that happens to carry our astrometry.
 
-**Settled: gain 4.** Most of the benefit (4× quantization headroom) for 0.028%
-clipped pixels and 1.8× sky margin on the brightest recorded night. 4 → 16
-quadruples headroom but multiplies clipped pixels by 156×, for a total payoff of
-only ~3–11% noise. Gain 8 stays open if the PTC shows quantization really is the
-limiting term.
+**Count SOURCES, not pixels.** Pixel counts overstate it — most components above
+threshold are hot pixels and cosmic rays. Filtering to components of >=3 px on a
+dark clear frame:
+
+| gain | real sources saturated | headroom |
+|---|---|---|
+| 2 | 11 | 2× |
+| 4 | **40** | 4× |
+| 8 | 58 | 8× |
+| 16 | catastrophic — 4.38% of ALL pixels | 16× |
+
+The cliff is precisely between 8 and 16: gain 8 costs only 18 more saturated
+stars than gain 4, while 16 begins clipping the noise floor itself.
+
+### Altair, not Polaris — and the bracket that survives (Peter, 2026-08-20)
+
+**Correction:** an earlier draft said "polefit takes the pole from Polaris's own
+arc" as the reason to protect bright stars *on eclipticam*. Wrong camera.
+Polaris/polefit is **astrocam**. **eclipticam-v3w has no pole in frame** — which
+is exactly why moon/sun-net hand-marking existed as scaffolding, and why it was
+retired 2026-07-06 in favour of **Altair star-ID** (`design/
+retire-moon-marking-v1.md`, `design/standing-plate-solve.md`).
+
+Altair is magnitude 0.76, so it saturates at **any gain >= 2**. That revives
+bracketing — but NOT the version Peter correctly killed. 50/50 HDR bracketing to
+protect pretty bright stars stays dead. What survives is that **the plate solve
+and the accumulator want opposite gains**: star-ID needs unsaturated anchors, the
+deep stack wants low quantization. Since the solve is **per-night, not
+per-frame**, the cheap form is asymmetric — **1 frame in 10 at gain 1 for
+astrometry, 9 at gain 8** — costing 10% of frames rather than 50%.
+
+**On moonlight:** the 2026-07-06 retirement removed the Moon as an *anchor*, not
+as a source of sky-glow. Moonlight raises the background whether or not the Moon
+is a target, which is why clear nights still contain bright frames.
+
+**Aside:** the brightest object in a v3w frame sits at y~2176, inside the band
+`privacy.json` flags as neighbouring windows (bottom 232 binned rows). The
+brightest thing in eclipticam's field is a neighbour's window, not a star —
+exclude it from any gain or photometric analysis.
 
 How much it buys is still unmeasured and hinges entirely on conversion gain
 `g` (e⁻/ADU). Sky sits 7.29 ADU above black level, quantization noise is
