@@ -1,0 +1,24 @@
+Rescue two orphaned inventory scripts from muppet's home dir into the repo.
+
+`scan-bigstore-inventory.py` and `scan-fs-inventory.py` (dated 2026-07-29,
+~3KB each) upsert astro-storage-inventory items to DynamoDB — one item per
+(camera, night) with host, real path, storage_class, bytes.on_disk. They are
+idempotent upserts in the same shape `inventory-from-csv` uses, and
+scan-fs-inventory infers the camera from the enclosing *-frames /
+starcam-backup / night tree so it works on any filesystem root.
+
+They exist ONLY in muppet's ~ — not in any repo, not in git. Found during an
+astro-science audit (2026-08-20) of 39 loose scripts on muppet; these two were
+the only ones belonging to astro-storage. Preserved meanwhile at
+~/tmp/muppet-orphans/ on pip (muppet is a laptop; the scratchpad was /tmp).
+
+Suggested: fold into astro/bin as `scan-inventory` with a --root/--host flag,
+since the two differ mainly in which root they walk.
+
+Related, for the storage picture: 17 eclipticam nights (2026-06-25..07-11) are
+in S3 Deep Archive as eclipticam-night-*.tar via glacier-app (bucket
+glacier-app-archive, 156 GB total). Those tars hold MSB-aligned FITS; bigstore's
+copies are being repacked to 10-bit LSB (2026-08-20), so the two diverge. Benign
+and self-identifying — repacked frames carry a RAWSHIFT header keyword, the
+Glacier ones do not — but worth recording in the storage inventory rather than
+re-uploading 156 GB.

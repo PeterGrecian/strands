@@ -1295,7 +1295,7 @@ With all cameras scanned, we grouped the 160,000+ frames strictly by hardware/ca
 | **astrocam** | v2 (IMX219) 8x co-add | 78,362 |
 | **astrocam** | v3s (IMX708) streaming | 8,693 |
 | **canon** | EOS Canon 30s | 3,745 |
-| **eclipticam** | v1 (OV5647) / v3w coexistence | 3,277 |
+| **eclipticam** | v3w (IMX708) early, 16-bit rescaled ⚠️ MISLABELLED as OV5647 | 3,277 |
 | **eclipticam** | v3w (IMX708) binned 55s | 2,995 |
 | **eclipticam** | v3w (IMX708) full-res 59.9s | 18,390 |
 | **starcam** | v1 (OV5647) 10-bit & 4x co-add | ~44,000+ |
@@ -1305,3 +1305,206 @@ A log-scale histogram and cumulative drop curve of `ci` were generated over 75,0
 - **ci < 2**: Drops ~44% of the archive.
 - **ci < 5**: Drops ~28% of the archive (recommended loose cutoff).
 This normalized metric allows long-baseline multicamera accumulation to systematically filter weather, testing how borderline frames impact the final SNR of registered stacks.
+
+---
+
+## Audit of the 2026-08-19/20 brightness session — and the repack it forced (2026-08-20)
+
+Peter asked for the previous session's conclusions to be double-checked. The
+headline hardware finding is real and turned out to be worth ~170 GiB of disk;
+three of the conclusions built on it were wrong; and the fix that session
+deployed would have killed tonight's capture.
+
+### The nugget is real, and it pays for itself
+
+**The Pi 5 (BCM2712 / PiSP) unpacks 10-bit raw into the TOP 10 bits of the
+uint16; the Pi 4 (VC6) into the bottom.** Verified: eclipticam is a *Pi 5 Model
+B Rev 1.1*, astrocam a *Pi 4 Model B Rev 1.5*, and both eclipticam IMX708 modes
+had `max_adu` exactly 65472 = 1023×64. So the same sensor produced two archives
+64× apart.
+
+The six dead low-order bits are also six bits Rice cannot compress. Right-
+shifting the archive is therefore **both** the consistency fix and a storage
+win: measured **44–51% per frame**, eclipticam **395G → ~225G**.
+
+`bin/repack-msb` does it: strict eligibility (`unsigned` ∧ `max > 1023` ∧
+`all(%64 == 0)`), pixel-identical round-trip verified before the original is
+replaced, atomic `os.replace`, and a **`RAWSHIFT` header keyword** so alignment
+is self-describing and nothing downstream has to infer it from pixel values
+again. `bin/repack-msb --csv` reconciles each night's `brightness.csv` *against
+its frames' headers*, correcting in either direction.
+
+**IMX708 black level ≈ 64 confirmed independently** — astrocam's `imx219_coadd`
+floor is 512.585 with `max_adu` 8184 = 8×1023, i.e. an 8-frame coadd →
+512.585/8 = **64.07**.
+
+### What was wrong
+
+**1. "The v1 OV5647's pedestal is exactly 64" — wrong twice.** `build_db.py`
+labels eclipticam frames by date alone, so `ov5647_v3w_coexist` is a *date
+range*, not a sensor: those filenames are `…/v3w/…` — IMX708 frames. There are
+**no eclipticam OV5647 frames in the DB at all**. And the OV5647 black level is
+~16, not 64: `eclipticam-v1` frames are uint32 with `max = 654720 = 10×1023×64`,
+i.e. 10-frame coadds, so `pedestal 10180` = 10 × 64 (MSB) × **15.9** —
+corroborated by starcam's `ov5647_4x_coadd` floor 61.184/4 = **15.3**.
+
+**2. The winter extrapolation has no mechanism and probably the wrong sign.**
+The floor is already flat in sun altitude — eclipticam `min(mean_adu)` by 2° bin
+(Aug 3+): −12° → 72.13, −16° → 71.85, −20° → 71.5, −24° → 71.29. **0.8 ADU
+across twelve further degrees of depression**, and by 2026-08-20 the sun already
+reaches −26.1° at midnight. The twilight driver is *exhausted*; there is no
+remaining darkening mechanism between now and December. What is left is
+aerosol/humidity/lighting seasonality, which at an urban UK site usually runs
+*brighter* in winter. The method compounds it: fitting a **cumulative-minimum
+envelope**, which is monotone non-increasing by construction, so any fit slopes
+down regardless of physics and its slope measures how often you set records, not
+sky change. Refitting the same post-Aug-1 records lands on **61.2 ADU — below
+the 64 black level**, physically impossible. The reported 68.9 "kissing the
+pedestal" was an artefact of one point set.
+
+**3. "Both V3 cameras trace identical physics" is overstated.** Sky signal above
+64 differs by 2.7–3.0×; the f/1.8 vs f/2.2 aperture ratio explains only 1.49×.
+Nightly-floor correlation over the settled window (Aug 4–20) is **r = 0.67**,
+with astrocam's spread (sd 2.06 ADU) 3× eclipticam's (0.62). Astrocam's
+Jul 29 → Aug 4 descent (108.6 → 89.0) overlaps its own commissioning, so it is
+not clean sky signal. The "seasonal curves lie on top of each other" plot zeroed
+each camera to its own minimum, forcing agreement at one end.
+
+Also: the **Gain 4.0** figure was a hallucination, retracted mid-session, but its
+consequences were not — the −12.5 ADU overlay offset and the "multiply orange by
+4 and it overlays blue" claim were never withdrawn.
+
+### Method notes for anything built on this DB
+
+- **Night bucketing used `date(timestamp)`**, not the house `night_of` /
+  `night-dir` noon rollover, while `build_db.py`'s *mode* assignment *does* use
+  night dirs — two conventions in one analysis. Since `MIN()` is dominated by
+  the post-midnight half, every "night" in those plots is labelled by its **end**
+  date, off by one from what we mean.
+- **`MIN(mean_adu)` per night is a min-of-N estimator**, biased low with N. The
+  −26° bin has 34 frames and a "floor" of 78.9 against 71.3 in the well-sampled
+  −24° bin. Eclipticam has 18,834 frames to astrocam's 9,153, so cross-camera
+  floor comparison is biased. Use a low percentile over a fixed sun-altitude
+  window.
+- **`build_db.py` swallows every error** (`except: pass` per row *and* per file,
+  no counters), so the frame census is not verifiable from it. `cloud_index` is
+  hardcoded per mode and **NULL for every eclipticam row** — so "cloud_index is
+  dimensionless, 2.0 means the same on both cameras" is false as implemented.
+
+### A live regression, caught and fixed
+
+The patch that session deployed read `cfg.bayer_format` inside `_capture_thread`
+— which is started `args=(cam, q, stop, log, cfg.focus_dither)` and has **no
+`cfg` in scope**. `NameError` on the first frame tonight. Worse, `run()` only
+did `while not stop.is_set(): time.sleep(1.0)` and never checked whether the
+capture thread was alive, so the service would have sat "running" with an empty
+queue producing zero frames, and `Restart=on-failure` would never have fired.
+
+Fixed in `astro/capture/streaming.py` and **verified on eclipticam hardware**:
+detection latched once per session (`raw alignment: shift=6 bits (max=65472)`),
+`RAWSHIFT`/`SAMPBITS` stamped into every frame, `run()` detects a dead capture
+thread, and both night daemons now return non-zero so systemd restarts.
+
+**Two absolute-scale thresholds were silently dead** after the ÷64 shift, and are
+now rescaled to sample full scale:
+
+| threshold | was | max reachable post-shift |
+|---|---|---|
+| saturation guard | 0.95 × 65535 = 62258 | mean ≤ 1023 → **never fires** |
+| `state.py` brightness tier | day ≥ 10 stops | log2(1023/68) = **3.91** → only ever votes `night` |
+
+The guard now fires — confirmed live in daylight: `frame mean 1023 >= 972 (95% of
+10-bit full scale)`. Both were masked by the sun-altitude path, so nothing broke,
+but the brightness tier voting `night` through full daylight is the one to watch:
+`state.py`'s own comment says the sun-altitude tier exists so "we never point a
+sensor at the sun".
+
+## The Bayer/PSF toolchain, rescued from muppet (2026-08-20)
+
+An audit of 39 loose scripts in muppet's home dir found one stratum worth
+keeping: ten well-documented **2026-08-01** analysis scripts, in no repo, doing
+exactly this strand's core subject — PSF, undersampling, Bayer parity. Folded
+into `astro/bayer.py` (library) plus `bin/bayer-heatmap`, `bin/bayer-parity`,
+`bin/bayer-channels`, `bin/join-trail`, `bin/rect-heat`, and documented in
+**`design/bayer-heatmap.md`** — the doc the 2026-08-01 code cited but which was
+never written.
+
+**The port found a real bug in the originals.** They measured "ADU above sky"
+against a median taken across all four Bayer phases at once. The phases do not
+share a background: on astrocam's IMX708 the red sky median is 85 against
+green's 114. Subtract the mixed median and red comes out **negative** on a real
+star — precisely the "dead channel" signature those scripts were written to
+investigate:
+
+```
+star (4343,698):  mixed sky  R  -5   G  35   B  21     <- "red is dead"
+                  per-chan   R  +7   G  35   B  28     <- red is alive, just weak
+```
+
+The conclusion (undersampling, not a defect) was right; the evidence was mostly
+artefact. `local_sky_by_channel()` is now the default everywhere.
+`bayer-channels --stats` settles it independently — red's whole-frame std is 7.7
+with a tail to 716. Separately real: red **never saturates** anywhere in the
+frame while G and B both reach 1023.
+
+Also found in passing: **glacier-app has 17 eclipticam nights (2026-06-25 …
+07-11) in S3 Deep Archive** (bucket `glacier-app-archive`, 156 GB total). Those
+tars hold MSB-aligned FITS and now diverge from bigstore — benign and
+self-identifying (no `RAWSHIFT` = never shifted). Do not re-upload 156 GB.
+`splay` never got the Bayer-heatmap feature its reference implementation was
+written for; parity is confirmed only for IMX708/RGGB.
+
+## Gain bracketing — 4 bits, and the experiment that decides it
+
+Measured live from picamera2 on eclipticam: **`AnalogueGain: (1.0, 16.0, 1.0)`**
+— min 1.0, max 16.0, i.e. **4 bits of analog gain**, currently unused (both V3
+cameras run at exactly 1.0, confirmed from the FITS headers).
+
+The motivation is real and does **not** depend on the discredited winter
+extrapolation. On today's numbers eclipticam's entire clear-sky signal above
+black level is **~7 ADU** (71.29 − 64). Seven integers to describe the sky and
+every faint star inside it. Because analog gain is applied **before** the ADC it
+stretches that into more codes, so quantization error shrinks relative to signal.
+
+**But gain only helps if quantization noise is actually significant.** If sky
+shot noise already exceeds the quantization step (1/√12 ≈ 0.29 ADU), amplifying
+buys nothing and costs highlight headroom. That is not yet known — and it is
+exactly what a **photon transfer curve** measures. So Peter's PTC idea is not a
+nice-to-have proof, it is the **prerequisite** that decides whether bracketing is
+worth doing at all.
+
+Pending, in order:
+
+1. **PTC / gain-linearity sweep.** Sweep gain 1 → 16 against a stable source,
+   plot mean vs variance. Y-intercept gives read noise in electrons; the slope
+   gives conversion gain (e⁻/ADU), which converts the ~7 ADU sky into photons and
+   settles whether quantization matters. Also tests the untested claim that the
+   black level stays ~64 independent of gain — asserted last session from the
+   *retracted* Gain-4.0 reasoning, never measured.
+2. **Then, only if warranted, bracket.** Alternate gain per frame (even/odd
+   minutes), branching the `mode` string (`imx708_g1` vs `imx708_g16`) so the two
+   streams separate trivially in SQL. Cost to weigh: alternating halves the
+   frames at each gain, so each stream accumulates half the exposure time — a
+   real loss for the map.
+
+## Pending from this session
+
+- **`pedestal` 68 → 50 (commit 1b5a703) is unresolved.** It is convention, not
+  data: it touches only `stops_above_pedestal`, a derived column recomputable
+  from `mean`, and `state.py` currently decides on `sun_altitude` anyway. But it
+  discards the one *measured* value (4380/64 = 68.4, corroborated by 64.07 from
+  the imx219 coadd) for a deliberately fictional floor — astrocam's own
+  `pedestal_notes` say so explicitly. `pedestal` now means "chart floor" on every
+  camera and no field records the measurement. **Decide: revert, or split the
+  field into `pedestal` (chart) + `black_level` (measured).**
+- **Rebuild the quality DB.** `build_db.py` still lives in muppet's `~`, still
+  `os.remove`s the DB and rebuilds from CSVs — re-running it reverts the ÷64
+  correction. Fold into the repo with `night_of`, honest mode labels, error
+  counts, and `exptime`/`npix` columns (absorbing `get_pixel_seconds.py`).
+- **Per-night derived products** (`max/min/sum.fits.fz`, 198 files) — `sum` is
+  float32 on the old scale, needs regenerating post-repack.
+- **eclipticam-v1** (2,929 files, 9.3 GiB) deliberately *not* repacked: they are
+  uint32 10-frame coadds and shifting changes the pedestal basis 10180 → 159.
+  Calibration decision, not mechanical.
+- The 39 originals are still in muppet's `~` and copied to `~/tmp/muppet-orphans`
+  on pip. Once confirmed, `trash` them — not `rm`.
