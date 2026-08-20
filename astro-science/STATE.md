@@ -155,13 +155,27 @@ the entirely cloudy ones"). *Stop* is a runtime decision and is reversible;
 better, or once its bias is understood and correctable. Resolve before deleting
 anything: the safe form is to keep the frames and record the verdict.
 
-**Temperature now has a proxy, and a caveat.** `black_level` / the per-frame
-`BLACKLVL` header (added 2026-08-20) is the natural thermal monitor — dark
-current roughly doubles per ~6-7 degC. CAVEAT: picamera2 does not expose the
-sensor's optically-black reference rows, so a frame's own dark percentile is
-black level PLUS minimum sky, not a true dark. Absolute values need a capped
-lens; but night-to-night *changes at matched sun altitude* are informative, and
-that is what the gate needs.
+**Temperature: dark current is the WRONG signal, and SENSTEMP is the right one.**
+Peter: *"we will not detect dark current in london pointing a camera at the
+sky."* Correct, and the mechanism matters more than the conclusion: Sony's
+on-chip black-level correction is referenced to **optically-black pixels**, which
+are shielded but carry the *same* dark current as the active area. Subtracting
+that reference removes dark current before readout — which is exactly why the
+pedestal sits at ~64 regardless of temperature. London sky-glow then dominates
+whatever remains. Evidence: eclipticam's nightly floor over 2026-08-04..20 is
+stable to **sd 0.62 ADU** across a month of varying temperature.
+
+So `black_level` is **not** a thermal proxy (an earlier note here claimed it was
+— wrong). picamera2 reports **`SensorTemperature`** directly in frame metadata,
+so the gate gets a real reading instead: stamped as **`SENSTEMP`** from
+2026-08-20 (verified on eclipticam at 27.0 degC), reusing the metadata fetch the
+focus dither already made.
+
+**And the thermal effect that actually matters is focus drift, not dark
+current** — VCM/lens thermal expansion, which is the astro-breathing thread
+consolidated into this strand. That is why SENSTEMP wants reading alongside
+LENSPOS, and why the gate's thermal test should be PSF width, not a black-level
+trend.
 
 **The stop metric already exists.** The de-rotation work uses matched-moving-star
 sharpness (single frame 4.452 = ceiling; plain sum 1.358; Polaris-arc pole
