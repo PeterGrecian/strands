@@ -311,6 +311,13 @@ on a shared feed, and "archive of record" can follow the disks. Peter's call.
 It determines whether the build needs a disk deck for USB enclosures or drive
 bays for a board, so it gates the panel work.
 
+**Handed off 2026-08-20:** the whole mounting scheme above was mailed to the
+`rackinabox` strand (orientation table, pitch/blanking/fan sizing, the
+disks-out-of-the-wire-rack reasoning, and the two items that gate its panel
+work — the shuck prerequisite and the nit-SATA question). rackinabox owns the
+build; this section is hardware's view of it, kept here because it is where the
+machine-level facts live.
+
 **Flagged, not chased:** muppet's fan was at **3478 RPM with CPU at 61 °C**, and
 puppy's at **3500 RPM**, on machines that should have been near idle. Noticed
 while checking fan presence; not investigated.
