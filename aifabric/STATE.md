@@ -2,6 +2,58 @@
 
 *Curated state of the aifabric extraction. Prose, not a log. Updated at session end / on dcp.*
 
+## Session 2026-08-21 — deck-attach: broken advice fixed, `--break-out` BUILT
+
+Started as "in 7699 start astro-science" — which turned out to need only a
+browser reload (the strand was already live as `panes:0.0`, the *active* pane of
+the active window). The diagnosis is the reusable part: **port 7699 is ttyd
+serving `deck-attach`, whose default board is the tmux session `panes`**, so
+"is it running?" is answered by `tmux list-panes -a`, not by what the tab shows.
+A stale tab looks exactly like a dead strand.
+
+**The bug that fell out of it.** Gate 3 (don't duplicate a live strand) refused
+correctly but advised a command that *never worked*:
+
+    tmux break-pane -s %16 -n astro-science -t astro-science:   # can't find session
+
+`break-pane -t` takes a destination WINDOW and cannot create the session.
+Confirmed on an isolated tmux server (`tmux -L`), not reasoned from the man page.
+Advice printed by a refusal path is the least-exercised code in a tool — nobody
+runs it on the happy path, so it rots silently. Worth a sweep of the other
+refusal messages sometime.
+
+**Built: `deck-attach --break-out NAME`.** Moves a strand's live pane out of a
+shared board into a board of its own, so it becomes servable at `?arg=NAME`.
+tmux has no "break to a new session", so the working sequence is
+`new-session -d` → `move-pane` into the placeholder → `kill-pane` the
+placeholder → `rename-window`; every target is a `%id`, which is stable across
+the move and immune to tmux's prefix matching. Verified end-to-end on the
+isolated server. Refuses: strand not live anywhere (5), already has its own
+board (0, no-op), a board of that name exists holding something else — a merge,
+not a break-out (4). Rolls back the empty board if `move-pane` fails, and warns
+when the source board is emptied and dies, since that detaches whoever watched
+it. Gate 3 now points at the verb instead of the dead command.
+
+**The gate decision, since it is the one deliberate bend in the security model.**
+`--break-out` is matched as an **exact literal before gate 1**, because a general
+"parse flags first" step would hand argv back to tmux — precisely the injection
+`deck-attach` exists to prevent. Its argument goes through the same check (gate 1
+is now the `shape_gate()` function, shared by both paths), so `-c`, `--hook` and
+the near-miss `--break-outx` stay rejected names. It *is* reachable from a ttyd
+client as `?arg=--break-out&arg=NAME`; judged acceptable because the verb only
+relocates an existing pty — it cannot spawn an agent, cannot name a session tmux
+would read as a flag, and cannot touch a strand that is not already live. If that
+judgement is ever revisited, an env opt-in is the smallest change.
+
+`test-deck-rules.sh` gained an `attach_rejects2` (two-argv) helper and 5 cases
+pinning that boundary. **23 passed, 0 failed.** No live pane was moved.
+
+**Left alone deliberately:** `tmux-deck/deck-layout` carries uncommitted changes
+from an earlier session (pin reconciliation, so a manual pane drag is not
+clobbered on the next resize). Coherent, but not this session's work and not
+tested here — committing it would have put someone else's in-flight change under
+this session's message. Still uncommitted; whoever owns it should land it.
+
 ## Session 2026-08-17 — retrospective dcp: `dcp-review` BUILT
 
 New tool `bin/dcp-review` (Python, house pattern: docstring help, `--hints`,
