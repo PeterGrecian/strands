@@ -2115,3 +2115,47 @@ all night and fades only at dawn.
 Two consequences: the last hour of 08-13 must be cut from any geometry (it was in
 the earlier fits), and this is most of the daily bootstrapping gate for free.
 `~/tmp/htm-step1/trail-timeseries.png`.
+
+### How much the pole moves DURING a night (2026-08-21, Peter's question)
+
+Only answerable once R was pinned. With R fixed and the rotation angle set by the
+clock, every frame implies its own pole — `c_i = p_i − R·u(φ₀ − ωt_i)`, one free
+parameter per night — so the camera's motion reads straight off at frame cadence.
+
+**The pole drifts 2–5 px dusk to dawn, in the SAME DIRECTION every night.** All
+eleven nights start left and end right-and-down; the offset-from-nightly-mean
+traces the V-shape of a monotonic drift. That is a mount cooling on the same
+schedule nightly, not wind buffeting.
+
+    excursion from nightly mean   median 2.30 px
+    dusk -> dawn displacement     median 2.30 px, range 1.26-5.34
+    max step between samples      1.1-2.2 px over ~40 min
+
+Caveat: a radius error produces a repeatable apparent drift of exactly this
+shape. The R band is ±0.9 px, worth ~1.4 px of fake dusk-to-dawn displacement, so
+the COMMON part is partly contaminated. The night-to-night VARIATION (1.26 →
+5.34 px) is unambiguous.
+
+**Consequence:** within-night registration is not optional. A 2–5 px drift is
+~10× the 0.26 px detection precision and would smear any accumulator that assumes
+a fixed pole per night.
+
+**BUG FOUND AND FIXED — `pick_frames` time ordering.** Hour dirs sort as strings,
+so a 20:00→03:00 night returns as 00,01,02,03,20,21,22,23 — reversed through the
+middle. Sampling "evenly" over that is not even in time, and any order-dependent
+downstream use scrambles silently. It first produced a drift analysis showing the
+pole "wandering and returning" (start→end 0.08–0.74 px); with correct ordering the
+same data show a clean monotonic 2.3 px drift. Circle fits were unaffected (they
+are order-independent), as was `fit-pole-track`'s own fit (it sorts `obs`), but
+the sampling was never even in time. Now sorted on the epoch-ms filename.
+
+**Plate scale re-checked after that bug and it SURVIVES.** Profiling rms against a
+fixed shared R gives a clean minimum at R = 15.00 px, rms 0.485, with a
+noise-equivalent band R 14.25–16.00 → **0.0196–0.0220 full-res**. The quoted
+0.02075 ± 0.00089 sits inside it. Spec 0.0169 needs R = 18.5, where rms is 0.644 —
+33% worse. Excluded.
+
+A methodological note worth keeping: the bootstrap-over-nights that first gave
+±4.3% CANNOT see a systematic common to all nights, because every night samples
+nearly the same sidereal window and therefore shares one degeneracy direction.
+Profiling the parameter directly is the honest error bar here; resampling is not.
