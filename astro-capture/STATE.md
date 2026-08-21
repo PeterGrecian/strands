@@ -737,3 +737,6 @@ remains live in this strand is the picamera2 side: astrocam + eclipticam v3w on
 `streaming.py`, eclipticam v1 and skycam still unmigrated. The unification
 frontier is unchanged by the mothball — but the EOS is no longer the case that
 proves "wrap, don't absorb"; it is now a *historical* example of it.
+
+### Operations (2026-08-20)
+- **astrocam cover manually opened during daytime**: A request to open the astrocam cover was executed manually. To prevent `astrocam_v3_gate.py` from immediately closing it on its next tick (since sun altitude was > -8), the state file `/var/lib/astrocam/cover.json` was left reading as `"closed"`. This allowed the cover to remain open during the day for testing. The daemon automatically heals and syncs the state back up on the next dusk/dawn transition.

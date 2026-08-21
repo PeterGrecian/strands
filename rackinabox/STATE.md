@@ -162,7 +162,14 @@ the cooler before cutting combs.
     insert colour-coded) → `renders/<name>_dxf.png`.
   - `cad/assembly.scad` — 3D walkthrough (assembled + exploded); `renders/`.
   - `cad/rackinabox.scad` — 3D printed parts (fan template etc.).
+  - `bin/rack-power` — CLI tool to query the rack's Zigbee plug (wattage, voltage) and hard-cycle the mains power via Home Assistant's REST API.
   - `.venv/` (gitignored): ezdxf, boxes, matplotlib.
+
+- **Mains Power Path (2026-08-20):** The rack is now powered via a dedicated Zigbee smart plug
+  (paired in HA as `rackinabox_power`).
+  - **Telemetry**: Measures total rack power draw natively (useful since the load is 80W+, well above the 1W meter floor).
+  - **Start-up Behaviour**: Must be set to **On** so servers recover from a house outage.
+  - **Control**: `rack-power cycle` drops the mains and restores it, which forces a hard reset of all servers (`vole`, `puppy`, `muppet`, etc).
 
 ## Build decision — REOPENED 2026-08-12: cast walls, not laser-cut panels
 

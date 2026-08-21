@@ -135,6 +135,13 @@
   that is a de-energised plug holding last-known state, not a fault; the
   timestamps (09:33:28Z, minutes before any rename) rule out a self-switch.
 
+- **Fourth Zigbee plug paired as `rackinabox_power` (2026-08-20) — switching the whole server rack.**
+  Provides whole-rack telemetry (watts) and remote power cycling. `start_up_behaviour`
+  set to **On** to ensure servers recover automatically from house power outages.
+  Unlike the Canon EOS, the server load (80W+) is well above the 1 W meter floor,
+  so wattage is fully usable for verification. A `rack-power` CLI tool (modelled on
+  `eos-power`) exists in `~/rackinabox/bin/` to manage this.
+
 - **Lab lighting buttons → use Matter, not Zigbee (decided 2026-08-09, not yet
   bought).** Peter wants a physical button for the lab late at night *and*
   keeps voice. Zigbee would pull lab lighting into HA and **lose** its Google
