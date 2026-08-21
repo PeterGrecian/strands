@@ -124,6 +124,14 @@ the addition makes things worse**.
 
 This is the load-bearing part of the design, and it is already right:
 
+- **A known constant offset is NEITHER** — it is CORRECTABLE (astro-polecam,
+  2026-08-21). The tempered-glass window fitted to astrocam at epoch 3 costs a
+  fixed multiplicative transmission factor. That is not noise (it does not
+  average away) and not bias in the gate's sense (it is known and stable), so
+  gating on it would throw away good nights forever. Carry it as a per-epoch
+  photometric offset instead. **The gate must therefore be epoch-relative**: its
+  job is to catch *new* contamination, and it must not flag epoch 3's constant
+  offset as a smear.
 - **Cloud, moonlight, faintness are NOISE.** Noise is weightable. With proper
   inverse-variance weighting you never strictly need to stop — a poor frame
   simply earns a weight near zero. "Stop when it makes things worse" is the
@@ -1846,3 +1854,37 @@ as the two mislabels found today — start there.
 frames from `2026-06-09/00` report a nonsensical 7x30 shape and land in a `?`
 cohort. Harmless (they are excluded from pixel-second totals by having no npix)
 but it should select the image HDU explicitly.
+
+
+## Epoch 3 (astrocam tempered glass) — measured, not assumed (astro-polecam, 2026-08-21)
+
+Relayed via strand mail, correcting three things in my epoch-3 note:
+
+**The ~8% transmission loss is a TEXTBOOK ESTIMATE, not a measurement.** Fresnel
+at normal incidence, R = ((n1-n2)/(n1+n2))^2 = 0.04 per air-glass surface at
+n=1.5, two surfaces → T = 0.9216 = 7.84% = 0.089 mag = 0.118 stops. It assumes
+the protector is UNCOATED, and many ship with AR/"HD clear" treatment which would
+put the real loss well below 8%. Do not treat 0.12 stops as calibrated.
+
+**Measure it with STARS, not sky.** A fixed star's summed flux drops by exactly
+the transmission factor regardless of sky conditions; the sky-mean route is
+hopeless because night-to-night scatter swamps 0.12 stops (08-19 per-hour means
+ran 96–166, 08-20 ran 132–282). The plate-solve + limiting-mag machinery can do
+this across the 08-19/08-20 boundary.
+
+**Epoch 3 is PHOTOMETRIC, not geometric — the mount is clamped.** Phase-
+correlating the 08-19 and 08-20 max-stacks gives 2 px at half-res = ~4 px native
+= **3.4 arcmin**. So the epoch-2 pole/plate solution remains a good starting
+point and the accumulator may be able to **continue across the boundary** with a
+per-epoch photometric offset rather than restarting. Off-axis check: R rises to
+4.4%/surface at the 37.5° diagonal, so only ~0.9% corner-to-centre — no
+meaningful vignetting gradient, which is the part that would have hurt radial
+geometry.
+
+**Backfill done, so the boundary is now sharp.** The 2026-08-20 night was
+captured under epoch 3 but stamped POSINDEX=2 (config bumped the next morning);
+all 465 frames re-stamped 2026-08-21. Verified: 2026-08-20 = {3: 465},
+2026-08-19 = {2: 460}. ⚠️ **`max/min/sum.fits.fz` carry NO POSINDEX at all** —
+the derived products sit outside the stamping convention entirely, which matters
+if anything accumulates from co-adds. Adds to the existing pending item about
+those products still being on the pre-repack scale.
