@@ -1929,20 +1929,37 @@ Polaris cannot separate them. A single night that appears to agree with one to
 claim in this session that the legacy value was "23% too large" was simply
 wrong, in the wrong direction.
 
-**Why Polaris fails, and it is geometry not sloppiness.** Its arc radius is
-~16 px at half-res and sags only ~6 px from a straight chord. Curvature carries
-the radius, so a ~1.5 px detection scatter propagates to ~25% on the radius —
-which is precisely the observed 15.4–19.5 px night-to-night spread. Peter's
-instinct that Polaris is the clean target is right about *distortion* (none
-worth speaking of over 0.6°) but proximity to the pole is exactly what destroys
-the lever arm. Not saturation: per-frame peaks run ~440 of 1023 ADU.
+**Why Polaris fails, and it is geometry not sloppiness.** Peter asked how well
+the points actually fit a circle. **Superbly — 0.26 px rms per night** (0.17–0.56
+on good nights), so the detections are excellent and an earlier "~1.5 px scatter"
+claim in this session was wrong (that was residual about a mis-specified
+rate-constrained fit, not about a circle). The precision simply does not buy
+radius precision: the arc is ~16 px radius sagging ~6 px over 100°, so centre and
+radius slide together along a valley.
 
-**The camera really has not moved** — Peter: unclamped only three times, which
-matches the three position_index epochs. Confirmed independently here: 116
-Polaris detections across 14 epoch-2 nights all fall on one arc
-(`~/tmp/htm-step1/multinight-track.png`). So the 13 px night-to-night scatter of
-the per-night pole fits is fit error, full stop, and nights inside a clamp epoch
-are legitimately combinable.
+The killer is that the model choice moves the answer more than the noise does.
+Pure circle gives R = 17.0 px (scale 0.0184); adding the physically-required
+drift term gives R = 20.4 px (scale 0.0153) **while fitting better**. A 20% swing
+on a modelling decision. Bootstrap σ_R is only 0.55 px, so this is not noise —
+drift and radius are near-degenerate over a short arc. **Polaris cannot settle
+the plate scale, whatever is done to the fitting.** Peter's instinct that it is
+the clean target is right about *distortion* (none worth speaking of over 0.6°)
+but proximity to the pole is what destroys the lever arm. Not saturation either:
+per-frame peaks run ~440 of 1023 ADU.
+
+**CORRECTED same session.** The first version of this section said the camera
+was fixed and therefore nights were combinable. Peter: *"the camera does move
+every night — the setup is prone to temperature humidity and wind variance."*
+"Unclamped three times" means three HARD epoch breaks, not nightly stability.
+So the 14-night joint fit was mis-specified (it shared one pole) and its rms of
+5.23 px was the model being wrong, not the data being bad. Do not use it.
+
+**Within-night drift is now MEASURED.** Fitting `p = c + d·t + Rot(ωt)v` — still
+linear, because the angles come from the clock — improves the residual on 9 of
+10 nights (08-12: 0.89 → 0.36 px) and returns drift rates of **0.3–1.6 px/hour**,
+i.e. a few px across a night. That is the thermal/wind variance Peter describes,
+and it has a consequence beyond calibration: **the accumulator cannot assume a
+fixed pole even within one night.** Frames need registration, not just rotation.
 
 ### The fix, not yet built: two stars, each doing what it is good at
 
@@ -1988,3 +2005,36 @@ muppet-only. Created 2026-08-21 from `requirements.txt`; it is also what lets
 splay open FITS on pip. `~/bigstore-astro` is an SMB share of the data and reads
 at **~2 MB/s**, so night products (max/sum, a few MB) are fine on pip but
 per-frame passes belong on muppet — 14 nights × 10 frames took 3.5 minutes.
+
+### Prior art I failed to check first (2026-08-21)
+
+`bin/` already had a whole pole family — `fit-pole`, `fit-per-star-poles`,
+`fit-tile-poles`, `fit-tile-pole-tangent`, `refine-tile-pole`,
+`fit-distortion-from-poles`, `sweep-tile-poles` — plus
+`design/per-tile-effective-pole.md`. `fit-pole-track` was written without
+looking, which is the house-tool rule broken. They use a better method than
+circle fitting: **derotate frames about a trial pole, stack, and maximise
+sharpness** — every star, every frame, which is the real operational form of
+"rotate the image about the pole". `fit-per-star-poles` already documents the
+exact degeneracy rediscovered the hard way here: *"scatter along the
+perpendicular bisector of each star's arc — the expected under-determination of
+a single-star pole fit (arc length is short → fit is flat along the bisector)."*
+
+**The distortion-free pole method, most likely recovered** (Peter: *"there is a
+distortion free way of doing it but I've forgotten, look in sessions"*). His own
+words, 2026-07-02: *"the pole from polaris and the pole from edge stars is
+different. I'm thinking of looking only in the first 10 degrees from the pole,
+that's the area we know most about"*, and *"more stars on the same side of the
+pole than opposite within 10 degrees of the pole"*. So: **many stars within ~10°
+of the pole** — distortion-free by *restriction* rather than by modelling. It
+succeeds where the Polaris fit fails because one short arc is degenerate along
+its own perpendicular bisector, but stars at different position angles have
+different bisectors and the degeneracies intersect. The starchart remark is the
+failure mode: stars all on one side leave the bisectors parallel and the
+degeneracy alive. NEEDS PETER'S CONFIRMATION that this is the method he meant.
+
+A second exactly-true property, derivable from `fit-distortion-from-poles`'s own
+model `P_eff(p) = p + (1/J_r(p))·(P_true − p)`: at `p = P_true` the effective
+pole equals the true pole **for any distortion**. So the true pole is the FIXED
+POINT of the effective-pole map, reachable by iterating a tile onto its own
+reported pole with no distortion model at all.
