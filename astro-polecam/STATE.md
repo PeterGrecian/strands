@@ -7,6 +7,63 @@
 Replace the v2 (imx219) camera on **astrocam** with a newly-bought **Pi Camera
 v3 (standard)** — imx708 sensor — and get it focused and capturing for sky use.
 
+## Glass window over the aperture -> epoch 3 (2026-08-20)
+
+Peter fitted a tempered-glass phone screen protector over the lens aperture for
+rain protection and clamped the camera back in place. That is a new calibration
+epoch: **`av3sw`, POSINDEX 3, boundary 2026-08-20** (Peter affirmed the date;
+the images cannot settle it -- see the clamp, below).
+
+**Rain is not a threat to this camera, and that is now measured rather than
+assumed.** Through a fortnight of wet days -- including 3.0 mm on 2026-08-19 --
+astrocam held 22 days of unbroken uptime, `throttled=0x0`, and a dT above
+ambient stable at ~25-27 C across dry and wet days alike (a box taking water in
+sheds heat differently; these curves are superimposable). The wettest night was
+also among the best-yielding: 460 frames, verdict clear, 256 stacked, ahead of
+the drier 08-17. Nothing about rain needed fixing.
+
+**The enclosure question is answered**: the camera body itself plugs the
+aperture, so the box was already genuinely sealed -- the glass adds no
+vented->sealed transition and no thermal change. The seal's own arithmetic is
+the real desiccant: air sealed in at 20 C / 63% RH has a dew point of ~12.7 C
+against a box floor of ~37 C (~24 C of margin), and sits at ~14% RH once warmed
+to operating temperature. Silica gel is redundant here -- and a sachet stored
+open is worse than none, because gel capacity FALLS with temperature, so a
+loaded sachet in a box running 25 C above ambient desorbs into the enclosure.
+
+**The mount is CLAMPED -- a calibration fact worth keeping.** Phase-correlating
+the 08-19 and 08-20 max-stacks gives 2 px at half-res (~4 px native = 0.057 deg
+= 3.4 arcmin; foreground-only dy=-2 dx=0, peak/sigma 14-25). A remount therefore
+returns the camera to within a few pixels, with two consequences: (a) **pointing
+cannot date an epoch boundary on this camera** -- a near-zero shift is EXPECTED
+across a remount, not evidence the camera stayed put (I concluded the opposite
+first time; Peter corrected it); (b) epoch 3 is broken **photometrically, not
+geometrically**, so the epoch-2 pole/plate solution is a starting point rather
+than a write-off.
+
+**The ~8% transmission loss is textbook, NOT measured.** Fresnel at two uncoated
+air-glass surfaces: R = ((1-1.5)/(1+1.5))^2 = 0.04 each, T = 0.96^2 = 0.9216 ->
+7.84% = 0.089 mag = 0.118 stops. The load-bearing assumption is *uncoated*; an
+AR-treated protector would lose considerably less. Off-axis is a non-issue:
+4.4%/surface at the 37.5 deg field edge gives 8.6% at the corner vs 7.8% on
+axis, i.e. ~0.9% corner-to-centre and no vignetting gradient. To get the real
+number, measure **stars, not sky** -- a fixed star's flux scales by exactly the
+transmission factor, whereas 0.12 stops is invisible against night-to-night sky
+scatter (08-19 per-hour means ran 96-166, 08-20 ran 132-282).
+
+**Backfill done.** The 08-20 night was captured under epoch 3 but stamped
+POSINDEX=2, the config having been bumped the following morning. All 465 frames
+re-stamped on muppet (locally, not across the NFS mount), in place, 1.1 s, no
+size change, HISTORY card added. Verified 08-20 = {3: 465}, 08-19 = {2: 460}.
+NB `max/min/sum.fits.fz` carry no POSINDEX at all -- the derived products sit
+outside the stamping convention entirely.
+
+**Not evidence of anything**: the 08-20 night stacked only 96/465 against
+210-340 on prior nights. That is weather -- the sky ran bright and swinging
+(132-282 vs a steady 96-166 on 08-19), and variability is what defeats the
+stacker; the "clear" verdict comes from a 10-minute anchor at 03:00 that
+sampled a genuinely clear patch.
+
 ## Cover automation landed (2026-08-13)
 
 Good results overnight, but the cover was still open at dawn. Root cause was
@@ -192,6 +249,14 @@ The imx219→imx708 swap is a hard calibration-epoch boundary. Made it explicit
   (verified 373/373, data intact, atomic writes). Guarded on CAMERA==imx708.
   Ran ON muppet against `/mnt/bigdisk/...` directly — see migration gap below.
   (imx219 history still unstamped — epoch clear from CAMERA header + date.)
+- **Epoch 3 (`av3sw`) opened 2026-08-20** — tempered-glass window + remount (see
+  the glass section above). `position_index=3` deployed to astrocam and to the
+  repo; epoch 2 now closes at 2026-08-19. Second backfill done (465 frames).
+  Deploying it, note the repo copy of `camera.json` on pip was AHEAD of the
+  capture host (astro-science's `black_level`/`blackest_observed` work, not yet
+  deployed) — so the change was applied to astrocam's own copy rather than
+  scp-ing the repo file over, to avoid shipping another strand's undeployed
+  edits. Check that diff before any future hand-deploy.
 
 ### ⚠️ bigdisk→bigstore cutover migration gap (2026-07-30)
 
@@ -330,6 +395,35 @@ is purely operational: this camera's setup, focus, calibration, and processing
 topology. (This strand becomes **astro-polecam** at the device-rename step.)
 
 ## Pending / loose ends
+
+- **`occlusion.json` is now stale** — it maps static obstructions, and the
+  camera has moved (small, ~3.4 arcmin, but real). This never arose before
+  because the camera had never moved *within* its epoch. Re-derive from epoch-3
+  frames.
+- **Measure the real transmission step** across the 08-19/08-20 boundary by
+  stellar photometry, and replace the textbook 7.84% in `position_registry`
+  with the measured figure. astro-science has been told the current number is
+  theory, so their epoch-relative gate isn't built on an unmeasured constant.
+- **Is there ALREADY a window?** IDEAS.md carries a capture-unification note
+  that "astrocam already has a transparent cover". If the aperture already had
+  a transparent element, the glass is a *second* plate: the incremental step
+  stays ~8% so the epoch arithmetic is unaffected, but the absolute
+  transmission budget and the ghosting picture are not. Settle it at the box.
+- **astrocam root is 94% full** (415 MB free on a 6.8 GB card; /usr is 3.8 GB
+  of it, nothing runaway — templog only 374 KB). STATE recorded 89% when the
+  templog rotation was set, so it is drifting the wrong way.
+- **Mailbox ritual trap (tooling, not this camera)**: `strand-mailbox drain`
+  empties the spool but NOT `MAILBOX.md`, so a subsequent `ding --arm --keep`
+  re-delivers the stale pointer line and exits at once — the doorbell reads as
+  armed but never blocks, and the Stop hook nags every turn. Truncate
+  `MAILBOX.md` after acting on mail, then re-arm. Corrections spooled to
+  aifabric; a separate unexplained failure (waiters killed with empty outputs
+  against an empty mailbox) is spooled there too.
+- **For Peter — HTM / tessellation ownership.** astro-science asks whether that
+  decision is theirs (they own the map and accumulation theory) with polecam
+  holding only what it means for this camera. They also report the HTM +
+  progressive-daily-bootstrapping scheme is **written down nowhere** — not in
+  either repo, either strand, the ideas spools or the session archive.
 
 - **Not in ansible**: `astrocam-v3-{night,uploader}.service`,
   `astrocam-v3-gate.{service,timer}`, and `/etc/polkit-1/rules.d/50-astrocam.rules`
