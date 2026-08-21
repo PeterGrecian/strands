@@ -181,12 +181,18 @@ tokens that expire weekly, so the backup would run for a week and then fail
 silently; publish to "In production" to avoid it).
 
 **Do the re-auth ON A HOST WHOSE OWN BROWSER CAN REACH ITS OWN LOOPBACK.**
-Google only accepts `http://127.0.0.1:53682` as the redirect. pip is a
-**Chromebook/Crostini box** — Chrome lives in ChromeOS, rclone in the Linux
-container, and those are *different* loopbacks, so the callback cannot land
-without ChromeOS port-forwarding of 53682. `penguin.linux.test` does **not**
-help: Google redirects to the literal `127.0.0.1`. muppet has Firefox and
-Chrome installed locally and is the path of least resistance.
+Google only accepts `http://127.0.0.1:53682` as the redirect — the loopback of
+the machine running the *browser*.
+
+**HOST IDENTITIES, since this session got them wrong and burned an hour:**
+**zog** is the Chromebook (aarch64, Crostini) and is the host these sessions
+run on; **pip** is the Linux X390 laptop at 192.168.0.19. They are not the
+same machine. zog **cannot** do the callback — Chrome lives in ChromeOS,
+rclone in the Linux container, different loopbacks, and `penguin.linux.test`
+does not help because Google redirects to the literal `127.0.0.1`. Use **pip**
+(ordinary Linux desktop) or **muppet with an external display** (Peter's
+suggestion; it has Firefox and Chrome installed, and GLOBAL.md rightly calls
+its built-in screen difficult).
 
 **STATUS:** 4 frames are on Drive; the ledger records **0** — correct, because
 both runs were killed mid-flight and the verify-before-record guard refused to

@@ -53,19 +53,23 @@ APIs & Services → **Credentials** → **Create Credentials** → **OAuth clien
   application", which requires explicit redirect URIs).
 - Name it, create, and keep the **Client ID** and **Client secret**.
 
-## 4. Authorise — ON MUPPET, not pip
+## 4. Authorise — on a host whose OWN browser reaches its OWN loopback
 
-**pip cannot do this.** It is a Chromebook: Chrome runs in ChromeOS, rclone
-runs in the Linux container, and Google only accepts `http://127.0.0.1:53682`
-as the redirect — the browser's *own* loopback. Those are different loopbacks.
-`penguin.linux.test` does not help, because Google redirects to the literal
-`127.0.0.1`. This is what defeated the 2026-08-21 attempt.
+**The one rule:** Google accepts only `http://127.0.0.1:53682` as the redirect,
+and that means the loopback of the machine *running the browser*. So rclone and
+the browser must sit on the same machine.
 
-**muppet has Firefox and Chrome installed locally**, so its browser and its
-rclone share one loopback. Do it there:
+| Host | | Suitable? |
+|---|---|---|
+| **zog** | Chromebook, aarch64, Crostini | **No** — Chrome runs in ChromeOS, rclone in the Linux container. Different loopbacks. `penguin.linux.test` does not help: Google redirects to the literal `127.0.0.1`. Would need ChromeOS port-forwarding of 53682. **This is what defeated the 2026-08-21 attempt.** |
+| **pip** | Linux X390 laptop, 192.168.0.19 | **Yes** — ordinary Linux desktop, browser and rclone share one loopback. Was offline when this was written. |
+| **muppet** | 192.168.0.10, Firefox + Chrome installed | **Yes** — needs a graphical session; GLOBAL.md calls its built-in screen difficult, so **use an external display** (Peter's suggestion). |
+
+Do NOT confuse zog with pip: zog is the Chromebook, pip is the Linux laptop.
+The 2026-08-21 session got this backwards and wasted an hour on it.
 
 ```bash
-ssh peter@muppet          # or use the lid; needs a graphical session
+ssh peter@muppet          # needs a graphical session on that host
 rclone config
 ```
 
