@@ -2258,3 +2258,35 @@ Next: rung 3 — read fainter detections off the mesh and check they persist, th
 subdivide. The measurement that matters is whether adding faint nodes lowers the
 0.78 px residual, and how far down in flux the net can be extended before the
 0.28 px noise floor stops it paying.
+
+### The foreground is the instrument, not the contaminant (2026-08-21)
+
+Trees, houses and street lights do not move with the sky, so **their apparent
+motion IS the camera's motion** — measured directly, with no pole, no sky model
+and no star matching. They are also the brightest things in frame, so their
+centroids are the best in the image. All evening they were treated as a trap to
+be filtered out (and they are, for the star net — the ten brightest sources are
+all foreground and none of them move). For measuring the mount, they are the
+ideal sensor.
+
+Separation is clean: **rigid camera motion is common to all foreground seeds;
+anything differential is the scene** — principally trees swaying. So one pass
+yields both, and the differential term is not noise but a second measurement.
+
+**Peter's wind mechanism** (2026-08-21): *"small changes in wind direction will
+have large effects on which sides of the box is cooled."* Convective cooling is
+strongly directional — the windward face has a far higher heat-transfer
+coefficient — so a wind shift rotates the cooling pattern around the box, rotates
+the thermal gradient, and hence rotates the direction of differential expansion.
+Wind direction changes on seconds-to-minutes timescales.
+
+**This undercuts the smooth-in-time assumption.** The earlier "linear in time per
+node" model and the 10-15 minute thermal coherence estimate both assume diffusive,
+monotonic drift. If wind sets which face is cooled, the motion turns and steps
+instead. The discriminator is the **wander ratio** = total path length / net
+displacement: ≈1 for a one-way thermal creep, ≫1 for wind-driven reorientation.
+
+**And the trees are already an anemometer.** If foliage sway and camera drift
+correlate in time, that is direct evidence for the wind mechanism, from a wind
+sensor that has been in every frame since the camera was installed — including
+retrospectively, over the whole archive.
