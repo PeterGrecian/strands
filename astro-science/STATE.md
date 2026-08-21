@@ -2184,17 +2184,13 @@ the brightest-first ladder in it is exactly the direction being resumed (Peter,
 brightest stars first, then progressively darker filling in the gaps"*;
 2026-07-25: *"bridge between brighter stars to id darker ones"*).
 
-**The decomposition the old doc did not make**, and which the pivot requires:
-
-| term | behaviour | how it is obtained |
-|---|---|---|
-| lens distortion | plausibly static per epoch (optics + silicon) | accumulated over time |
-| pose | time-varying, thermal | re-solved from the stars themselves, never from an absolute pole |
-| twist | *differential* across the field | only representable as LOCAL transforms on patches |
-
-The twist term is why patches must shrink: a rigid pose correction cannot express
-it. "Relative to the framework of stars" is therefore not a retreat from the pole
-method — it is the only formulation in which the thermal term exists at all.
+**CORRECTION (Peter, same day):** *"the twist is just the mechanism I used to
+describe the lens moving with time."* An earlier version of this entry read
+"twist" literally and built a three-term decomposition on it, inventing a
+"differential across the field" term as the reason patches must shrink. That
+distinction was mine, not the data's, and is withdrawn. The real content is
+simpler: **the lens moves with time**, so nothing anchored to the sensor is
+stable, and everything must be measured relative to the stars.
 
 **Doc conflict to resolve before anything is built on a sky grid:**
 `design/adaptive-refinement.md` records **HEALPix as settled 2026-08-16**; this
@@ -2213,3 +2209,52 @@ catalogue and no plate scale — which is the point.
 scale 0.0196–0.0220 full-res, the trail-as-time-series nightly quality gate, and
 the HTM machinery itself (which remains valid as an output indexing scheme even
 though it is no longer the working frame).
+
+
+## The star net — rungs 1-2 built and measured (2026-08-21)
+
+Peter's algorithm: *"we could find the brightest 10 stars and track them over a
+few frames and pull the inbetween stars and sub divide and repeat."* Prototyped on
+8 consecutive frames of 2026-08-12 hour 00 (`~/tmp/htm-step1/starnet*.py`). No
+pole, no catalogue, no plate scale anywhere in it.
+
+**TRAP: "the brightest 10" are all foreground.** Of the ten brightest sources,
+**zero move**; five are provably static. astrocam has trees and houses in frame
+and a porch light outshines Vega. Any brightest-first ladder MUST carry a motion
+test or it seeds itself on the neighbourhood lighting.
+
+**Second trap: the motion threshold has to be well above jitter.** A >3 px
+threshold over 8 frames still admitted static objects whose centroids wander ~0.4
+px/frame, and the resulting fit recovered only 56% of the true rotation. A
+hypothesis that the seed set was too spatially CLUSTERED was tested and refuted
+(spreading anchors >400 px apart changed 56% → 58%, rms unchanged).
+
+**What works: robust fit over everything, then keep the inliers.**
+
+    1114 sources tracked through all 8 frames
+    862 inliers after iterated rejection
+    rotation -1675 mdeg vs -1752 expected (95.6%), rms 1.019 px
+
+**The residual IS the distortion field, and it is smooth enough to interpolate.**
+After the best single global similarity the median residual is 0.778 px, and
+**64% of it is shared with each star's 8 nearest neighbours** (median
+|r_i − mean(neighbours)| = 0.277 px against median |r_i| = 0.778 px). So it is a
+coherent field with a ~0.28 px per-star noise floor, not per-star scatter. The
+quiver plot shows the expected structure: radial, growing outward, with a null
+near the optical centre. This is the "lens distortion as vector field" of
+2026-07-25, now measured directly and cheaply.
+
+**Answer to "tiles are discontinuous and not interpolatable"** (Peter): don't tile
+the image — **triangulate the stars**. A Delaunay mesh over the net (1699
+triangles, median edge 54 px) gives a piecewise-affine map that is continuous
+across every edge by construction, interpolates barycentrically inside each
+triangle, and **subdivides locally when a fainter star is added** — which is the
+"sub divide and repeat" step with no discontinuity anywhere. If C1 smoothness is
+needed later, the same star nodes carry a thin-plate spline. The nodes are the
+stars, not an arbitrary grid, which is the whole difference from the old tile
+idea.
+
+Next: rung 3 — read fainter detections off the mesh and check they persist, then
+subdivide. The measurement that matters is whether adding faint nodes lowers the
+0.78 px residual, and how far down in flux the net can be extended before the
+0.28 px noise floor stops it paying.
