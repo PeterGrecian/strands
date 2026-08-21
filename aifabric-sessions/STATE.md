@@ -597,3 +597,10 @@ Older spool items (2026-07-19), still TODO — kept here now the spool is trashe
   counts distinct sessionId (8) but keeps all message content (`is_sidechain`
   flags the 2709 sidechain docs). The inventory's "23 sessions" should read
   "23 files". Transcripts also nest as `agent-a<hash>.jsonl` beside the main file.
+- **AGY transcripts have truncated and full versions (2026-08-20)**. AGY writes
+  two files per session: `transcript.jsonl` and `transcript_full.jsonl`. The former
+  is token-efficient and aggressively truncates large text blocks (like `cat` or
+  `grep` outputs) down to ~4KB to protect agent context limits. Ingest MUST target
+  `transcript_full.jsonl` to ensure the OpenSearch index remains fully searchable
+  across all file content and tool outputs. (Confirmed: `ingest-sessions` correctly
+  targets `transcript_full.jsonl`).
