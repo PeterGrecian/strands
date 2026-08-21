@@ -1888,3 +1888,103 @@ all 465 frames re-stamped 2026-08-21. Verified: 2026-08-20 = {3: 465},
 the derived products sit outside the stamping convention entirely, which matters
 if anything accumulates from co-adds. Adds to the existing pending item about
 those products still being on the pre-repack scale.
+
+## HTM step 1 — and the plate scale that blocks it (2026-08-21)
+
+**Answer to "how low should we go?": HTM level 4.** L4 is the *coarsest* level
+that separates the ten brightest anchors — measured, not estimated: L2 puts two
+pairs in one trixel, L3 still collides (Schedar `N31131` and Gamma Cas `N31130`,
+4.2° apart, share the 13.6° parent `N3113`), L4 separates all ten. L4 is 2048
+trixels, 20.1 deg², ~6.8° a side — still ~7× coarser than early pointing error,
+so nothing lands in the wrong cell. L3 remains the useful "whole field in ~34
+cells" overview.
+
+**HTM is in** (`astro/htm.py`). Verified: prefix nesting exact to level 12 (the
+level-(N-1) id *is* the level-N id `>> 2`), all 8 base faces reachable, and the
+four children's areas sum to the parent's exactly — the 4:1 property the
+accumulator depends on. Within L4 trixel areas vary by 2.10×; that is fine
+because it is *deterministic* — `trixel_area` computes it exactly, so a
+surface-brightness accumulator divides it out. An equal-area grid buys nothing
+we cannot compute, and HTM's prefix code is worth more: the ladder's rungs are
+the same integers at different lengths.
+
+### The blocker: astrocam's imx708 plate scale is genuinely unsolved
+
+`camera.json` already says so (`plate_scale 0.0190` marked STALE, "must be
+re-solved from imx708 sky frames"), but `_epoch.wcs.json` still serves 0.02081
+on imx219 3280×2464 geometry and that is what tools actually consume. This
+session tried to close it and **did not succeed**. What is now known:
+
+| method | full-res °/px |
+|---|---|
+| single night (2026-08-12), Polaris track | 0.0210 |
+| four nights separately | 0.0166, 0.0188, 0.0206, 0.0186 |
+| joint fit, 14 nights, 111 points | 0.0186 ± 0.0010 (5.6%) |
+| estate legacy (`_epoch.wcs.json`) | 0.02081 |
+| imx708 spec, f=4.74 mm, 1.4 µm | 0.01690 |
+
+**The honest reading: 0.0186 ± 6%, which is consistent with BOTH candidates.**
+Polaris cannot separate them. A single night that appears to agree with one to
+1% is over-reading its own noise — 2026-08-12 did exactly that, and an early
+claim in this session that the legacy value was "23% too large" was simply
+wrong, in the wrong direction.
+
+**Why Polaris fails, and it is geometry not sloppiness.** Its arc radius is
+~16 px at half-res and sags only ~6 px from a straight chord. Curvature carries
+the radius, so a ~1.5 px detection scatter propagates to ~25% on the radius —
+which is precisely the observed 15.4–19.5 px night-to-night spread. Peter's
+instinct that Polaris is the clean target is right about *distortion* (none
+worth speaking of over 0.6°) but proximity to the pole is exactly what destroys
+the lever arm. Not saturation: per-frame peaks run ~440 of 1023 ADU.
+
+**The camera really has not moved** — Peter: unclamped only three times, which
+matches the three position_index epochs. Confirmed independently here: 116
+Polaris detections across 14 epoch-2 nights all fall on one arc
+(`~/tmp/htm-step1/multinight-track.png`). So the 13 px night-to-night scatter of
+the per-night pole fits is fit error, full stop, and nights inside a clamp epoch
+are legitimately combinable.
+
+### The fix, not yet built: two stars, each doing what it is good at
+
+Fix the **pole** with a star far out (Kochab, arc radius ~470 px, sagitta
+~170 px) — the centre of rotation does not require knowing *which* star it is,
+so no identification is needed for this half. Then measure **Polaris's radius**
+from that now-solid centre; it stops having to determine the centre and only
+supplies a distance. Note `0.14 px` elsewhere in this file is **cross-streak**
+line-fit precision, i.e. *perpendicular to a trail* — which is exactly the
+radial direction of a pole-centred arc. So once the centre is known
+independently, the max-stack ridge should give the radius far better than
+per-frame centroids did.
+
+### Tools added this session
+
+- `astro/htm.py` — trixel ids/names/vertices/exact areas; prefix code.
+- `astro/skypos.py` — epoch-aware pole distances, 22 bright northern stars.
+- `bin/htm-anchors` — the anchor set with L4 ids and predicted ring radii.
+- `bin/fit-pole-track` — pole by tracking one star across a night with the
+  rotation angles fixed by the clock (`p = c + Rot(ωt)v`, linear in c and v).
+  Carries the sweep consistency check: a night of length T subtends exactly
+  15.041·T degrees and no more, so an arc that appears to subtend more is a
+  wrong centre or a mis-identified star. Doubles as the daily nudge gate.
+- **Bug fixed:** `polefit.py` hardcoded `POLARIS_SEP_DEG = 0.7525` commented as
+  the 2026 value. It is a mid-1990s value — J2000 is 0.7359°, **2026 is
+  0.6262°**. Not cosmetic: `fit_pole` uses that radius as the *selector* among
+  candidate arcs, so a 20%-stale value can pick the wrong star. Now computed per
+  epoch. (`fit-pole-polaris` returns radius 21.1 px on 2026-08-12 against ~16 px
+  from tracking — it is picking up the thick max-stack band, and should be
+  regarded as unreliable for this camera until the two-star fit replaces it.)
+
+### Known-bad in what was built
+
+`fit-pole-track`'s "brightest peak in the box" picked the wrong object on 5 of
+116 detections (nights 08-10, 08-14, 08-16, 08-18, 08-19 have detections
+20–70 px off the arc). It needs a sanity filter against the running arc before
+it is trusted unattended as the nudge gate.
+
+### Environment
+
+`~/astro/.venv` did not exist on pip — that is why this work had been
+muppet-only. Created 2026-08-21 from `requirements.txt`; it is also what lets
+splay open FITS on pip. `~/bigstore-astro` is an SMB share of the data and reads
+at **~2 MB/s**, so night products (max/sum, a few MB) are fine on pip but
+per-frame passes belong on muppet — 14 nights × 10 frames took 3.5 minutes.
