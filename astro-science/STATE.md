@@ -2322,12 +2322,45 @@ The 12.2 px differential motion is swaying foliage and unstable extended-object
 centroids, not camera motion — it is why seeds must be filtered for stability
 before the common-mode term means anything.
 
-### CORRECTION: the camera with houses in frame is NOT in a box (Peter, 2026-08-21)
+### CAMERA CONFIGURATIONS — settled (Peter, 2026-08-21)
+
+**astrocam: BOXED, on a pole, out of a window, looking upwards.**
+**eclipticam: NOT boxed — indoors, through a window, at the tops of houses.**
+
+This resolves a confusion that ran through the session. "The camera with houses in
+the picture is not in a box" meant ECLIPTICAM. astrocam sees rooflines and trees
+at the edge of its wide upward field, which is what the static-foreground
+detections are; it is boxed, and `camera.json`'s enclosure note and the ΔT
+25-27°C figure are CORRECT for it. An intermediate entry here withdrew the whole
+thermal-enclosure argument for astrocam — that withdrawal is itself withdrawn.
+
+**The pole matters as much as the box.** A boxed camera on a pole out of a window
+is a cantilever with a sail on the end, so wind has a DIRECT MECHANICAL path —
+torque at the base, deflection at the tip — independent of differential cooling.
+Both mechanisms predict motion in the same 5-30 min band (sustained gust envelopes
+vary on those timescales), so the measured band power cannot distinguish them.
+
+**Peter's box-opening is a DISCRIMINATOR, not just an improvement.** Opening the
+bottom cuts ΔT ~5x and leaves the mechanical path untouched:
+
+  - motion drops ~5x  -> THERMAL; a ventilation/materials problem
+  - motion unchanged  -> MECHANICAL; the pole needs stiffening and no box work helps
+
+Predicted if thermal: the 0.85 px hourly excursion in the 5-30 min band becomes
+~0.17 px. Measurable in one night on that exact statistic.
+
+**eclipticam is the control we already have.** Indoors = near-constant temperature
+and no wind loading. Much smaller drift on the same nights confirms environment;
+comparable drift indicts the measurement or the mounting concept instead. Its
+frames are on muppet, not pip.
+
+### (superseded) CORRECTION: the camera with houses in frame is NOT in a box
 
 `astrocam/camera.json`'s position_registry epoch-3 note states *"the camera body
 itself seals the aperture, so the box was already sealed ... (ΔT stayed ~25-27°C
-above ambient across the change)"*. Peter: **the camera with houses in the picture
-is not in a box.** astrocam has houses in frame, so that note is wrong, and it is
+above ambient across the change)"*. Peter said **the camera with houses in the picture
+is not in a box**; this was read as astrocam, WRONGLY — he meant eclipticam. Kept
+only to explain why the entries around it moved. The note is CORRECT and it is
 load-bearing — it is the only place the thermal environment is recorded, and this
 session built an entire uneven-heating argument on it (material comparison,
 conductivity vs expansivity, "move the Pi's heat out of the structural loop").
