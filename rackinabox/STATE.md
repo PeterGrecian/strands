@@ -93,6 +93,8 @@ is the arm worth having.
 | **B** | both fans OFF | Peter to unplug; run **last and shortest** (recreates halt conditions) |
 | **C** | fans in the DESIGN topology: one low blowing in, one high drawing out | Peter to rearrange |
 
+**Fan Control (Arm C):** The 140mm analogue fans will be driven by a Raspberry Pi Pico acting as a USB-to-PWM bridge (`~/rackinabox/thermal/pico_fan_driver/`). The Pico takes commands from the host laptop over USB serial and outputs a 25 kHz PWM signal to a low-side common-emitter Darlington switch to modulate the 5V/12V fan power rail. This spans `rackinabox` (thermal testing), `electronics` (the Darlington switch), and `home-automation` (the automation environment).
+
 **No lid-open/closed arm** while the lid switch reads `closed` regardless of
 the lid's actual position — that sensor is untrustworthy and it is the exact
 variable implicated in the halt.
@@ -163,6 +165,7 @@ the cooler before cutting combs.
   - `cad/assembly.scad` — 3D walkthrough (assembled + exploded); `renders/`.
   - `cad/rackinabox.scad` — 3D printed parts (fan template etc.).
   - `bin/rack-power` — CLI tool to query the rack's Zigbee plug (wattage, voltage) and hard-cycle the mains power via Home Assistant's REST API.
+  - `bin/rack-monitor` — Continuous logger outputting CSV (power draw and air temp/humidity from the `sonoff_snzb_02d` sensor in HA) for thermal analysis.
   - `.venv/` (gitignored): ezdxf, boxes, matplotlib.
 
 - **Mains Power Path (2026-08-20):** The rack is now powered via a dedicated Zigbee smart plug

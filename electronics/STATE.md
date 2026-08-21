@@ -102,6 +102,7 @@ see its note.
   fans and electronics: mild-steel rectangular tube, mostly glued, baffled ATX
   PSU, IKEA Lack table as frame. Mechanical/packaging project; scope and whether
   it fully belongs in this strand still TBD, but it's the active build.
+  **Update (2026-08-21)**: Built a USB-to-PWM fan controller for the rack's thermal prototype (Arm C). Uses a Pico to generate 25 kHz PWM commands from a host laptop over USB, driving a low-side common-emitter Darlington switch to modulate the analogue fan's power rail. An excellent intersection of `rackinabox`, `electronics`, and `home-automation`.
 - **PWM amp for 8R — driver stage working (2026-07-25).** The PWM-as-DAC /
   driver stage feeding an 8Ω load (pwmaudio line of work). The beta-limited
   2N3904 was the last gap; the **darlington (2N3904 → B882)** clears it — coil
