@@ -4,6 +4,17 @@
 
 ## What exists
 
+- **zog ingest verified live; laptop sleep is the real freshness limit**
+  (2026-08-21). `ingest-sessions.timer` enabled and healthy on zog, hourly, exit
+  0; index reads pip 75,010 / zog 6,231 / muppet 3,096 (muppet frozen at its
+  2026-04-21 archive, as expected). But the journal shows the 20 Aug 23:25 run
+  "finishing" at 08:16 the next morning — the laptop suspended mid-run and the
+  00:00–08:00 slots never fired. No data lost (ingest is idempotent and catches
+  up on wake), but on a laptop the *effective* cadence is "hourly while awake",
+  not hourly. Worth remembering before blaming the timer for a stale index, and
+  it sharpens the streaming decision below: the latency that matters here is
+  sleep, which no amount of fluent-bit would fix.
+
 - **Retrieval failure fixed: `--said`** (2026-08-21, aifabric `e85429e`). A
   session searched for a scheme Peter wrote the evening before, got 639 hits,
   read six, and told him it didn't exist. All six were its *own* tool calls from
