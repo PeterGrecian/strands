@@ -2376,3 +2376,47 @@ there is no evidence for which.
 **Better experiment now available:** if another camera IS boxed, measure both the
 same way across the same nights. Boxed vs unboxed separates "enclosure" from
 "mount" directly, which beats any amount of reasoning about materials.
+
+### Focus dither: measured, and it should go (2026-08-21)
+
+Peter, considering turning it off: *"the psf includes dithering — for polaris it
+will be smoothed out because it moves so slowly."* **He is right, and it
+invalidates the PSF figure used earlier in this session.**
+
+    best-focus LENSPOS   1.441 (2026-08-15)   1.442 (2026-08-19)
+    FWHM across the LENSPOS sweep    2.03 - 5.80 px
+    FWHM at best focus               ~2.0 px      (half-res)
+    FWHM dither-averaged             ~3.3 px      <- what this session kept quoting
+
+The 3.29 px "PSF" measured earlier came from the star at (696,490) — **Polaris** —
+and is the dither-averaged width, not the optics. Focus dominates: 2.0 px at the
+optimum against 5.8 px at the ends of the sweep.
+
+**Recommendation: turn the dither off, fix LENSPOS at ~1.441.**
+
+1. **PSF 3.3 → 2.0 px FWHM**, i.e. ~2.7x peak SNR for point sources — a real gain
+   in limiting magnitude, not a marginal one.
+2. **Best focus is stable** (1.441 vs 1.442 a week apart), so fixing it is safe and
+   the thermal-focus-drift risk does not materialise over that interval.
+3. **The sampling rationale for dithering does not apply.** Even at best focus,
+   2.0 px half-res = 4.0 px native, ~2x oversampled. There is no aliasing to break.
+   (This survives the correction — it was checked against the best-focus width, not
+   the dithered one.)
+4. A stable PSF should also tighten the 0.28 px centroid floor limiting the star net.
+
+**Inconclusive test, recorded so it is not repeated:** comparing Polaris's width
+against the CROSS-STREAK width of trailed stars was meant to isolate the smear, but
+gave only 6 near-pole detections (the component size cap probably excluded Polaris
+itself) and a cross-streak width that fell 3.50 → 1.82 px with increasing radius —
+a detection-threshold artefact, not physics. The focus sweep answers it directly
+and better.
+
+**When it is switched off, DATE IT PROMINENTLY.** The PSF step propagates into
+photometry and limiting magnitude across the archive — the same trap class
+`camera.json` already documents for the tempered glass. Probably not a
+position_index bump (not camera, lens or mounting), but it needs a dated note.
+
+**GAP: `SENSTEMP` is absent from the frames** — all NaN, though `camera.json`
+refers to it. So temperature-compensated focus is not currently possible, and the
+thermal/mount work has no temperature record to correlate against. Worth enabling
+regardless of the dither decision.
