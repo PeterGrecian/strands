@@ -2263,8 +2263,11 @@ subdivide. The measurement that matters is whether adding faint nodes lowers the
 
 Trees, houses and street lights do not move with the sky, so **their apparent
 motion IS the camera's motion** — measured directly, with no pole, no sky model
-and no star matching. They are also the brightest things in frame, so their
-centroids are the best in the image. All evening they were treated as a trap to
+and no star matching. They are the brightest things in frame, but NOT the most
+precise: measured per-seed rms is 0.32-1.72 px against 0.26 px for stars, because
+houses and trees are EXTENDED and their centroids wander. The foreground is more
+DIRECT, not more accurate. (An earlier version of this entry claimed their
+centroids were "the best in the image" — withdrawn.) All evening they were treated as a trap to
 be filtered out (and they are, for the star net — the ten brightest sources are
 all foreground and none of them move). For measuring the mount, they are the
 ideal sensor.
@@ -2290,3 +2293,53 @@ displacement: ≈1 for a one-way thermal creep, ≫1 for wind-driven reorientati
 correlate in time, that is direct evidence for the wind mechanism, from a wind
 sensor that has been in every frame since the camera was installed — including
 retrospectively, over the whole archive.
+
+
+#### First result, and it is negative (2026-08-12 hour 00, 60 frames)
+
+    camera translation over the hour   x -1.90..+0.33   y -1.03..+0.55 px
+    frame-to-frame step                median 0.227, 90th 0.558, max 1.557 px
+    wander ratio                       95.1 (25.7 for the 5 most stable seeds)
+    differential motion between seeds  rms 2.0 px, max 12.2 px
+
+**The wander ratio is NOISE, not wind.** Lag-1 autocorrelation of the step
+sequence is NEGATIVE (-0.125 in x, -0.383 in y) — the signature of a measurement
+jittering about a FIXED position. Real smooth motion gives positive step
+autocorrelation. A ratio of 95 is exactly what ~0.3 px of centroid jitter yields
+over 60 frames whether or not anything moved, so the discriminator proposed above
+is necessary but not sufficient: it must be paired with the autocorrelation test.
+
+**Within one hour, astrocam's motion is below ~0.3 px** — undetectable. A smooth
+cubic in time explains almost none of the 1.5-1.8 px range (rms about the fit
+0.24-0.34 px). So the 2-5 px nightly drift is SLOW (hours), not gusty (minutes),
+and on this night rapid wind reorientation is not the dominant term.
+
+Qualifier: 2026-08-12 was chosen because it was the cloudless well-behaved night,
+so it was probably calm. **The experiment that would settle the wind question is a
+windy night against a calm one**, same measurement, and the contrast is the answer.
+
+The 12.2 px differential motion is swaying foliage and unstable extended-object
+centroids, not camera motion — it is why seeds must be filtered for stability
+before the common-mode term means anything.
+
+### CORRECTION: the camera with houses in frame is NOT in a box (Peter, 2026-08-21)
+
+`astrocam/camera.json`'s position_registry epoch-3 note states *"the camera body
+itself seals the aperture, so the box was already sealed ... (ΔT stayed ~25-27°C
+above ambient across the change)"*. Peter: **the camera with houses in the picture
+is not in a box.** astrocam has houses in frame, so that note is wrong, and it is
+load-bearing — it is the only place the thermal environment is recorded, and this
+session built an entire uneven-heating argument on it (material comparison,
+conductivity vs expansivity, "move the Pi's heat out of the structural loop").
+All of that is withdrawn for astrocam and needs re-aiming at whichever camera is
+actually enclosed. **`camera.json` needs fixing.**
+
+What survives: the measurements, which assumed no enclosure — 2-5 px within a
+night, same direction each night, 4.6 px median between nights, all from star
+positions. What does not: the mechanism. Something still produces a repeatable
+diurnal drift on a clamped unboxed camera (the clamp and bracket expand too), but
+there is no evidence for which.
+
+**Better experiment now available:** if another camera IS boxed, measure both the
+same way across the same nights. Boxed vs unboxed separates "enclosure" from
+"mount" directly, which beats any amount of reasoning about materials.
