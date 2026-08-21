@@ -2038,3 +2038,80 @@ model `P_eff(p) = p + (1/J_r(p))·(P_true − p)`: at `p = P_true` the effective
 pole equals the true pole **for any distortion**. So the true pole is the FIXED
 POINT of the effective-pole map, reachable by iterating a tile onto its own
 reported pole with no distortion model at all.
+
+## PLATE SCALE SOLVED — 0.0208 deg/px, from Peter's shared-radius constraint (2026-08-21)
+
+**`plate_scale_deg_px = 0.02075 ± 0.00089` full-res (4.3%).** The estate's legacy
+0.02081 is confirmed to **0.3%** — right all along, but now for a measured reason
+instead of by inheritance from the imx219. The imx708 **spec value 0.01690 is
+excluded at 5.5σ**: effective focal length at the pole's field position is ~3.8 mm,
+not the catalogue 4.74 mm. `camera.json`'s `plate_scale_notes` ("STALE ... must be
+re-solved") can now be closed for epoch 2.
+
+**The constraint that cracked it was Peter's**, in one sentence: *"the cyan circle
+should always be the same size."* Polaris's arc radius is pole-distance ÷ plate
+scale — neither changes, ever. The camera moving changes only the CENTRE. So fit
+all nights at once with ONE shared R and a free centre per night. Each night alone
+is degenerate (centre and radius slide together along a ~100° arc of a 15 px
+circle); eleven nights sharing R over-determine it.
+
+    R = 15.090 px half-res, 11 nights, overall rms 0.485 px
+    per-night rms 0.22-0.88 px vs 0.17-0.56 for FREE radii
+
+Imposing one radius costs almost nothing, which is itself the proof that one
+radius really does explain every night. Seed each night's centre from its own
+circle fit — seeding from the point-median drops two nights into a local minimum
+20 px away and quietly corrupts R.
+
+**Nightly camera motion, now cleanly separated** because the centres are no longer
+absorbing radius error: **4.60 px median step between consecutive nights, 17.8 px
+spread over three weeks.** Confirms Peter's "temperature humidity and wind".
+
+**What is still unconstrained, and why.** Peter's 18 eyeball pole probes sit
+(−2.2, −4.9) px from the fitted centres — a real systematic, unchanged by sharing
+R. Its direction is **18.1° from the arc's chord-bisector**, i.e. along the one
+axis a short arc cannot constrain at all. Sharing R fixed the circle's SIZE, not
+its POSITION along that axis. The cure is arcs at other position angles — which is
+exactly the remembered "many stars within 10° of the pole" method. Do that next.
+
+Consequence for the field: with f_eff ~3.8 mm the FOV is ~3700 deg² (not the
+~2700 estimated from the spec), so ~184 L4 trixels in frame and ~0.24 expected
+colliding pairs for ten anchors. **HTM level 4 stands.**
+
+### The PSF is real — three hypotheses killed
+
+Single-frame FWHM is **3.29 ± 0.19 px** half-res, and the max-stack trail is
+~3.3 px. So:
+
+1. **NOT focus dither.** Retracted: this session claimed a max stack takes the
+   worst focus of the dither and so inflates the trail, and recommended a
+   focus-selected stack. Worth ≤0.5 px across the whole LENSPOS range. Not worth
+   building.
+2. **NOT chromatic aberration from binning RGGB.** R−B separation is 0.69 full-res
+   px = 0.35 half-res. (Per-channel FWHM comparisons are unreliable — second
+   moments inflate on the wings at 4× lower SNR.)
+3. **NOT a wrong pole** — the sweep-exceeds-the-clock flag raised repeatedly today
+   is explained by PSF extension at the trail ends, `2·asin(2/R)` ≈ 16° at R≈14.
+   `fit-pole-track`'s check needs that term; as written it cries wolf.
+
+So ~3.3 px half-res (6.6 px full-res, ~9 µm) is genuine optics at 16-20° off axis.
+That matters for the sub-pixel programme: it is the real sampling kernel.
+
+**LENSPOS is a slow RAMP, not a 3-value dither** — 1.30 → 1.58 in 0.02 steps over
+36 consecutive frames, perfectly correlated with time. So focus breathing and sky
+rotation are degenerate in any consecutive block, and the 0.216% magnification
+signal measured across the ramp is uninterpretable. Separating breathing needs
+INTERLEAVED focus values, not a ramp.
+
+### The trail is a time series — a free nightly quality gate
+
+Azimuth about the pole IS time (Peter). Reading the max-stack trail radially at
+each azimuth gives transparency (peak brightness), seeing (FWHM) and pole position
+(peak radius) against time, with **no per-frame reads**. On 2026-08-13 at 6.1 h in,
+peak brightness collapses 255 → 95 and the width/radius measurements go to noise:
+cloud arriving, exactly the "weather front" Peter predicted. 2026-08-12 holds 255
+all night and fades only at dawn.
+
+Two consequences: the last hour of 08-13 must be cut from any geometry (it was in
+the earlier fits), and this is most of the daily bootstrapping gate for free.
+`~/tmp/htm-step1/trail-timeseries.png`.
