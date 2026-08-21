@@ -102,6 +102,15 @@ variable implicated in the halt.
 **Also wanted while the lid is off: the box's internal W and H** (never
 measured; depth came in 2 mm under design; the comb is cut to W).
 
+### Live Rack Temperatures (checked 2026-08-20)
+
+**Checked via SSH while machines are in the rack:**
+- **vole** (Acer C720): ~40 °C CPU core (`x86_pkg_temp`)
+- **puppy** (ASUS X515EA): ~40 °C CPU core (`TCPU`)
+- **pip** (ThinkPad X390): ~43 °C CPU core (`x86_pkg_temp`) / ~45 °C WiFi (`iwlwifi_1`)
+
+All three laptops are sitting well within safe margins (low-to-mid 40s) in their current configuration. The ethernet switch does not expose internal telemetry.
+
 ## PLATE RACK — the holding scheme (designed 2026-08-16)
 
 The draining-board plate rack: parallel slots, machines on edge, top-loaded.
