@@ -1,6 +1,218 @@
 # astro-storage — state
 
-*Updated 2026-08-13*
+*Updated 2026-08-21*
+
+## gdrive-sync — built, defects fixed, first frames landed on Drive (2026-08-21)
+
+The Google Drive DR path from the 2026-08-18 ideas is now real code:
+**`astro/bin/gdrive-sync`** + `astro/services/gdrive-sync.{service,timer}`,
+deployed to **puppy** by `ansible/roles/apps/gdrive-sync`. It walks the
+archive **in the backup-priority order Peter asked for — fewest copies
+first, then darkest (`mean_adu` asc), then newest** — joining astro-science's
+`archive_quality.db` (clean `flags=''` rows only) against per-night copy
+counts scanned from the `astro-storage-inventory` DynamoDB table, and pushes
+via `rclone copy` with a SQLite ledger (`frame_copies`) snapshotted to S3.
+
+Note this is the **file-by-file** shape, not the tar-per-night shape the
+2026-08-18 idea argued for. That was deliberate: a per-frame darkness
+priority is exactly what tar-per-night cannot express. The file-count caution
+still applies, but the queue is 27k files, not hundreds of thousands.
+
+**V3 ONLY (Peter, 2026-08-21):** *"i don't want ancient frames - the new ones
+v3 cameras are much more important. only do them."* So the queue is filtered to
+the **imx708** sensor — astrocam-v3s (from 2026-07-29) and eclipticam-v3w.
+Selected **by sensor, not by camera name or date range**, which is the exact
+trap `build-quality-db`'s own docstring documents; eclipticam is wholly v3w so
+its header-less rows are caught by `stream` instead. This drops astrocam's
+imx219 era (78,036 clean frames) and starcam (7,827) entirely. `--all-sensors`
+overrides.
+
+**QUEUE SIZE (measured 2026-08-21).** v3 clean frames: **26,616 — and every
+single one is at 1 copy.** There is nothing at 2 or 3 copies in the v3 set at
+all. **The newest and most valuable data is the least protected**, which is a
+sharper statement of the problem than the whole-archive ledger gave: across all
+sensors it looked like 34,227 at 1 / 77,228 at 2 / 5,095 at 3, and the
+redundancy was concentrated in the old frames we care least about.
+
+Measured size: **~252 GB** (300-file random sample, mean 9.5 MB/frame — v3
+frames are ~2.4x the starcam frames the first estimate extrapolated from).
+Comfortably inside a 2 TB Google One quota, but **~35 hours of transfer** at the
+current `--bwlimit=2M`; that limit should be revisited before the real seed.
+
+A consequence worth noting: **within the v3 set the copy-count sort is inert**
+(everything ties at 1), so **darkness is doing all the ordering**. The copy
+count only starts to matter again as frames land in Drive and later runs.
+
+### The credential was never missing — it was provisioned to the wrong hosts
+
+First read of this was WRONG and is worth recording, because the wrong
+diagnosis cost an hour of trying to redo an OAuth that was already done.
+puppy's `rclone.conf` was a 37-byte token-less stub and `rclone about gdrive:`
+said *"empty token found"*, so the conclusion was "never authorised, Peter must
+re-auth in a browser". **Peter: "what happened with the auth I did before?"**
+
+**A valid token was in SSM `/rclone/config` the whole time**, from an earlier
+auth, and it still works. The real fault:
+
+- `ansible/roles/rclone` is what deploys `/rclone/config` from SSM to
+  `~/.config/rclone/rclone.conf`. It is gated on **`enable_rclone`, set only in
+  `inventory/group_vars/laptops.yml`**.
+- **puppy is a Pi, not a laptop** — so that role has never run there.
+- But **`enable_gdrive_sync: true` was set on puppy**, putting the *consumer*
+  of the credential on a host the *credential* never reaches.
+
+**The credential and its consumer were provisioned to different hosts.** The
+"empty token" error was accurate about puppy and completely misleading about
+the system. **Lesson: an absent credential on a host is a provisioning
+question before it is an authentication question — check who deploys it and
+where that is gated, before assuming the secret does not exist.**
+
+**FIXED** by deploying the rclone config from `roles/apps/gdrive-sync` itself,
+so the role that *needs* the credential is the role that *ensures* it. It
+deploys the config **only** — deliberately not the whole `rclone` role, which
+also sets up a **FUSE mount of Drive**, and that must never exist on a capture
+host (the 2026-08-18 idea's "never the mount as a live target").
+
+**DRIVE IS 5 TiB, 4.986 TiB FREE** (measured 2026-08-21), not the 2 TB the
+ideas assumed. 424 MiB used. The ~252 GB v3 set is a rounding error against it,
+so quota is simply not a constraint on this design.
+
+**A second, smaller bug** surfaced on the first real run: `rclone copy
+--files-from` **lists the destination root and fails outright if it does not
+exist** — it will not create it. `gdrive:astro-backup` did not exist, so the
+run died with `directory not found`. The script now `rclone mkdir`s the remote
+first. Worth noting the ledger correctly stayed **empty** through that failure:
+the exit-code guard did its job on its first real test.
+
+**TIMER DISARMED (2026-08-21)** pending that. `systemctl disable --now` on
+puppy — note `mask` FAILS here, because the ansible role deploys the unit as
+a *symlink* into `/etc/systemd/system` and mask wants to put its own symlink
+there. `disable` removed both the `timers.target.wants` link and the unit
+symlink itself. **`gdrive-sync.service` is still linked**, so the test can
+still be run by hand. Also set **`enable_gdrive_sync: false`** in
+`ansible/inventory/host_vars/puppy.yml` — without that, the next ansible run
+silently re-arms it.
+
+**THREE DEFECTS FIXED** before any of this could work — all found by trying
+to run it, none visible by reading:
+
+1. **Paths were wrong on both hosts.** `RCLONE_ROOT` was hardcoded to
+   `/mnt/bigstore/astro-data`, which does not exist on puppy (there the
+   export is mounted at **`/mnt/muppet/bigstore`**). Worse: the quality DB
+   records each frame by its path **on the capture host** —
+   `/home/peter/<cam>-frames/<night>/<hh>/<file>` — so the prefix-strip was a
+   no-op. **The real mapping is `/home/peter/X` → `<root>/X`** (verified
+   398/400 on a random sample). Now auto-detects the root, `--root` to override.
+2. **The ledger trusted rclone's exit code.** An empty or mis-rooted
+   `--files-from` list exits **0**, so the original would have recorded 4,500
+   frames as backed up having uploaded nothing — and *permanently*, since the
+   ledger excludes them from later runs. **A backup tool that lies about
+   having a copy is worse than no backup tool.** Now an
+   `rclone check --one-way --checksum` must pass before any frame is recorded.
+3. **The DynamoDB scan was unpaginated** — silently truncated at 1 MB.
+
+Also added `--dry-run`, and moved the ledger **off the NFS mount** to
+`~/.local/state/astro/astro-storage.db`: sqlite locking over NFS is unsafe and
+that mount carries `idle-timeout=60`, so it can vanish mid-write. Durability
+comes from the S3 snapshot instead.
+
+**50-FRAME DRY RUN PASSES** on puppy: root `/mnt/muppet/bigstore`, 319
+inventory items → 177 (night, camera) counts, 50 frames / 203.4 MB selected.
+Top of the queue is the darkest **eclipticam-v3w frames of 2026-08-19**, the
+most recent night — which is what "newest cameras, darkest first" should look
+like. (Before the v3 filter it picked **2026-05-21 starcam**, which this STATE
+already flags as a do-not-touch single copy — so the priority logic was sound;
+it was aimed at an archive Peter does not want backed up.)
+
+**STILL OPEN:**
+- **7,755 starcam rows (2026-05-23) carry RELATIVE filenames** in the quality
+  DB — a defect in the CSVs `build-quality-db` read. They cannot be resolved to
+  a camera root, so gdrive-sync skips and counts them rather than guessing.
+  **05-23 is the *other* do-not-touch single-copy night.** The v3 filter makes
+  this moot for gdrive-sync (starcam is excluded outright), but it is still a
+  real defect in the quality DB and 05-23 still has one copy — so the exposure
+  did not go away, it just stopped being this tool's problem. Worth fixing at
+  the source (astro-science owns `build-quality-db`).
+- Copy counts are **raw item counts**, not the **reliability-weighted** rule of
+  2026-07-31 (thumb-drive copies count half). A night whose 2nd copy is the
+  astrobackup stick therefore looks safer to gdrive-sync than the policy says
+  it is. Not blocking, but the weighting should land before this is trusted.
+- A **restore has still not been tested**. Per the 2026-08-18 idea: *an
+  untested backup is not a backup*, and pulling a frame back out and checking
+  it against the original is the remaining gate before the timer is re-armed.
+- `--bwlimit=2M` means **~35 hours** for the 252 GB seed. Revisit before the
+  real run.
+
+## THE REAL BLOCKER: rclone's shared Drive client_id is being retired (2026-08-21)
+
+The first real uploads **stalled**: files reached **100%, sat at 0 B/s for
+minutes, timed out, and restarted from 0%**, with non-zero TCP Send-Q. Ruled
+out, each by measurement, in this order:
+
+- **NFS/bigstore** — mount healthy, `stat -f` fine throughout.
+- **MTU black hole** — plausible (puppy carries `tailscale0` at MTU 1280 and
+  `docker0`), but **refuted**: the route to Google goes direct via the ethernet
+  NIC at MTU 1500, and `ping -M do -s 1472` succeeds.
+- **Upstream bandwidth** — **refuted decisively**: 20 MB to S3 from puppy in
+  **8 s (2.5 MiB/s)**. S3 uploads perfectly *while Drive stalls*, which is what
+  narrowed it to the Drive client specifically.
+
+**puppy's rclone was v1.60.1 (a 2022 distro build).** Upgraded to **v1.75.0**
+(`/usr/local/bin/rclone`; puppy is **x86_64**, not a Pi). Transfers improved —
+files began completing — and 1.75 printed the answer 1.60 was too old to know:
+
+> `NOTICE: gdrive: This remote uses rclone's shared Google Drive client_id,
+> which is being retired and will stop working during 2026. Create your own
+> client_id to avoid interruption.`
+
+**The config has no `client_id`**, so it uses rclone's built-in one — shared by
+every rclone user in the world and throttled accordingly. That is the stall.
+
+**THIS IS NOT OPTIONAL TUNING.** The token in SSM `/rclone/config` **will stop
+working during 2026** on its own. A private OAuth client in
+`petergrecian-personal` (Drive API enabled, consent screen, Desktop-app client)
+is required, then a re-auth with that `client_id`/`client_secret`, then
+**`secrets put /rclone/config`** so every host gets it. **Needs Peter** —
+console work.
+
+**FULL CHECKLIST: `SETUP-gdrive-client-id.md`** in this strand — console
+steps, and the **7-day-refresh-token trap** (an app left in "Testing" issues
+tokens that expire weekly, so the backup would run for a week and then fail
+silently; publish to "In production" to avoid it).
+
+**Do the re-auth ON A HOST WHOSE OWN BROWSER CAN REACH ITS OWN LOOPBACK.**
+Google only accepts `http://127.0.0.1:53682` as the redirect. pip is a
+**Chromebook/Crostini box** — Chrome lives in ChromeOS, rclone in the Linux
+container, and those are *different* loopbacks, so the callback cannot land
+without ChromeOS port-forwarding of 53682. `penguin.linux.test` does **not**
+help: Google redirects to the literal `127.0.0.1`. muppet has Firefox and
+Chrome installed locally and is the path of least resistance.
+
+**STATUS:** 4 frames are on Drive; the ledger records **0** — correct, because
+both runs were killed mid-flight and the verify-before-record guard refused to
+claim them. Self-correcting: a later run re-selects them, rclone skips the
+identical files, and the check then records them honestly.
+
+## puppy's NFS automount self-deadlocks at boot (2026-08-21)
+
+Found while trying to run gdrive-sync: `/mnt/muppet/bigstore` on puppy had
+been **wedged for 19 hours**, dead since boot. Any access blocked forever;
+`ls` did not return in 200s. NFS itself was fine throughout — `showmount -e`,
+ports 111 and 2049 all healthy from puppy, and a manual `mount -t nfs` to a
+scratch mountpoint succeeded instantly.
+
+**The cause is puppy being both NFS server and NFS client.** The journal
+shows `Got automount request for /mnt/muppet/bigstore, triggered by 991
+(exportfs)` at boot — puppy's *own* `exportfs` touched the automount point
+during startup, before the mount could be satisfied, and the request never
+completed. Ordering deadlock, not a network fault.
+
+**Fix: `sudo systemctl restart mnt-muppet-bigstore.automount`** — mounts in
+under a second afterwards. **This can recur at every boot**, so it is a
+check, not a one-off repair: anything scheduled on puppy that reads bigstore
+should be assumed to be reading a wedged mount until proven otherwise. The
+`soft` mount option (deliberate, 2026-07-29) is what keeps this a hang on the
+mountpoint rather than fleet-wide D-state.
 
 ## astro-science all-time accumulation — coordinated, four answers given (2026-08-13)
 

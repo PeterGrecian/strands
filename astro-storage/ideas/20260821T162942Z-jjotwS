@@ -1,0 +1,15 @@
+STEADY STATE RESHAPES WHAT THE BACKUP IS FOR (Peter, 2026-08-21, during the first gdrive-sync upload).
+
+Asked about the Google One deal lapsing ~2027-08, Peter: "by that time the project might be steady state... all the archive data will have been ingested and its contribution to the htm will be complete and maybe a few weeks of data will be buffered for addition."
+
+THIS CHANGES THE TARGET. Today gdrive-sync is seeding ~252 GB of ALL clean v3 frames, ordered darkest-first, on the implicit assumption that raw frames are the thing worth protecting indefinitely. If the steady state is "archive fully ingested into the HTM, only a few weeks of raw buffered awaiting addition", then:
+
+1. THE CROWN JEWEL BECOMES THE HTM PRODUCT, NOT THE RAW. astro-science's accumulator output is 400-700 MB per instrument FOREVER (STATE, 2026-08-13). A backup of THAT is trivially small, instantly restorable, and irreplaceable in a way raw frames are not once their contribution is already extracted. It is currently NOT in any backup plan.
+
+2. THE URGENT RAW SET BECOMES BOUNDED AND SMALL — the not-yet-ingested buffer ("a few weeks"), not the whole archive. That is a standing rolling window of maybe 10-30 GB, not a 252 GB seed. It also has the sharpest exposure: brand-new nights start single-copy (verified 2026-08-21: ALL 26,616 clean v3 frames are at 1 copy).
+
+3. IT ARGUES AGAINST THE BIG SEED, OR AT LEAST AGAINST ITS PRIORITY. Uploading 252 GB of raw over ~weeks to protect data whose value is about to be extracted into a 700 MB product may be the wrong order of work. Sequence question: does HTM ingestion of a night RETIRE the urgency of backing up that night's raw, or not? That is a real question for astro-science — how lossy is the ingestion, could the HTM be rebuilt differently later and want the raw back?
+
+4. IT ALSO SOFTENS THE SUBSCRIPTION-LAPSE RISK, which is why it came up. If by 2027-08 the thing needing offsite protection is ~1 GB of HTM products plus a rolling few weeks of raw, that fits anywhere — Glacier, R2, a stick — and the Drive tier becomes pure convenience. Peter is not tempted by the Google One deal on Gemini's merits ("if gemini 3.1 pro was stronger I would be tempted"), so the plan must NOT assume renewal.
+
+DO NOT let this quietly cancel the current work: the v3 frames are at 1 copy TODAY and the HTM is not built yet. The seed is still the right thing to be doing now. This is about what the STANDING job should be once ingestion catches up — and about adding the HTM products to the backup set, which is a gap right now regardless.
