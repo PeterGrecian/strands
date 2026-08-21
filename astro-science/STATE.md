@@ -2420,3 +2420,64 @@ position_index bump (not camera, lens or mounting), but it needs a dated note.
 refers to it. So temperature-compensated focus is not currently possible, and the
 thermal/mount work has no temperature record to correlate against. Worth enabling
 regardless of the dither decision.
+
+## RUNG 3 WORKS — the mesh reaches below the single-frame limit (2026-08-21)
+
+Peter refocused the session: *"all we know is that finding the pole is non trivial
+and what we are trying to do is find stars which does not need it except maybe for
+getting the initial mesh which can then be refined."* Stronger than that in
+practice — **the initial mesh did not need it either.** The 862-node net was built
+with no pole anywhere; a rotation centre fell out of the fit as a by-product
+(671, 504) and was never used. The pole is an output, not an input, at any stage.
+
+**First attempt at rung 3 was wrong and is worth recording.** It required a
+DETECTION within 1.5 px in every frame, and returned +3% with no depth gain. But
+the candidates are exactly the sources not detectable in every frame — 812 of 1064
+were never trackable. It tested "confirm what is already visible" when the point is
+"find what is not". Rung 3 must **co-add through the mesh and detect in the stack**.
+
+**Done properly** (8 frames, 2026-08-12 hour 00, `~/tmp/htm-step1/rung3b.py`):
+
+    12916 marginal frame-0 peaks (2.5-6 sigma, BELOW the detection cut), in-hull
+    median single-frame SNR 3.11 -> median stacked 1.74   (the NOISE regressing)
+    reaching SNR>5 after stacking: 2809
+
+The median falling is correct: most candidates are noise selected at +2.5 sigma in
+one frame, and noise regresses when seven more are added. The signal is the tail.
+
+**Controls make it a result, not a claim:**
+
+    marginal frame-0 peaks        21.75% reach SNR>5
+    random positions               2.24%
+    real peaks, SHUFFLED mesh      2.84%   <- the decisive one
+
+Scrambling the node displacements collapses the detections to the random rate, so
+it is specifically the CORRECT mesh registration doing the work. Genuine excess
+~2520 stars below the single-frame limit, **from seven minutes of data**.
+Net 862 -> ~3380.
+
+### Months apart — where this answers the strand's question (Peter)
+
+*"we can still use photons from images months apart to pull stars from between
+ones we have found."* The star net is a valid common reference across ARBITRARY
+time gaps because stars do not move: no chaining, no accumulating registration
+error — the failure mode that killed the pole approach.
+
+Depth goes as sqrt(N). 8 frames bought 1.13 mag. astrocam takes ~430 frames/night,
+so ~150 usable nights is ~64,000 frames: **sqrt(64,000) ~ 250x, about 6 magnitudes
+below the single-frame limit.** That is the accumulation half of "what does a
+year-scale urban dataset yield".
+
+Two things IMPROVE with the gap:
+
+1. **Newly found faint stars become mesh nodes**, densifying it, tightening
+   registration, reaching fainter still — the recursion in Peter's scheme, each
+   pass feeding the next.
+2. **The camera drifts, so a sky position lands on different pixels over months**,
+   averaging out per-pixel gain and flat-field error instead of accumulating it.
+   The mount instability is an ADVANTAGE here.
+
+**Not yet built: linking nets between nights.** Looks easy — the camera moves only
+~4.6 px median between consecutive nights, so consecutive nets overlap almost
+exactly. Match each night to a REFERENCE net directly rather than chaining, and
+organise accumulation by sidereal time so frames months apart land on the same sky.
