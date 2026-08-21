@@ -2159,3 +2159,57 @@ A methodological note worth keeping: the bootstrap-over-nights that first gave
 ±4.3% CANNOT see a systematic common to all nights, because every night samples
 nearly the same sidereal window and therefore shares one degeneracy direction.
 Profiling the parameter directly is the honest error bar here; resampling is not.
+
+## DIRECTION CHANGE — drop the global pole, go relative to the star framework (Peter, 2026-08-21)
+
+**Decision, Peter:** *"finding the pole to sub pixel required by HTM is not going
+to work. I think thermal gradients in the box the camera is mounted on are
+twisting it unpredictably. so we are not going to do that. might improve the
+mount. we are going to go back to previous work — all distances are relative to
+the framework of stars. We find dim stars between bright ones and do local
+transformations to increasingly small patches."*
+
+**The evidence from this session supports it.** The pole drifts 2–5 px dusk to
+dawn *in the same direction every night* (thermal, not random) and 4.6 px median
+between nights. No global pole is stable at the sub-pixel level the accumulator
+needs, and a *twisting* box is not even a rigid-body error, so no single global
+transform can absorb it.
+
+**This falsifies a load-bearing premise of `design/hierarchical-vector-field.md`**,
+which states: *"Because the camera is fixed, this field is static per camera —
+measured once, refined per night."* It is not fixed. A static pixel→sky map
+cannot hold to sub-pixel across an epoch. The doc needs amending, not discarding —
+the brightest-first ladder in it is exactly the direction being resumed (Peter,
+2026-07-28: *"derivation of the distortion fields should be hierarchical -
+brightest stars first, then progressively darker filling in the gaps"*;
+2026-07-25: *"bridge between brighter stars to id darker ones"*).
+
+**The decomposition the old doc did not make**, and which the pivot requires:
+
+| term | behaviour | how it is obtained |
+|---|---|---|
+| lens distortion | plausibly static per epoch (optics + silicon) | accumulated over time |
+| pose | time-varying, thermal | re-solved from the stars themselves, never from an absolute pole |
+| twist | *differential* across the field | only representable as LOCAL transforms on patches |
+
+The twist term is why patches must shrink: a rigid pose correction cannot express
+it. "Relative to the framework of stars" is therefore not a retreat from the pole
+method — it is the only formulation in which the thermal term exists at all.
+
+**Doc conflict to resolve before anything is built on a sky grid:**
+`design/adaptive-refinement.md` records **HEALPix as settled 2026-08-16**; this
+session chose **HTM** (`astro/htm.py`, `bin/htm-anchors`, L4). Two docs now assert
+different grids. Less urgent under the pivot — the working frame becomes the star
+net, not the sky grid — but it must not be left contradictory.
+
+**Proposed first measurement (NOT yet approved):** the one free parameter in the
+new scheme is patch size, and it is set by the twist. Detect all sources per frame
+on a clear night, fit a local transform per patch, and measure how much patch A's
+transform disagrees with patch B's as a function of separation and of time through
+the night. That disagreement *is* the patch size, and it needs no pole, no
+catalogue and no plate scale — which is the point.
+
+**Still standing from earlier today** (not invalidated by the pivot): the plate
+scale 0.0196–0.0220 full-res, the trail-as-time-series nightly quality gate, and
+the HTM machinery itself (which remains valid as an output indexing scheme even
+though it is no longer the working frame).
