@@ -4,6 +4,25 @@
 
 ## What exists
 
+- **Retrieval failure fixed: `--said`** (2026-08-21, aifabric `e85429e`). A
+  session searched for a scheme Peter wrote the evening before, got 639 hits,
+  read six, and told him it didn't exist. All six were its *own* tool calls from
+  minutes earlier — hourly ingest had already indexed them, and they matched
+  every query term verbatim because the agent had just typed them. Three faults
+  compounded: (a) `match` is OR, so a 5-word query matches anything with any one
+  word and the real message sinks; (b) **tool output is stored `role=user`** (the
+  harness is the speaker), so `--role user` — the obvious "what did Peter say"
+  filter — is ~27k `[tool_result]` docs; (c) nothing told the caller that a big
+  total with a useless page one means the *query* is too broad. Now: `sessions
+  search --said` (role:user minus tool traffic) turns that same 5-word query from
+  639 hits into 3 with the answer at #1; search prints a truncation note; `--hints`
+  rewritten around the four rules the failure broke. `--exclude-mine` exists but
+  is **deliberately not the default** — sessions run for days across strands and
+  here the answer was in the caller's own session, so auto-excluding would have
+  turned six wrong hits into zero. Lesson for the RAG roadmap: **lexical recall
+  fails silently**, and an agent reading page one of a diluted query will report
+  absence with confidence. Semantic/kNN would have found this on the first try.
+
 - **AGY sessions included in backup and redact** (2026-08-20). Updated
   `osd/bin/backup-raw-sessions` and `aifabric/bin/redact-from-sessions` to point
   at `~/.gemini/antigravity-cli/brain` (the AGY path) alongside `~/.claude/projects`.
