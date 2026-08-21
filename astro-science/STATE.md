@@ -2481,3 +2481,72 @@ Two things IMPROVE with the gap:
 ~4.6 px median between consecutive nights, so consecutive nets overlap almost
 exactly. Match each night to a REFERENCE net directly rather than chaining, and
 organise accumulation by sidereal time so frames months apart land on the same sky.
+
+## THE MESH AND THE ACCUMULATOR ARE DIFFERENT STRUCTURES (2026-08-21)
+
+Peter: *"are we really going to get 3 stars which we can track in a 3x3 pixel
+fragment? occasionally."* The arithmetic says never:
+
+    seed net (8 frames)     862 stars   node spacing 118 px   3-star patch 204 px
+    after rung 3           3380         spacing  59 px        patch 103 px
+    10x deeper            34000         spacing  19 px        patch  33 px
+    100x deeper          340000         spacing   6 px        patch  10 px
+
+    3 stars in a 3x3 NATIVE px patch needs 4.0 MILLION stars in frame — 1178x
+    the current net. Not reachable at any plausible depth.
+
+**But it is never required, because a 3x3 px fragment is an ACCUMULATOR cell, not
+a MESH cell.** This session repeatedly conflated the two. They are separate
+structures with different resolution drivers:
+
+| | nodes / cells | resolution set by | how it is evaluated |
+|---|---|---|---|
+| **mesh** (displacement field) | at stars, 59 native px today | STAR DENSITY | smooth field, interpolated anywhere |
+| **accumulator** (sky map) | 3x3 px cells + sub-sampling | PSF and REGISTRATION | asks the mesh where a pixel's light goes |
+
+The mesh is not a set of independent local fits, so it never needs 3 stars inside
+the region it is evaluated at. Interpolating it to 3 px granularity is justified
+by measurement, not assumption: **64% of the displacement residual is shared with
+each star's 8 nearest neighbours** at 56 px spacing. The 36% that is not shared —
+0.277 px half-res — **IS the interpolation error, and it is already inside the
+0.52 native px registration budget.** Not double-counted.
+
+**This is also the route to the 1.6x registration improvement that a 1-native-px
+sub-sample needs.** Densifying the mesh moves nodes closer and reduces the
+interpolation error directly. Rung 3 took node spacing 118 -> 59 px in one pass on
+seven minutes of data.
+
+**Mesh subdivision must be data-driven** (Peter: *"we don't know which fragment
+will not yield more stars and be sub devided"*) — refine where stars appear, stay
+coarse where they do not. That is `design/adaptive-refinement.md`'s "depth follows
+information, not area", applied to the MESH rather than the sky map. The
+accumulator does not wait on it: it interpolates whatever mesh currently exists.
+
+### Deletion criterion, in Peter's formulation
+
+*"the sub sampling sets the point at which the motion vectors are known
+sufficiently well to not benefit from refining and the image can be deleted."*
+Better than the earlier "residual below the centroid noise floor", because it ties
+the test to the accumulator's own design choice rather than an external number.
+
+    registration today 0.52 native px
+    3x3 px cell, 1x1 sub -> 3.00 px samples   sigma/sub 0.17   deletable NOW
+    3x3 px cell, 3x3 sub -> 1.00 px samples   sigma/sub 0.52   marginal
+    1x1 px cell, 3x3 sub -> 0.33 px samples   sigma/sub 1.56   registration-limited
+
+**~1 native px sub-samples is the design point**, because two independent limits
+meet there: registration needs only 1.6x improvement to support it, and the PSF
+(~2-3 native px FWHM) carries no information below it, so finer sub-sampling buys
+nothing optically however good registration becomes. **This makes the outstanding
+PSF measurement load-bearing** — it fixes the accumulator's permanent resolution,
+and there are currently three mutually inconsistent figures for it.
+
+The criterion is **per-frame and time-varying**: a frame becomes deletable when the
+CURRENT mesh registers it below the sub-sample size, so old frames become deletable
+as the mesh densifies and storage pressure eases by itself.
+
+An earlier note here advised "accumulate finer than you think you need, binning
+down is free" — **wrong on this criterion**. Storage is not the constraint
+(accumulator 68 MB vs 650 GB/yr raw); registration is. Accumulating at 1/3 px and
+deleting would bin photons into cells we cannot place them in. Deletion should go
+via `trash`, keeping the 14-day grace window.
