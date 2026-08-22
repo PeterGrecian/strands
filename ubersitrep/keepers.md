@@ -89,8 +89,7 @@ blurbs, not by the `keeper` grep. That gap is the roster's reason to exist.
 | Strand | Verdict | Serves | Evidence |
 |---|---|---|---|
 | `aifabric-sessions` | **keeper** | the session archive + RAG in OpenSearch | declared; running infra, hourly ingest. **Owns the archive the keeper-keeper needs** |
-| `aifabric-pane-driver` | **keeper** | the driver agent | declared; vocabulary settled |
-| `aifabric-pane` | **builder** | the single pane of glass | declared keeper but 530-line STATE, active build to 08-12 — **verdict contested, see below** |
+| `aifabric-pane` | **builder** | the single pane of glass — surface *and* driver | **absorbed `aifabric-pane-driver` 2026-08-22** (3 pane/chat strands → 1); active build, browser-compositor spike pending |
 | `aifabric` | **builder** | tools/libraries/templates of stranding | 513-line STATE, practice half, still building |
 | `aifabric-essay` | **builder** | the argued case for using AI well | prose deliverable, not yet written |
 | `aicli` | **keeper** | the launcher itself | bounded tool, "hardened here" |
@@ -123,7 +122,6 @@ blurbs, not by the `keeper` grep. That gap is the roster's reason to exist.
 | `testbook` | **builder** | the sleep-listening app | mid-pivot 2026-07-25 |
 | `glacier-app` | **builder** | Deep Archive photo archiving | "prototype now, app later" |
 | `cleft-plus` | **builder** | usage observability | "Grow cleft from…" |
-| `strandchat` | **builder** | browser window onto the mesh | deliverable-shaped |
 | `srfc` | **builder** | court-booking automation | "Integrate…" |
 | `manim` | **builder** | animations in cairo, occasionally manim | blurb written 2026-08-14 (Peter): cairo is the usual tool, manim only when its scene machinery earns the dependency — **the strand name is the library that got there first, not the tool of choice** |
 | `bookmarks` | **builder** | bookmark reorganisation | self-declares short-lived, retires when done |
@@ -131,10 +129,27 @@ blurbs, not by the `keeper` grep. That gap is the roster's reason to exist.
 
 ## Tally
 
-**41 rows: 20 keeper, 19 builder, 2 provisional** — counted by `to-whom --list`,
+**40 rows: 20 keeper, 18 builder, 2 provisional** — counted by `to-whom --list`,
 not by hand. The `keeper` grep over CLAUDE.md finds only **10**, so **the
 declared count is half the real one**, which is exactly why the roster is a file
 and not a grep.
+
+*(Re-counted 2026-08-22 after the pane/chat consolidation removed the
+`aifabric-pane-driver` and `strandchat` rows.)*
+
+**⚠ 18 of these 40 rows name strands that are no longer live** — all sitting in
+`archive/` after the 2026-08-22 archiving sweep: `astro-canon`, `astro-polecam`,
+`muppet-status`, `xmatters`, `aifabric-essay`, `splay-grid`, `splay-mosaics`,
+`splay-graticule`, `splay-ai-discovery`, `spend`, `calendaralarm`, `testbook`,
+`glacier-app`, `cleft-plus`, `srfc`, `manim`, `bookmarks`, `cv`. **The router
+will happily route to every one of them** — `to-whom` ranks the row, prints
+`route: aicli -s <name>`, and nothing checks the strand still exists. Nearly
+half the gate's weights are dead. This is exactly the silent mis-route the
+roster exists to prevent, so it needs a deliberate pass: decide whether an
+archived strand keeps a row marked **retired** (consistent with "record
+transitions, don't overwrite them") or loses it, then apply that uniformly —
+and ideally teach `to-whom` to flag a row whose strand dir is gone, so the
+next sweep cannot reopen the gap.
 
 *(Corrected 2026-08-14. The hand-written tally said "42: 22/18/2" and was wrong
 on every figure — the first thing `to-whom` found. Arithmetic over the rows is
@@ -145,12 +160,6 @@ the tool's job now; don't hand-count it again.)*
 *Lexical overlap ranks by wording; these are rulings. Where a rule contradicts
 the ranking, the rule wins — the gate applies them, `to-whom` only shortlists.*
 
-- **Pane / deck / layout work → `aifabric-pane-driver`, not `aifabric-pane`.**
-  The ranking puts `aifabric-pane` first on any pane wording (it owns the design
-  and says so), but the driver is *the thing you talk to*. Verified 2026-08-14:
-  "replace pane 2 with the deck" ranks pane [10] over driver [9] — wrong by
-  Peter's ruling, right by wording. Design questions go to `aifabric-pane`;
-  making a deck *do* something goes to the driver.
 - **Subject-matter routing is never delegated to a surface agent.** The driver
   owns the surface; ubersitrep owns the subject matter (STATE, 2026-08-13).
 - **Cost / billing / subscription questions → `spend`, even when they say
@@ -161,12 +170,35 @@ the ranking, the rule wins — the gate applies them, `to-whom` only shortlists.
   is **what is being asked about the bytes**: what they *cost* is `spend`, where
   they *live* is `astro-storage`. Both at once is a hand-off, not a contest.
 
+## Retired rules — kept as evidence
+
+*Not applied (this heading is outside the block `to-whom` parses). Kept because
+a rule that had to be retired says more than one that still holds — see
+"Record transitions, don't overwrite them" under Maintenance.*
+
+- **Pane / deck / layout work → `aifabric-pane-driver`, not `aifabric-pane`**
+  (2026-08-14 → **retired 2026-08-22**). The two strands merged in the 3→1
+  pane/chat consolidation, so the distinction it policed no longer exists: all
+  pane / deck / layout / driver work now goes to `aifabric-pane`, design question
+  or not. **The rule's own shape was the warning.** Wording ranked
+  `aifabric-pane` first on *every* pane utterance ("replace pane 2 with the
+  deck" scored pane **[10]** over driver **[9]**) and the ruling had to override
+  it each time. A rule that must permanently contradict the ranking is evidence
+  the *split* is wrong, not that the ranking is — the ranking was reading the
+  blurbs correctly and reporting that the two strands were one subject.
+  **Generalise: a standing override with no exceptions is a merge waiting to be
+  done.**
+
 ## Contested rows — resolve at the archive diff
 
-- **`aifabric-pane`** — declares keeper, behaves builder (530-line STATE, active
-  to 08-12). Best candidate for **fork-off**: the vocabulary ladder
-  ([[pane-of-glass-vocabulary]]) is settled and served while the deck work
-  continues.
+- **`aifabric-pane`** — declares keeper, behaves builder (600+-line STATE, active
+  build). Was listed as the best candidate for **fork-off** (the settled
+  vocabulary ladder [[pane-of-glass-vocabulary]] served while deck work
+  continues) — **note that the estate just did the opposite here**, merging
+  `aifabric-pane-driver` back in on 2026-08-22 because the forked half could not
+  move without its host. Fork-off is still the right shape for a settled,
+  independently-*asked-about* part; it is the wrong shape for a component that
+  only ever answers alongside the thing it belongs to. Re-judge on that test.
 - **`astro-capture`** — declared development, but its *conventions* (epoch_ms
   stems, run-tags, one-capture-one-frame) are already durable and asked about.
   Same fork-off shape.

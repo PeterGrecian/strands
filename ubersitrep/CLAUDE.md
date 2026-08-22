@@ -62,10 +62,11 @@ judgement this strand exists for. Brief, hand off, take the verdict back.
 `dispatch` (`aifabric/docs/decisions/dispatch.md`, **unbuilt**) is the dependency
 that makes this affordable — until it exists, delegate sparingly and deliberately.
 
-**Boundary: the driver owns the surface; ubersitrep owns the subject matter.**
-Anything about panes, decks or layout is delegated sideways to
-`aifabric-pane-driver` — never done here. Routing over *expertise* is this
-strand's; manipulating the *display* is not.
+**Boundary: the pane owns the surface; ubersitrep owns the subject matter.**
+Anything about panes, decks, layout or the driver is delegated sideways to
+[[aifabric-pane]] — never done here. Routing over *expertise* is this strand's;
+manipulating the *display* is not. (That strand absorbed `aifabric-pane-driver`
+on 2026-08-22 — surface and driver are one address now.)
 
 Dispatching needs two inputs: **`keepers.md`** (who owns this) and **liveness**
 (`strand-ps` + the mailbox spool — is anyone home).

@@ -242,12 +242,25 @@
     handler. `unzip` is in `common_packages`, but a role must not depend on
     `common` having run first — same class of latent portability bug as the
     nfs-server generator-dir one. Role now installs it.
-  - **`pip` CANNOT be converged from another host** — inventory has it as
-    `ansible_host=localhost ansible_connection=local`, so `--limit pip` from zog
-    silently targets *zog*. `ansible pip -m ping` returns SUCCESS while the real
-    pip (192.168.0.19) does not answer at all. zog has the same shape. Worth a
-    decision: give pip a real `ansible_host` like the other laptops, or the
-    inventory will keep lying about it.
+  - **`pip` fixed and converged** (2026-08-22). Three separate faults stacked:
+    (1) the inventory had `ansible_host=localhost ansible_connection=local`, so
+    `--limit pip` from zog silently targeted *zog* and `ansible pip -m ping`
+    returned SUCCESS while the real pip was untouched — now
+    `ansible_host=192.168.0.61`; (2) the address had drifted (pip is a **DHCP
+    lease** above the .12 pool start — muppet/puppy are pinned below it; pip
+    wants a reservation or it will drift again), fixed in `/etc/hosts` by Peter
+    and now declared in `network_hosts_entries`; (3) zog could not SSH to pip
+    because `~/dotfiles/.ssh/config` sets `IdentitiesOnly yes` with a single
+    `IdentityFile ~/.ssh/id_ed25519` for all of `192.168.0.*`, so the **shared
+    fleet key `id_ed25519_b` (`SHA256:CvosCos…peter@muppet`) was never offered**
+    — and pip lacked zog's own key. Bootstrapped once with
+    `-e ansible_ssh_private_key_file=…/id_ed25519_b`; the `users` role then
+    installed zog's key, and plain `ssh peter@pip` now works.
+    **Root cause still live**: that single-IdentityFile line means any host
+    whose key isn't yet distributed is unreachable from zog. Worth a second
+    `IdentityFile` line in dotfiles.
+  - pip verified: rclone 1.75.0, `scope = drive.file`, new client, no
+    retirement notice.
 - **Own Google OAuth client: DONE, LIVE, and durable** (2026-08-22). rclone's
   shared client_id is being retired "during 2026". Peter's Desktop-app client is
   in SSM as **`/rclone/client-id` + `/rclone/client-secret`** (AWS only — no host

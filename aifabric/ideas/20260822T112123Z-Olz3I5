@@ -1,0 +1,39 @@
+[carried from aifabric-pane-driver on its 2026-08-22 archival; original spool file 20260813T081320Z-TSSCDX]
+
+Doorbell should be a poll, not a push (Peter, 2026-08-13).
+
+PROVEN TODAY by killing an xfce4-terminal window holding 3 tabs: astro-capture
+(1d), astro-science (1d, mid-flight muppet meteor scan), aifabric-pane-driver
+(2d23h). All 3 claude processes stayed ALIVE and Sl+, ptys still open and
+writable, transcripts intact. But they are INERT - unreachable by every route:
+
+  1. strand-mailbox send  -> rang MAILBOX.md, but the LIVE session's waiter
+     consumed it. Doorbell is keyed to the FILE, not the session, so a second
+     session on a strand silently eats the first's mail. One ring, first
+     reader wins - it is a race.
+  2. ding <pts>           -> does not type into the terminal at all; resolves
+     pts -> its MAILBOX.md and writes there. Same dead end one layer down.
+  3. raw write /dev/pts/N -> bytes land (exit 0) but NO turn: no tool children,
+     no transcript write, CPU only the idle render loop. Tried CR, LF, LF+CR.
+     Asked it to message back as a positive test: 150s, no reply.
+
+ROOT CAUSE is not 'the terminal died'. Everything needed to work survived -
+process, context, transcript, pty. Only the path that converts input into a
+TURN died, because that path runs through the TUI. The expensive part (3 days
+of context) survives; the cheap part (wiring) breaks; the expensive part is
+lost anyway.
+
+FIX: sessions POLL a file every ~5s instead of being pushed at. Inverts the
+dependency - session reaches OUT to the filesystem, which does not care whether
+a window exists. Cost is negligible: measured idle TUI render loop is already
+13 ticks/6s just drawing a screen nobody watches; a stat() is noise beside it.
+Also kills the collision (per-session read-offset has no race, both sessions
+see the message) and makes 'please dcp' reachable in the one situation that
+needs it - a session about to die, which is exactly when push-wake is gone.
+
+CAVEAT: not a total fix. Needs the session to be BETWEEN turns to notice; one
+wedged mid-tool-call still will not answer. Converts unconditional loss into
+recoverable loss.
+
+Driver/deck territory: this is the mail half of the domain (layout, keepers,
+attention, mail).

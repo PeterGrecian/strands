@@ -620,7 +620,8 @@ to load.** That is why this is a router and never a LoRA.
 Peter, closing the keeper-keeper discussion: **"the keeper-keeper should be the
 only interface I type into."** Example given — *if I want to replace one pane
 with another, ask `aifabric-pane-driver` to do it, and if it is not live, start
-it up.* And the allocation that fixes the role's weight: **"if I was allowed one
+it up.* (That strand merged into [[aifabric-pane]] on 2026-08-22 — the example
+stands, the address changed.) And the allocation that fixes the role's weight: **"if I was allowed one
 agent of Fable and the others were Opus, it would be that one."**
 
 **This promotes the strand from lookup to front end.** Everything below (the
@@ -1654,9 +1655,11 @@ and the rest of the portfolio list in super/GLOBAL.md.
   choreography absorbed here displaces routing. **`dispatch` must be built
   first** ([[forkterm-coordination-tax]]); without it the front end drowns the
   strand in plumbing. Needs a second input beyond the roster: **liveness**
-  (`strand-ps` + mailbox). **Boundary with `aifabric-pane-driver`: the driver
-  owns the surface, ubersitrep owns the subject matter** — pane/deck/layout work
-  is delegated sideways, never done here.
+  (`strand-ps` + mailbox). **Boundary with [[aifabric-pane]]: the pane owns the
+  surface, ubersitrep owns the subject matter** — pane/deck/layout/driver work
+  is delegated sideways, never done here. (Was "boundary with
+  `aifabric-pane-driver`"; that strand merged into `aifabric-pane` 2026-08-22,
+  so the surface has one address again.)
 - **ubersitrep is the keeper-keeper — a router over the keepers** (2026-08-13,
   Peter): the estate's mixture-of-experts is **the keeper strands**; ubersitrep
   holds the **gate**. Chosen over a LoRA because the expertise lives in *context*

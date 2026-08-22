@@ -5,8 +5,14 @@
 ## What this is
 
 An **aifabric-pane**: one agent-driven surface replacing scattered strand
-terminal-emulator windows. This strand is the driver. Split out of
-[[aifabric]] on 2026-08-03; full design in `aifabric/ideas/20260803T144642Z-ZAMrik`.
+terminal-emulator windows. Split out of [[aifabric]] on 2026-08-03; full design
+in `aifabric/ideas/20260803T144642Z-ZAMrik`.
+
+**This strand owns the pane END TO END** — surface *and* driver. Consolidated
+2026-08-22 (3 strands → 1): `aifabric-pane-driver` merged back in (see THE
+DRIVER below) and `strandchat` archived as a closed direction (see CHAT below).
+The surface had grown three strands that could only be worked on together;
+routing anything about panes, decks, layout or the driver comes here.
 
 ## DIRECTION DECIDED 2026-08-10 — browser compositor (read this first)
 
@@ -114,6 +120,156 @@ cards: a page-tab should be a little CARD with a headline + a few summary lines
 in the curses overview surface we already own.
 
 ---
+
+## THE DRIVER — merged in from `aifabric-pane-driver` (2026-08-22)
+
+`aifabric-pane-driver` was split out on 2026-08-10 and **archived back into this
+strand on 2026-08-22**: the split was made while tmux was the compositor and the
+driver was a Claude session in a pane. Under the browser pivot the driver is *a
+component of this surface* ("a first-class web-app component"), and the driver
+strand's own last word was **"Waiting on `aifabric-pane`'s spike"** — two strands
+blocked on each other over one surface. One strand now owns the pane end to end.
+Its full history is in `archive/aifabric-pane-driver/`.
+
+### The one-sentence job
+
+**The driver is the natural-language interface to the deck.** Peter speaks; the
+driver understands; it composes deterministic tools into the compound task.
+Every deck has exactly one overview and one driver.
+
+### The layering — interface over implementation (Peter, 2026-08-10)
+
+| Layer | What it is | Property |
+|---|---|---|
+| **Expressive control** | What Peter says. Jargon, dense and precise. | Interpreted |
+| **Deterministic tools** | What the driver emits. Verbs, composed. | Predictable, identical every time |
+
+**Interpret freely — that is the job.** Determinism is a property of the
+*implementation*, not a limit on what may be understood. A resize asked for in
+words always costs a turn; the turn IS the interface and is already paid. What
+determinism buys is that the compound task executes reliably once understood.
+
+**Jargon is wanted, not avoided.** `pane grow astro-storage 20` is what the
+driver EMITS; *"ribbon the quiet ones, bring astro-storage to main"* is what
+Peter SAYS. Never make him type the first to get the second. **Compound is the
+unit** — one utterance routinely becomes several tool calls.
+
+**Overview and driver stay SEPARATE, designed to merge** (2026-08-10, Peter).
+The overview is status, read-only, no agent, and must stay truthful while the
+driver is busy, asleep or dead. The merge seam is kept open, not taken.
+
+**Driver, not conductor** (Peter's word; "conductor" retired, as "cockpit" was).
+Rename gotcha: the scrub collapsed two words — "conductor" was the AGENT,
+"driver" was the PANE. Say **"the driver"** for the agent, **"the driver pane"**
+for the term; blind `sed` yields "the driver's driver".
+
+### Jargon (grows from use — the live artefact)
+
+The control vocabulary, curated as it emerges rather than designed up front.
+**THE LADDER IS ASPIRATION, NOT ENFORCEMENT** (Peter: *"sort of - I'll get it
+wrong from time to time but it's a good idea"*): keep window/pane/term precise in
+the WRITING, understand them alike when he speaks, **never correct him mid-flow**.
+
+Observed in Peter's own speech (2026-08-10, first live driving):
+
+- **"this window"** → the term the driver is in. He says *window* for *term*.
+- **"<strand> bigger/smaller"** → resize by STRAND NAME, never a term id or
+  position. Strand-name is the natural address — which is exactly why the
+  identity guard matters: the name must resolve to the right term.
+- **"make X smaller and Y bigger"** → one utterance, one compound: a relative
+  reallocation between two terms, not two independent resizes.
+- **"use idea to tell <strand> about X"** → compose a house tool at a named peer.
+  He named the TOOL — the vocabulary reaches past deck geometry into fabric
+  plumbing, a nudge that a deck-only scope was too narrow (and an argument for
+  this merge).
+- **TERM HEIGHTS — three useful sizes, arrived at by feel (2026-08-17).** Peter
+  set these live; they are the floors the decay model needs, and they are HIS
+  numbers, not derived:
+  - **2 rows = a RIBBON.** Parked, alive, visible, clickable — not readable.
+    Enough for the border label plus one line.
+  - **9 rows = the useful minimum.** Peter: *"this is a useful size whilst 6 was
+    not"* — the readable/unusable boundary sits between 6 and 9.
+  - **5 rows = too small to type into.** Peter: *"I can't read the typing"*.
+  Consequence for reflow: a quiet keeper may decay to 2, but a term being TYPED
+  INTO must never fall below ~9. **Interactive and watched terms need DIFFERENT
+  floors; one global minimum gets it wrong either way.**
+
+### The tool layer (inherited from the tmux prototype)
+
+Code in `aifabric/tmux-deck/` (moved there 2026-08-10, aifabric `0a151b8`;
+`pane-conductor-helpers.sh` → `pane-driver-helpers.sh` in `e778b58`).
+
+- **`pane` — deterministic deck verbs** (proven live 2026-08-09): `list` · `up` ·
+  `drop` · `grow` · `even` · `ribbon` · `restore`. **This is the driver's real
+  interface** and the artefact most worth carrying across the pivot.
+- **`pane-driver-helpers.sh`** — the primitives the verbs wrap; registry lives in
+  the tmux session env as `PANE_KEEPER_<strand>`.
+- **`pane reconcile [--fix]` + verify-and-refuse guard** (2026-08-10): identity
+  re-derived from the running `aicli` argv; no verb acts on a term whose tag has
+  diverged. Written up in `aifabric/method/identity-verification.md`.
+- **Proven live** (2026-08-03, Peter scored the driver 5/5): a plain Claude
+  session sourcing the helpers IS a working driver — no agent framework needed.
+
+### Driver obligations under attention-driven reflow
+
+- **A hand-set size must PIN the term and suspend its decay.** If the deck
+  quietly undoes a requested size, the surface feels broken and every later
+  request is untrustworthy. An explicit size is an override, not a suggestion.
+- **Driver and overview are FURNITURE, not work** — exempt from decay. The
+  driver must stay findable at a constant place and a readable size.
+- **Builders must not be silently squeezed.** Keepers are idempotent and safe to
+  shrink; a builder mid-trajectory is not.
+
+### Driver-side open questions (carried forward)
+
+- **The vocabulary is the prize — BOTH halves.** Re-derive the tool set for a
+  compositor where terms are DOM cells: which verbs are backend-independent
+  (`up`/`drop`/`list`) vs tmux-shaped (`even`, `grow <cells>`, `ribbon` all
+  assume a row of fixed-width panes, which the downward-scroll model discards)?
+  A `focus`/`bring-to-main` verb is implied by the thumbnail strip and has no
+  tmux ancestor. **The halves need not map 1:1.**
+- **Compound tasks are the unit of work** — name the recurring compounds as they
+  appear; they are the jargon's natural referents.
+- **Driver's own address space.** `pane_index` renumbers on kill; the prototype
+  wanted a stable `@slot`. In the DOM this is free (`data-strand`). Carry the
+  *requirement*, drop the hack.
+- **Identity must be re-derived from the running process, never cached at
+  spawn.** Root cause found 2026-08-10: the spawn path is sound; drift comes
+  from a human typing `aicli <other>` into a live term's shell, so the tag
+  describes the process that *used to* run there. **The registry is
+  authoritative about WHERE a term is and stale about WHAT it runs.**
+  `data-strand` in the DOM will be just as unclobberable and just as stale.
+- **Verification belongs IN the tools, not in the driver's discretion.** The
+  guard sits in the shared resolve path. Generalise: where correctness depends
+  on a check, the tool enforces it.
+- **How the driver is addressed in a browser** — text box? persistent? streaming?
+- **`pane up` cannot serve the live deck**: it needs `PANE_STRANDS_ROW`, unset on
+  the standard-layout deck. The verbs assume a shape the layout has moved past.
+- **Doorbell re-arm loop** (found 2026-08-10, still worth fixing centrally):
+  `strand-mailbox drain` empties the SPOOL but not `MAILBOX.md`, so a `--keep`
+  waiter re-arms against a still-full mailbox and rings instantly, forever. Fix
+  in the moment: `: > MAILBOX.md` before re-arming.
+
+## CHAT — a closed direction (`strandchat` archived 2026-08-22)
+
+`strandchat`/`forkchat` was **the wrong shape**, as recorded in the pivot above:
+a chat transcript per strand is not how you watch many strands — the thumbnail
+strip is. The strand is archived (`archive/strandchat/`, with its deployment
+sketch in `ARCHITECTURE.md`: pip-brain/puppy-window, Tailscale `--serve`).
+
+What survives it and must not be lost:
+
+- **`aifabric/bin/forkchat` is shipped and hardened** (PR #3 `c7f2046`, hardening
+  `e7804fe`: Basic-auth, Host-header allowlist, fail-closed off loopback).
+  Ownership passes to the **[[aifabric]]** strand as one of its `bin/` tools; it
+  is no longer a workstream of its own.
+- **The phone-onto-the-mesh requirement is real and unmet.** Reaching the mesh
+  from a phone over Tailscale was chat's genuinely good idea. It belongs to the
+  browser compositor now — a surface served over `--serve` answers it better
+  than a chat page did.
+- **The format gap is still open**: the live strand-mailbox spool is flat and
+  loses sender/lineage; the `~/.forkterms` tree wants `### src → dst`, colour and
+  parent. Whichever surface reads mail eventually has to pick a direction.
 
 ## PROTOTYPE-ERA (tmux deck) — history below this line
 
@@ -343,6 +499,27 @@ the driver pane puppeteering real keepers via the tmux CLI:
   the curses `.py`; keep only as reference for the cleft-cadence bug it had).
 
 ## Decisions
+
+- **CONSOLIDATED 3 STRANDS → 1 (2026-08-22, Peter: the pane/chat strands were
+  "getting a bit confused").** `aifabric-pane-driver` merged back in and
+  `strandchat` archived; this strand owns the surface end to end. Reasons, in
+  descending order of how much they generalise:
+  1. **A permanently-blocked fork is not a strand.** The driver's last status was
+     *"Waiting on `aifabric-pane`'s spike"* — layout was never its call.
+  2. **A standing routing override with no exceptions is a merge waiting to be
+     done.** The roster carried a rule sending pane work to the driver *against*
+     the word-ranking, every single time (see `ubersitrep/keepers.md`, Retired
+     rules). The ranking was right: it was reading the blurbs and reporting one
+     subject.
+  3. **The pivot dissolved the boundary.** Once the driver is a web-app component
+     rather than an agent in a tmux pane, it is part of this surface.
+  4. **Chat was already recorded here as a wrong turn** — a per-strand transcript
+     does not scale to watching many strands; the thumbnail strip is the answer.
+     `forkchat` the *tool* survives, owned by [[aifabric]].
+  The asymmetry survives as a rule about *components*: the design sets vocabulary
+  and layout, the control layer curates only control jargon and defers on the
+  rest. A component that redesigns its host is still the failure mode — it just
+  does not need its own strand to prevent it. Write-up: `aifabric/method/panes.md`.
 
 - **Driver is a tmux-CLI puppeteer that LIVES IN the driver pane** (decided
   2026-08-03, resolves the self-hosting question). It runs as a plain process in
