@@ -2858,3 +2858,57 @@ path, but it is no longer forced.
 Earlier in this session the 6-minute data gave −2924 ± 938 ppm/dioptre. Both the
 sign and the magnitude were wrong, for the same reason: aliasing plus the phase
 error. **+8147 ppm/dioptre** supersedes it.
+
+### The 5 frames, resolved: two offsets, and DATE-OBS is a delivery time
+
+Peter: *"the delay in the streaming capture path, does that mean our time
+measurements are offset?"* Yes. Reading `astro/capture/streaming.py`:
+
+```python
+picam2.set_controls({"AfMode": 0, "LensPosition": lp_cmd})   # commanded
+req  = picam2.capture_request()                              # frame already in flight
+meta = req.get_metadata(); lp_rep = meta.get("LensPosition")  # in force for THIS frame
+epoch_ms = int(time.time() * 1000)                            # AFTER the request returns
+h["DATE-OBS"] = ...epoch_ms...
+```
+
+**The estate already records the honest value.** `LENSPREP` (reported) runs
+exactly **4 steps behind** `LENSPOS` (commanded) in every frame checked — frame
+0 commanded 1.40 reports 1.32; frame 10 commanded 1.30 reports 1.52.
+
+But the photons want **5**, not 4:
+
+```
+fold the breathing on LENSPOS            12.5% linear
+fold on LENSPREP                         36.7% linear
+fold on LENSPREP shifted one more frame  98.9% linear
+```
+
+So libcamera's reported LensPosition is itself one frame optimistic. **The rule
+is: true focus during frame k = LENSPREP(k−1) = LENSPOS(k−5).** Anything that
+reads per-frame focus should use that, not the commanded value.
+
+**DATE-OBS is the frame's delivery time, not its exposure start.** `time.time()`
+is sampled after `capture_request()` returns, so at minimum it is one full
+exposure (59.9 s) late, and the FITS convention wants exposure start while
+astrometry wants the midpoint — so the effective epoch is off by **≥90 s**. If
+the pipeline is also buffering ~4 frames it is ~5 minutes.
+
+Which of those cannot be settled from the archive: a 4-frame *control delay* and
+a 4-frame *buffer* produce identical LENSPREP behaviour. `req.get_metadata()` is
+already called for `SensorTemperature`; taking **`SensorTimestamp`** from the
+same dict and differencing it against `time.time()` settles it on the next frame
+captured, and would be the right thing to write into DATE-OBS anyway.
+
+What this does and does not break:
+
+| | |
+|---|---|
+| time *differences* | **unaffected** — the 99.93% sidereal rate says cadence is right to 0.07% |
+| cross-night matching by sidereal time | **unaffected** — a constant offset is common to all nights and cancels |
+| absolute epoch (ephemeris, catalogue solves) | **affected** — 90 s = 0.375° of rotation, 5 min = 1.25° ≈ 30 px at the field edge |
+
+That lands directly on the catalogue work proposed above for the Polaris
+conflict: an absolute solve assumes an absolute sidereal time, and 1.25° of RA
+error would corrupt the identification it depends on. **Fix the timestamp before
+starting the catalogue work, not after.**
