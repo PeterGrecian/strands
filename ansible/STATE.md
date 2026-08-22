@@ -2,12 +2,58 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
-**Status (2026-08-22): the reachable fleet is converged and rclone works.**
+**Status (2026-08-22): vole now has single-address wired/WiFi failover, and it
+is ansible-managed.** The reachable fleet is converged and rclone works.
 muppet, puppy, pip, zog, vole and eclipticam all run upstream rclone 1.75.0 on
 Peter's own OAuth client (`drive.file`), verified against Drive with no
 retirement notice. The six offline Pis pick the role up on their next converge.
 
 ## What exists
+
+- **vole: single-address wired/WiFi failover on `bond0`** (2026-08-22,
+  `~/ansible`, `network` role). vole's `.9` now lives on an ifupdown
+  active-backup bond rather than on a physical link, so it survives either link
+  dying without ever appearing twice on the subnet. This was the
+  "prefer wired, fall back to WiFi, same IP" item; Peter's call was to scope it
+  to vole rather than do the whole fleet, because vole is the only host where
+  the same-address constraint is hard (its `.9` is pinned in the OpenSearch
+  compose `network.publish_host` + published ports, the other nodes'
+  `discovery.seed_hosts`, and the shared node cert SANs).
+
+  What it took, and the three things that would bite anyone repeating it:
+  - **The old dongle was junk, not misconfigured.** STATE.md previously recorded
+    it as "enumerated, PHY has link, never brought up — pure config gap,
+    hardware fine". That was wrong. The Naxiang/SZNX `35b5:3510` (a fake-gigabit
+    unit) bound to **usb-storage**, exposed no netdev at all, and reset every
+    ~20s. Peter binned it. The replacement `35b5:3500` binds `cdc_ether`
+    correctly → `enxec9a0c13dad6`, 100 Mbps. Only then was there anything to
+    bond.
+  - **`fail_over_mac=active` is mandatory with a WiFi slave.** An 802.11 station
+    cannot accept frames for a MAC other than the one that associated, so the
+    bond must adopt the active slave's MAC instead of imposing its own.
+  - **ifupdown silently skips `wpa-` options on a bond slave.** The first
+    cutover produced a bond that looked healthy but whose WiFi slave was
+    `NO-CARRIER` / "Not connected" — a dead backup that only shows up when you
+    need it. Association is now owned by `wpa_supplicant@wlp1s0.service`.
+    Related: `bond-primary` in the `bond0` stanza is applied before any slave
+    exists and is silently rejected (`Primary Slave: None`); it is set from the
+    primary slave's own `post-up` instead.
+
+  **Failover verified, not assumed** (2026-08-22): downing ethernet moved the
+  active slave to `wlp1s0` with `.9` intact, the gateway reachable, and
+  OpenSearch still answering on `.9` (HTTP 401 = up, wants auth); restoring
+  ethernet reclaimed it via `primary_reselect always`. **OpenSearch never
+  restarted** — the `docker-proxy` sockets bound to `192.168.0.9:9200/9300`
+  survived the address moving between interfaces, so the container has been up
+  4 weeks throughout.
+
+  Codified as `network_bond_*` in `roles/network` (`bond.yml` +
+  `templates/interfaces-bond.j2`), enabled in `host_vars/vole.yml`. Second
+  converge is `changed=0`. Two deliberate choices in the role: **no handler
+  restarts networking** (tearing down the bond is exactly how you strand a
+  headless host — changes land on disk and take effect at reboot or a manual
+  cutover), and **the PSK is not in git** (the task is skipped unless a hashed
+  psk is passed via `--extra-vars`, needed only on a rebuild).
 
 - **zog onboarded; fleet SSH keys made declarative** (2026-08-18, `~/ansible`
   `21fd607`, pushed). zog is a new ChromeOS crostini laptop (Debian 13, arm64,
@@ -357,37 +403,67 @@ retirement notice. The six offline Pis pick the role up on their next converge.
     — likely just extending that role to astrocam. Not urgent, no deadline; it's
     the last hand-installed corner of an otherwise-automated camera.
 
-  - **vole's networking is an outlier — single-homed on WiFi by config**
-    (2026-08-15). vole runs ifupdown + wpa_supplicant with NO NetworkManager /
-    networkd / netplan / resolved. One stanza only: `wlp1s0` static
-    192.168.0.9 — **the .9 everyone resolves is the WiFi address**. Its USB
-    ethernet dongle has *no stanza at all*: enumerated, PHY has link, but never
-    brought up (state DOWN, qdisc noop, carrier_changes 0, rx/tx all zero).
-    Pure config gap, hardware fine. Matters because vole is the OpenSearch
-    voting tiebreaker (see [[duty-cycle-tiering]]) — so no-redundancy is a real
-    property, not cosmetic. Also: static in a file rather than a DHCP
-    reservation, drifting silently from the router's view.
+  - **vole's bond has NOT been reboot-tested** (2026-08-22). The config is
+    right on paper — `auto bond0`, `allow-hotplug` on both slaves, `bonding` in
+    `/etc/modules-load.d/`, `wpa_supplicant@wlp1s0` enabled — and the cutover
+    was done live rather than by reboot precisely to avoid bouncing a
+    voting-only tiebreaker that has been up 4 weeks. The one untested path is
+    cold start, where `bond0` comes up before the hotplug slaves enrol. Worth a
+    reboot at a moment when a walk to the machine is acceptable; the half-dead
+    internal display makes console recovery unpleasant but not impossible.
+    `/etc/network/interfaces.pre-bond` is still on the host as the escape
+    hatch.
 
-  - **Sitewide: "prefer wired, fall back to WiFi, same IP" role** — the
-    generalisation of the vole finding; vole is just where it surfaced. Peter
-    unplugged that ethernet for ~12h and it was *completely invisible* (zero
-    node-left events in 16 days of master log) — the cable fed a link the OS
-    ignored. **Hard design constraint: keep the SAME address on whichever link
-    is up, do NOT give ethernet a second IP.** vole's .9 is pinned in three
-    places (compose `network.publish_host` + published ports, the other nodes'
-    `discovery.seed_hosts`, and the shared node cert SANs), so same-IP failover
-    means zero OpenSearch change; a second address forces cert regen and a
-    force-recreate of puppy+muppet. Options weighed, **no decision made**:
-    (1) both IFs on the subnet, ethernet lower route metric — least machinery,
-    but ARP flux and a carrier-up-but-dead port won't fail over;
-    (2) active-backup bond — textbook and genuinely automatic, but bonding WiFi
-    is fiddly and vole is a 2GB box you want boring;
-    (3) install NetworkManager for `autoconnect-priority` — cleanest semantics,
-    replaces a working stack. Needs Peter's call on the house standard, then an
-    audit of the other always-on hosts for the same drift.
-    Gotcha for whoever picks this up: `/etc/network/interfaces` on vole is
-    **root-readable only** — an unprivileged `cat` returns empty and looks like
-    an empty file. Use sudo. The WiFi PSK is cleartext in that same file.
+  - **USB ethernet dongle inventory** (2026-08-22, swept while answering "are
+    any of ours actually gigabit?"). **Only muppet's is** — an ASIX AX88179
+    (`0b95:1790`), linked at 1000 Mbps, though muppet's own notes say bus
+    placement caps it near 280 Mbps. The rest are 100M parts and honest about
+    it: puppy has a Realtek RTL**8152** (`0bda:8152`, the Fast Ethernet sibling
+    of the gigabit 8153 — one digit apart and easy to mis-buy) at 100 full;
+    vole and pip both have Naxiang SZNX `35b5:3500` "LAN 100M". The only
+    dishonest unit was the binned `35b5:3510`. **vole's links at 100 HALF
+    duplex** where the others get full — likely cable or port negotiation
+    rather than the adapter; worth a different cable next time someone is at
+    the machine.
+
+  - **pip is addressed in inventory by its *lower-priority* link** (2026-08-22).
+    pip is live dual-homed: ethernet `.19` at route metric 100 and WiFi `.61` at
+    metric 600, both DHCP. The inventory says `ansible_host=192.168.0.61` — the
+    WiFi address — so ansible reaches pip over exactly the link pip itself
+    deprioritises, and a WiFi blip loses the host while ethernet is healthy.
+    Same class as the pip address drift already recorded above. Not fixed here:
+    the tidy answer is a DHCP reservation on the ethernet MAC, which is a router
+    change, and pip is a laptop that is not always on the wire at all — so it
+    may be that pip simply should not be pinned to either address.
+
+  - **The house WiFi PSK is not in the secrets store.** It lives cleartext in
+    vole's `/etc/network/interfaces.pre-bond` and (hashed) in its
+    `wpa_supplicant-wlp1s0.conf`, and nowhere central. This is what stops the
+    bond role being fully self-sufficient: a rebuilt vole needs the PSK passed
+    by hand via `--extra-vars`, and it blocks any WiFi rescue path on other
+    hosts. Deliberately not fixed unilaterally — putting the house WiFi key
+    into SSM + GCS is Peter's call, not a side effect of a networking task.
+
+  - **Fleet audit for the same drift** (2026-08-22, run from zog). Three hosts
+    carry a second link the OS never uses, but each is blocked differently, so
+    the "rescue path everywhere else" half of the decision is **not** done:
+    - **homepi** — eth0 `.53` (DHCP), `wlan0` down, radio enabled, 3 APs
+      visible, and **no WiFi profile in NetworkManager at all**. The most
+      valuable candidate: it is the bastion, so losing its cable costs fleet
+      entry. Blocked only on the PSK above.
+    - **muppet** — USB eth `.10`, with **both** `wlp0s20f3` and the built-in
+      `enp0s31f6` idle. It explicitly sets `network_wifi_disabled: true`, a
+      deliberate "WiFi is a dual-homing nuisance" decision. Adding a rescue
+      path there reverses an existing call, so it needs Peter, not a patch.
+    - **astrocam** — eth0 `.67` (DHCP), `wlan0` down. Blocked by the known
+      `pi`-sudo breakage: ansible cannot `become` on this host at all, so
+      nothing can be rolled out to it until that is fixed.
+    - **eclipticam** and **puppy** have no WiFi hardware — nothing to do.
+    - **deskpi, starcam, xoverpi** did not answer ping while astrocam,
+      cloudcam and eclipticam did from the same host, so they are likely
+      genuinely down rather than a crostini routing artifact. That is pifleet's
+      call, noted here only because it limited the audit.
+    - **cloudcam** refused both `pi` and `peter` keys from zog — not audited.
 
 - **puppy `/etc/default/astro-process` cleanup** (low prio, from astro-storage
   mail 2026-08-03): the file still names `CAMERAS='--camera astrocam'`, stale
