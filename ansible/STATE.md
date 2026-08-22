@@ -2,6 +2,11 @@
 
 *Curated summary of where this strand is. Updated at the end of each session.*
 
+**Status (2026-08-22): the reachable fleet is converged and rclone works.**
+muppet, puppy, pip, zog, vole and eclipticam all run upstream rclone 1.75.0 on
+Peter's own OAuth client (`drive.file`), verified against Drive with no
+retirement notice. The six offline Pis pick the role up on their next converge.
+
 ## What exists
 
 - **zog onboarded; fleet SSH keys made declarative** (2026-08-18, `~/ansible`
@@ -287,12 +292,15 @@
     OAuth configuration is incomplete". The missing part was **Branding → App
     domain** (home page + privacy policy). Note the greyed *Save* there means
     "form not dirty", NOT "form valid" — that misreading cost two rounds.
-  - **DEBT: the privacy policy URL is a lie.** `https://www.petergrecian.co.uk/privacy`
-    was entered to satisfy publishing, but the site has a catch-all that returns
-    the homepage (`<title>Peter Grecian</title>`) with HTTP 200 for any path. It
-    is on the consent screen as this app's privacy policy. **A real page should
-    be added to `mywebsite`** (not cloned on zog). Low urgency — nobody but
-    Peter ever sees that consent screen — but it should not be left indefinitely.
+  - **Privacy policy: DEBT PAID** (2026-08-22, `mywebsite` `fc0e7c8`, deployed).
+    `https://www.petergrecian.co.uk/privacy` had been entered to satisfy
+    publishing while the site's catch-all returned the homepage for any path —
+    so the consent screen cited a policy that did not exist. `mywebsite` now has
+    a real `/privacy` route and template stating what is actually true: the
+    client holds `drive.file` (sees only files it created), runs as rclone on
+    Peter's own machines against his own Drive, and sends nothing anywhere but
+    Google's APIs; it also documents the site's own DynamoDB request logging.
+    Allowed in `robots.txt`. Live and verified.
   - **Verified live** on muppet, puppy, eclipticam and zog: `scope = drive.file`,
     `rclone about gdrive:` returns the quota with **no retirement notice**, and a
     real write→list→delete round trip against Drive succeeded. vole skips the
@@ -535,6 +543,13 @@ Standing / not-yet-scheduled items (were in IDEAS.md, promoted 2026-07-29):
 - **Recurring maintenance schedule** (idea, 2026-07-22): stand up a cadence for
   the drift sweep (scheduled `/loop` or cron routine) rather than ad-hoc.
   Decide interval + form with Peter; ties into the drift-watch role.
+
+- **`zip` is missing from `common_packages`** (found 2026-08-22 on zog, when
+  `mywebsite`'s `./deploy` died at the packaging step). The list carries `unzip`
+  but not `zip`, so any host that has to *build* an archive fails late, after
+  the smoke tests have passed. Installed by hand on zog; the one-line fix to
+  `group_vars/all.yml` is still pending. Same shape as the `unzip` gap the
+  rclone role hit on vole — assume nothing about what the base image ships.
 
 ## Decisions
 
