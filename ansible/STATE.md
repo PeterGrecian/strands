@@ -230,11 +230,16 @@ retirement notice. The six offline Pis pick the role up on their next converge.
     `refresh_token` is identical, which is why deploying from SSM authenticates
     anyway. Same treatment applied to the duplicate copy in `roles/apps/gdrive-sync`.
   - **Credential fetch is gated on the aws CLI existing, not on `enable_aws`.**
-    zog has `enable_aws` true but no `aws` binary — intent is not fact. A host
+    zog had `enable_aws` true but no `aws` binary — intent is not fact. A host
     that wants the credential, has no aws CLI *and* no existing rclone.conf now
     **fails loudly**; one that already has a config gets a warning that a
     rotation will not reach it. Silent skipping is exactly how puppy came to run
-    gdrive-sync against a token-less config.
+    gdrive-sync against a token-less config. *(zog's gap closed 2026-08-22:
+    `--tags aws --limit zog` installed aws-cli 2.36.29, re-run `changed=0`. No
+    code change was needed — the `aws-cli` role was already wired to
+    `enable_aws`, it had simply never been run on zog, and the credentials had
+    been placed by hand at onboarding so the host looked configured. The gate
+    the rclone role now applies is what would have caught it.)*
   - **Verified**: muppet (had **no rclone at all**), puppy (dual binaries
     reconciled), zog — all 1.75.0, `rclone about gdrive:` returns the quota,
     re-converge `changed=0`.
