@@ -2550,3 +2550,234 @@ down is free" — **wrong on this criterion**. Storage is not the constraint
 (accumulator 68 MB vs 650 GB/yr raw); registration is. Accumulating at 1/3 px and
 deleting would bin photons into cells we cannot place them in. Deletion should go
 via `trash`, keeping the 14-day grace window.
+
+---
+
+## THE IMAGE PLANE IS NOT A TANGENT PLANE (2026-08-22)
+
+Peter proposed a new pole finder: the max stack finds stars but cannot find the
+pole because the camera orientation moves with time; however *each pair of
+frames* gives, for each star, a tangent to its arc, and the normals to those
+tangents all point at the pole. Their intersection is the pole, and lens
+distortion is why they miss.
+
+Built it (`~/tmp/htm-step1/polenorm.py`). The construction used is the
+**perpendicular bisector of the chord**, which passes through the centre
+*exactly* for any baseline — no small-angle approximation — so each star gives
+one linear constraint `u.p = u.m` and the pole is the least-squares
+intersection. A nice property falls out: a star at distance R from the pole has
+chord `L = 2R sin(a/2)`, so centroid noise `s` tilts its bisector by `s√2/L` and
+displaces it at the pole by `R·s√2/L = s√2/(2 sin(a/2))` — **independent of R**.
+Every star constrains the pole equally well however far from it. Weight
+uniformly.
+
+### What the method is really limited by
+
+Over 8 frames (7 min) the intersection landed 43 px from the then-accepted pole,
+and the lines missed each other by 27 px rms against 12 px predicted from
+centroid noise. 93% of that miss was shared with each star's 4 nearest
+neighbours (44 px away; shuffled control −0.06), so the misses are a smooth
+field, not noise — as predicted.
+
+**But it is not a distortion discovery.** The amplification factor
+`1/(2 sin(a/2))` is 33 at a 7-minute baseline, and 0.8 px of ordinary model
+residual × 33 = 27 px. The bisector construction is a 33× magnifying glass on
+whatever the model gets wrong. Worse, the method inherits the degeneracy it was
+meant to escape: a camera translation `d` between the two frames is *exactly*
+indistinguishable from a pole shift of `d/(2 sin(a/2))`, because
+`c = (I−R)^-1 t`. At 7 minutes a 1.3 px camera drift moves the pole 43 px.
+
+So the method is **baseline-limited, not distortion-limited**. The amplification
+falls to 0.63 over a whole night. That is the whole game, and it is encouraging:
+the same construction that is hopeless over minutes is well conditioned over
+hours.
+
+### The 95° field breaks the circle assumption
+
+Frames are 4608×2592. At the then-accepted 0.02075 °/px that is a 95° field, so
+the frame is nowhere near a tangent plane and star tracks are not circles.
+Fitting an equidistant fisheye (`r = f·θ`) plus a plain 3-dof rotation, with
+nominal centre and f, already fitted a 7-minute pair at 1.02 px where the
+image-plane similarity gave 1.019 px but recovered only 95.6% of the clock
+rotation against the fisheye's 102.8%.
+
+### A whole night, and a projection that actually fits
+
+`nightdets.py` caches detections at 6-min spacing across 2026-08-12 (62 frames,
+7.15 h, 107° of sky rotation); `nighttracks.py` chains them (the model only has
+to be right over one 6-min step) giving 802 stars through ≥40 frames and 1108
+through ≥30. `nightfit.py` then compares:
+
+| fit | residual |
+|---|---|
+| per-frame FREE rotation, nominal projection | 12.400 px |
+| per-frame FREE rotation, FITTED projection | **0.992 px** |
+| rotation LOCKED to the clock, fitted projection | 1.085 px |
+
+The clock-locked fit being barely worse than the free one means the model
+reproduces 107° of sidereal rotation at ~1 px.
+
+**The projection** (half-res px, `r = f(θ + k1·θ³)`):
+
+```
+centre (1156.2, 643.1)   f = 1693.7 px/rad   k1 = +0.44
+on-axis scale 0.01691 deg/full-res px    HFOV 67.6 deg   DFOV 75.2 deg
+```
+
+Validated five independent ways:
+1. residual minimum is sharp in f (0.99 px at 1694, 2.25 at 1381, 2.00 at 2100);
+2. the recovered **sidereal rate** — never used in that fit — is 15.0302 °/h,
+   **99.93% of truth**, and crosses 100% at the same f;
+3. forward-modelling reproduces the measured circle-centre drift bin by bin
+   (see below);
+4. a synthetic end-to-end recovery test recovers every planted projection
+   exactly, including f=1101, so the estimator is not degenerate;
+5. HFOV 67.6° matches the Camera Module 3 **standard** spec (66°/75°), which is
+   what `camera.json` says astrocam is.
+
+Adding θ⁵, θ⁷, θ⁹ terms moves f only 1693.7 → 1687, so this is not model
+mis-specification.
+
+### A model-free probe: circle-centre drift
+
+Under a projection centred on the optical axis, a sky circle about the pole maps
+to an oval whose best-fit circle centre is pulled away from the true pole, more
+so for bigger circles. Measured over 1372 stars, that pull is smooth and large:
+
+| arc radius (px) | centre offset from pole |
+|---|---|
+| 100–200 | 4.1 |
+| 300–450 | 20.1 |
+| 650–900 | 57.5 |
+| 900–1400 | **113.0** |
+
+Forward-modelling k1=+0.44 reproduces this to a few percent in every bin
+(4.4, 19.2, 60.4, 114.1); k1=0 gives a third of it; negative k1 gets the sign
+wrong. My first reading of the drift direction as "barrel" was wrong — it is
+pincushion.
+
+### The single plate scale is dead
+
+`plate_scale_deg_px` as a scalar is not a meaningful quantity for this camera.
+With k1=+0.44 the local scale runs from 0.01691 °/px on-axis to ~0.0116 °/px at
+the horizontal edge — **46% across the field**. Anything that assumed one number
+(derot tiles, PSF-in-arcsec comparisons, the accumulator's cell size in sky
+units) needs the projection instead. `camera.json`'s 0.0190 was already marked
+STALE; it should be replaced by the four projection parameters, not by a new
+scalar.
+
+### The Polaris conflict — NOT resolved
+
+Under this projection Polaris (pole distance 0.6262° in 2026) must show an arc
+radius of 19.88 px, and **no point in the field can give less than 18.51 px**
+(the on-axis minimum). Measured, with the rotation locked to the clock,
+Polaris's arc radius is **14.87 px** — and the estate's 11-night shared-R fit
+independently got 15.09. So the two arc measurements agree with each other and
+disagree with the projection by a factor 1.34.
+
+It cannot be resolved by moving the pole (an arc radius is a property of the
+star's own path) or by field position (18.51 px is a floor). Polaris is
+unambiguous — 24× brighter than anything else within 1.5° of the pole. Either
+the projection's absolute scale is wrong by 1.34× despite five checks, or
+something in the Polaris pole-distance chain is.
+
+**This is the decisive reason to un-park `design/catalog-match-parked.md`**, for
+one narrow purpose: identify two or three stars and settle the absolute scale.
+Everything else here is internally consistent; this one number is not.
+
+### Withdrawn: "PLATE SCALE SOLVED"
+
+The earlier section claiming 0.02075 ± 0.00089 °/px is withdrawn. The *arc
+radius* it measured (15.09 px) survives and is close to the clock-locked 14.87.
+What fails is the interpretation: dividing a pole distance by an arc radius
+gives the local scale at one point in a field whose scale varies by 46%, and it
+was then used as a global plate scale. The claim that the estate's legacy 0.0208
+was "confirmed to 0.3%" and the spec 0.0169 "excluded" is exactly backwards —
+the fitted on-axis scale is 0.01691.
+
+### Free circle fits to near-pole stars are wrecked by drift
+
+The tell is the **sweep**: every star must sweep 106.9° in 7.10 h. A free circle
+fit gave Polaris 157.5° and its neighbour 144.7°, because their arcs are only
+~15–20 px across and a 2–5 px camera drift is a large fraction of that. Locking
+the rotation angle to the clock (`p_i = c + Rot(ωt_i)v`, linear in c and v)
+fixes it: 12.03 → 14.87 px. **This vindicates the estate's existing
+`fit-pole-track` formulation** — for near-pole stars the free circle fit is not
+an acceptable substitute, and sweep-vs-clock is a cheap validity check that
+should be applied wherever arcs are fitted.
+
+### Near-pole stars are the best probe of how the pole MOVES
+
+Peter's point, and it is the exact dual of the above. A star R from the pole
+picks up `R·δα` from any rotation error but only `δ` from a camera translation,
+so the translation-to-contamination ratio goes as 1/R. Far stars fix the
+projection and the rotation; the 20 stars within 120 px of the pole then read
+off the translation with almost nothing to subtract.
+
+Measured on 2026-08-12 (median residual of those 20 after removing the
+clock rotation):
+
+```
+t=0.0 h  0.00 px      t=2.8 h  4.64      t=5.6 h  4.47
+t=0.7 h  3.98         t=3.5 h  4.90      t=6.3 h  3.54
+t=1.4 h  4.97         t=4.2 h  4.92      t=7.0 h  2.39
+t=2.1 h  4.80         t=4.9 h  4.84
+```
+
+Total excursion 5.66 px, end-to-end 3.15 px. **Not monotonic** — it rises to ~5
+px within the first hour, plateaus all night, and returns to 2.4 px by dawn.
+That is a settling curve, not a linear drift, and it is why the smooth
+linear+quadratic drift model in the first night-fit misbehaved (it wanted 33 px
+of "drift" to absorb what is really model error).
+
+### The focus dither IS detectable in the distortion
+
+Peter predicted the LENSPOS sawtooth should show up in the distortion, radially
+symmetric and increasing with distance from the lens centre. Both confirmed.
+
+The 6-min sampling **aliases** the 15-min dither period, which is a gift:
+corr(LENSPOS, time) = −0.072, so focus and drift are separable rather than
+confounded. Fitting each frame's post-rotation residual as a radial
+magnification `dr = m·r + c·r³` and regressing m jointly on time and LENSPOS:
+
+```
+LENSPOS coefficient  -2924 +- 938 ppm/dioptre   (3.1 sigma)
+over the 0.28 D dither: 1.06 px of radial breathing at r = 1300
+time coefficients: +72 ppm/h, -30 ppm/h^2
+radial residual sd 0.707 px vs tangential 0.576 px  (radial excess)
+```
+
+So: radially symmetric (radial > tangential), **linear in r** — the r³
+coefficient is consistent with zero, so "increasing with distance from the
+centre" holds in its simplest form. This is a known-phase calibration signal of
+about 1 px at the field edge, and it is a real term in the accumulator's
+registration budget.
+
+One unexplained structure: the response jumps at the sawtooth **reset**
+(1.30–1.38 mean +1169 ppm, 1.40–1.58 mean +45 ppm) rather than varying
+monotonically with LENSPOS. A monotone focus response would not do that; a VCM
+flying back from 1.58 to 1.30 and settling would. Worth a dedicated run at full
+1-min cadence over an hour — that covers four complete dither cycles with no
+aliasing and would separate hysteresis from a sampling artefact.
+
+### Bugs found
+
+- **Sky rotation sign** was inverted in the first night-fit. Wrong sense
+  predicts to 16 px, right sense to 1.6 px over a 6-min step. Everything the
+  first pass reported — including a pole "3.19 px" from the shared-R value — was
+  a fit to essentially random matches and is void.
+- **`arccos` is unsigned**, so frames before the reference contributed positive
+  angles for negative Δt and the rate regression cancelled to 14% of sidereal.
+- One-shot matching from a reference frame across hours fails (91 stars
+  survived); chaining frame-to-frame is what works (1108).
+
+### Pending from this session
+
+- Un-park catalogue matching for the narrow purpose of settling the absolute
+  scale against the Polaris conflict.
+- Replace `plate_scale_deg_px` with the four projection parameters, per epoch.
+- Re-run the LENSPOS analysis at 1-min cadence over one hour.
+- Add decentering/tilt terms — the fit is 0.99 px against a 0.42 px synthetic
+  noise floor, so ~0.9 px of structure is still unmodelled.
+- Repeat the whole night-fit on a second night: the projection must be identical
+  and only the pole and drift may differ.

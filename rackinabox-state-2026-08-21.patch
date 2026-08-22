@@ -1,0 +1,258 @@
+From cbe0b24784713cf1322bc960e3ecbda0c2e8af53 Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Fri, 21 Aug 2026 14:41:47 +0000
+Subject: [PATCH] =?UTF-8?q?rackinabox:=20frame-and-deck=20scheme=20?=
+ =?UTF-8?q?=E2=80=94=20cubes=20ordered,=20USB=20fan=20power,=20annex=20air?=
+ =?UTF-8?q?flow?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Vertical column on a self-built block-and-extrusion table frame at 550 mm,
+140 mm fan under the bottom deck blowing upward. 15x 50 mm pine cubes ordered
+to evaluate before committing.
+
+- Cube nodes: square by manufacture (removes the hand-cut error that put the
+  built box 2 mm under), and lossy wood breaks the extrusion's ringing path.
+- 50 mm legs leave only 30 mm under the 20 mm fan (0.21D) - noisier than
+  needed. Double the legs (needs 16 cubes) or cut four to length.
+- Extrusion continuous through nodes: bonds in shear, not peel; tolerance
+  stops accumulating.
+- Deck strip-built, 8 pieces, no notching. Core seams at 205/345 mm coincide
+  with where cross members want to be. Second deck rotated 90 degrees.
+  Aperture 145 not 140, foam collar = decoupling for free.
+- USB buck-boost closes the long-open 5 V start problem and is fail-safe by
+  being dumb. Must not be powered from a machine in the rack.
+- Annex 120s add no capacity unless each annex gets its own intake.
+  Three chambers across 400 mm caps annex fans at 120 mm.
+- 19 inch compatibility explicitly ruled out.
+
+Open: extrusion type (T-slot would dissolve platerack.py's socket scheme);
+whether annexes vent outside or back into the central volume.
+---
+ rackinabox/STATE.md | 203 +++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 200 insertions(+), 3 deletions(-)
+
+diff --git a/rackinabox/STATE.md b/rackinabox/STATE.md
+index 91b223f..3fb5eaa 100644
+--- a/rackinabox/STATE.md
++++ b/rackinabox/STATE.md
+@@ -2,6 +2,200 @@
+ 
+ *Curated summary of where this strand is. Updated at the end of each session.*
+ 
++## FRAME + DECK SCHEME — block-and-extrusion table frame (2026-08-21)
++
++**The design has moved to a vertical column on a self-built table frame: wood
++cube nodes bonded to extrusion, with the 140 mm fan under the bottom deck
++blowing upward.** This supersedes the cast-monocoque assumptions about how the
++walls carry load — the *frame* is now the structure and the walls hang on it.
++
++**⚠ NOT YET COMMITTED TO — 15× 50 mm pine cubes are ORDERED (2026-08-21) so
++Peter can look at one before proceeding.** Everything below is the scheme the
++cubes are being evaluated against, not a locked design. 15 covers 12 nodes plus
++spares; it does **not** cover doubled legs (see below).
++
++### Why cubes at the nodes, and why wood
++
++- **Bought cubes are square by manufacture**, which removes the accuracy
++  problem. The built box already came in 2 mm under design from hand-cutting,
++  and a frame accumulates that error across twelve members. This was the whole
++  reason for choosing cubes over cut blocks.
++- **Wood nodes are acoustically load-bearing.** Extrusion is stiff and *rings*
++  — the same failure mode that ruled out 6 mm ply for the walls. Lossy wood
++  blocks at every node break the ringing path between members. Constrained-layer
++  damping, arrived at for free.
++- **⚠ Check the arrises on arrival.** Craft cubes are often tumbled/sanded, and
++  a rounded edge means the extrusion doesn't seat flat — glue area is lost
++  exactly at the perimeter where the moment is carried. Want sawn or machined.
++  Check squareness with a small square; 1° at a node is ~1 mm over 50 mm.
++
++### Geometry — 550 mm, matching LACK, but NOT for 19"
++
++**Peter has ruled out 19" rack compatibility** — so the outer dimension is free,
++and 550 mm (LACK footprint) is the choice. For the record, since it will come up
++again: a LACK side table is 550 × 550 × 450 h, legs ~35 mm square, inner span
++~480 mm ≈ 19" (the LackRack coincidence), top ~50 mm thick, clear height under
++the top ~400 mm. Legs are hollow except the top ~50 mm. **Not the route taken.**
++
++| | With 50 mm cubes |
++|---|---|
++| Outer | 550 × 550 |
++| Inner span (cross members between blocks) | **450 mm** |
++| Cross members continuous, full width | 550 mm |
++| Clearance around the 414 mm box | 18 mm a side |
++
++**Extrusion should run CONTINUOUS through the nodes, not in segments between
++them.** Then the extrusion sets all geometry and cube length tolerance is
++cosmetic; bonds are in **shear** (strong) against flat faces rather than in
++**peel** against cut ends (weak). Segmented extrusion stacks twelve length
++errors into the overall height.
++
++**⚠ Racking is the frame's weak axis.** Four posts + cross members with no
++diagonals is a mechanism. Bonded 50 mm cube faces are a real moment connection,
++but at least two adjacent faces still want a **shear panel** (a deck fixed to
++all four posts, or the walls bonded rather than hung).
++
++**Glue: epoxy, not PU** (PU foams and is weak in the gap). If the extrusion is
++aluminium, the oxide re-forms in minutes — abrade, degrease, bond immediately.
++
++### ⚠ Leg height: 50 mm cubes are SHORT for the fan
++
++The fan is **20 mm thick, mounted under the bottom deck**. A single 50 mm cube
++leg leaves **30 mm** under the fan — that is 0.21D on a 140 mm bore, under the
++0.25D rule of thumb for undisturbed inflow. Free area is still ample
++(~500 cm² of perimeter gap vs ~154 cm² of fan), so it will not *throttle* — but
++it will be **noisier than it needs to be, and noise is the entire point of the
++box**.
++
++Fixes, in order of preference: **stack two cubes at each leg** (100 mm, leaving
++80 mm clear — and it doubles as a live test of the glue joint), or cut only the
++four legs to length and use cubes for the eight upper nodes. **Doubling the legs
++needs 16 cubes, not 15** — order is one short if that route is taken.
++
++### Deck — strip-built, 8 pieces, no notching
++
++Rather than a 550 × 550 sheet with four 50 mm corner notches (four internal
++corners, each needing overcut to seat on a sharp-cornered block), the deck is
++**built up from strips around a central fan aperture**. Per deck:
++
++| Qty | Size (mm) | Role |
++|---|---|---|
++| 2 | 450 × 155 | core, either side of aperture |
++| 2 | 155 × 140 | infill, above and below aperture |
++| 4 | 450 × 50 | edge strips, between the legs |
++
++Two decks come off one 1220 × 610 handy panel. 12 mm ply; 9 mm drums under
++disk vibration.
++
++**The seams land where the cross members want to be anyway.** Core seams sit at
++**205 mm and 345 mm** from the frame edge — exactly the two sides of the fan
++aperture. A pair of intermediate cross members there backs the butt joints *and*
++frames the fan. Design to this rather than discovering it later.
++
++**Rotate the second deck 90°.** Butt joints are weak alone, but with the second
++layer quarter-turned no seam sits over a seam. Plywood logic; the largest free
++strength gain available here.
++
++**⚠ Cut the aperture at 145, not 140.** A 140 mm fan frame is 140.0 nominal, so
++a 140 hole is an interference fit that wood movement turns into a jam or a
++rattle. 145 + a closed-cell foam collar gives **decoupling for free** — no
++metal-to-wood path into the deck every machine stands on — and makes the
++aperture tolerance stop mattering, which suits a strip-built panel. Free area
++~210 cm² vs the fan's ~127 cm² swept bore, so the deck is not the restriction.
++
++**Any solid deck in a bottom-intake vertical-flow box is a plug.** The notches
++don't help — they are filled by the legs. Whichever deck scheme wins, apertures
++must be sized against the fan (≥ fan area, ideally 2×) so the deck acts as a
++**diffuser**, not a barrier. Card baffle for flow division, kept well clear of
++the PSU chamber (card is worse than the foam already excluded there).
++
++### Fan power — USB + adjustable buck-boost (2026-08-21)
++
++**Peter is running the 140 mm fan from USB via an adjustable buck-boost
++converter. This CLOSES the long-open "12 V fans may not start at 5 V" item** —
++set 7–8 V and get full starting torque while still running slow and quiet.
++Tune to the lowest voltage that starts reliably **from cold after sitting
++overnight**, not from warm; cold start is the failure case.
++
++It is also **fail-safe by being dumb**: no Pi, no duty cycle, nothing to crash.
++Power on means fan spinning. This satisfies the fail-safe rule better than PWM
++control does — keep it this way.
++
++- **⚠ Inrush, not running current, is the risk.** ~0.6 A at the 5 V input is
++  nothing, but the converter's output caps look like a near-short at power-on
++  and can trip host port current limiting — the port latches off and the fan is
++  dead with no other symptom. Soft-start, or bring the converter up before
++  connecting the fan; never hot-plug.
++- **⚠ Do NOT power it from a USB port on a machine in the rack.** The fan would
++  die whenever that machine sleeps, crashes or is pulled for a swap — a silent
++  thermal failure on the box holding the data, exactly the class of fault that
++  got puppy. Use a dedicated USB PSU on the Zigbee plug: that plug is already
++  set start-on-power On, so `rack-power cycle` resets the fan with everything
++  else.
++- **Open: no tach feedback.** `thermal/pico_fan_driver/` already exists —
++  repurposing it to *read* tach rather than drive PWM is a smaller job and
++  closes the silent-failure hole without putting anything in the power path.
++
++### Annexes — separate chambers, own decks, internal 120s
++
++Plan: a central chamber with the 140 under it, **annexes to the side with their
++own decks and their own 120 mm fans**, drawing air across.
++
++**⚠ A fan inside the box adds NO cooling capacity — it only redistributes what
++the 140 brings in.** If the annexes draw from the central volume and dump back
++into it, the 120s are pure recirculation (~0 W/K net export) and total export
++stays ~8 W/K, i.e. ~19 °C rise at 150 W — marginal, since a disk at 40 °C
++gaining 19 °C is at its limit. They are still worth having: the disks have no
++heatsink and need air *moving across* them regardless of where it goes.
++
++If instead an annex exhausts through a side wall, its 120 is in **series** with
++the 140 on that branch — pressure adds, flow does not — and a 120 pulling harder
++than the 140 supplies will draw air backwards through its own exhaust and
++breathe its own warm air.
++
++**Resolution: give each annex its own intake.** Then the 120s are genuine
++parallel paths, flow adds, each chamber's budget is independent, and a failed
++annex fan is a local problem. This is the same answer the strand already reached
++for the disks ("give them their own intake, don't reorder the stack").
++
++**⚠ Chamber width now sets fan size — harder than the hole-saw constraint.**
++Three chambers across 400 mm internal with two partitions gives ~129 mm each:
++**a 140 mm fan does not fit; 120 mm does.** So the three-chamber decision
++quietly settles the long-open fan-size question at **120 mm** — unless chambers
++are sized unequally to their contents (the plate rack is the width-hungry one;
++a disk annex could be narrow).
++
++**Open — does each annex vent to outside, or back into the central volume?**
++This single answer determines whether the 120s are capacity or circulation, and
++whether more intake area than one 140 is needed. Side exhausts also mean four
++more apertures in the least reversible material, which interacts with the
++structural limit on how much can be removed from a cast wall.
++
++### Sourcing
++
++- **Timber:** Alsford, St Mark's Hill, Surbiton (020 8399 4234) — closest proper
++  merchant, will cut and keeps offcuts. Closes noon Sat, shut Sun. Backups:
++  Lords and Selco, both Richmond Rd, Kingston (Selco open Sun 10–4).
++- **Nominal is not actual:** UK "2×2" planed finishes at **44 × 44**, sawn
++  ~47 × 47. True 50 × 50 must be asked for explicitly. Moot while cubes are the
++  route, but it is the trap if cut blocks are ever revisited.
++- **UK T-slot cut-to-length** (if aluminium extrusion is chosen over steel
++  square tube): KJN, Motedis, Ooznest, all to ~±0.5 mm. **T-slot would dissolve
++  the plate rack's fixed-socket problem** — fins would slide at continuous
++  pitch, making the 10 mm sockets, two comb heights and `top_comb_z()` grip
++  check unnecessary. Steel square tube keeps the comb as designed. **Undecided,
++  and it gates whether `platerack.py` gets simplified.**
++
++### Next actions for this scheme
++
++1. **Look at a cube when the 15 arrive** — squareness, arris, finish. Gate on
++   this before anything else.
++2. **Decide doubled legs vs cut legs** (and order a 16th cube if doubling).
++3. **Choose the extrusion** — steel square tube or 2020 T-slot. Gates
++   `platerack.py`.
++4. Confirm continuous-through-node routing, then work the frame BOM and cut
++   list.
++
+ ## THE BOX IS BUILT AND POPULATED (2026-08-16)
+ 
+ **vole is living in the rack.** The enclosure exists physically; measured
+@@ -572,9 +766,12 @@ Then `platerack.py` emits the comb + fin DXFs directly.
+ - ~~Thermals un-re-derived~~ **✅ DONE 2026-08-13** — see "Cooling
+   architecture". What it leaves open: **(a) settle the real load figure**
+   (80 W vs 130–160 W); **(b) intake area vs cast-wall structure** — 4 holes is
+-  a lot of material out; **(c) confirm hole-saw size actually owned** (140 mm
+-  likely unavailable → 4× 120 mm is the fallback); **(d) pressure balance**
+-  positive vs negative; **(e) test 12 V fans start from cold at 5 V**.
++  a lot of material out; ~~**(c) confirm hole-saw size actually owned**~~
++  **✅ 2026-08-21 — moot: the central fan is 140 mm mounted under the deck in a
++  cut-out (145 mm aperture), and annex chamber width caps annex fans at
++  120 mm**; **(d) pressure balance** positive vs negative;
++  ~~**(e) test 12 V fans start from cold at 5 V**~~ **✅ 2026-08-21 — dissolved
++  by the USB buck-boost: run 7–8 V, full starting torque. See "Fan power".**
+   (Cast walls help: much higher thermal mass, no panel resonance.)
+ - Shelf count/heights: was 2 rows (z=20,160) for laid-flat laptops — **re-derive
+   against nit's board deck + cooler height**.
+-- 
+2.43.0

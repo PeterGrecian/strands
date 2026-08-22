@@ -170,3 +170,15 @@ asked for is MEASURED: three capture modes, identified by saturation ceiling
 photometric scale via a single 1.54 scalar. Still open from below: the THIRD
 ASTROCAM CAMERA question (Peter only), the epochs PAGE itself, and Peter's
 unstated "I've got an idea" for the all-time sweep.]
+
+I'd like a number of polearis closeups from the past few weeks for me to probe
+
+
+its not x and y axis there is a distortion free way of doing it but I've forgotten.  look in sessions
+
+
+the camera does move every night - the setup is prone to temperature humidity and wind variance
+
+
+how well do the points on polaris fit to a circle?  night time variance of conditions
+

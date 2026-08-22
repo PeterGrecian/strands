@@ -158,14 +158,12 @@
   - **Verified from pip with smbclient**: browse, read, write, delete all work;
     wrong password → `NT_STATUS_LOGON_FAILURE`, anonymous → `ACCESS_DENIED` at
     tree connect, SMB1 → refused at negotiation.
-  - **Chromebook (zog) setup: DONE + VERIFIED** (2026-08-21). The hardware arrived
-    and the share was added in the ChromeOS Files app to `\\192.168.0.10\astro`.
-    - In order to access it from the `zog` Linux container, the share was right-clicked
-      in Files and **Shared with Linux**. It appears in the container via 9p bridge
-      under `/mnt/shared/SMB/<hash>` or `/mnt/chromeos/SMB/<hash>`.
-    - A stable symlink **`~/bigstore-astro`** was created pointing to the hash path,
-      so scripts have a reliable path. Verified read/write works, and files land as
-      `peter` on muppet. Note: `df` inside the container halves the reported capacity.
+  - **Not yet done — the Chromebook itself.** The hardware hasn't arrived. When
+    it does: Files app → Add SMB file share → `\\muppet.local\astro`, user
+    `peter`, password from `secrets get /samba/muppet-peter` (NB `secrets copy`
+    hangs on pip — see below).
+    If `muppet.local` doesn't resolve on ChromeOS, fall back to `\\192.168.0.10\astro`
+    (muppet's pinned static). Untested against real ChromeOS until then.
   - **Android/VLC (2026-08-16, same day).** VLC for Android speaks SMB and works
     on the home LAN — server `192.168.0.10` (the IP, NOT `muppet.local`:
     Android mDNS is patchy and VLC's share dialog often won't resolve `.local`),
