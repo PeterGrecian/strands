@@ -2799,3 +2799,62 @@ Tilt dominates, as predicted, though roll is not quite zero. Scale is *nearly*
 fixed — and the residual scale term that does exist is the same one that
 correlates with LENSPOS at 3.1σ. So the two statements reconcile: **the camera
 motion contributes no scale change; the focus dither does.**
+
+### LENSPOS IN THE HEADER IS OFFSET BY 5 FRAMES (2026-08-22)
+
+Peter: *"if we concentrate on the middle 2 hours we should see 8 cycles of
+breathing. can we increase the temporal resolution of the pole measurement?"*
+Yes — 1-minute cadence samples the 15-minute dither 15 times instead of aliasing
+it. `finedets.py` / `finepole.py` / `breathplot.py` do the flat middle 2 hours
+of 2026-08-12: 120 frames, 727 stars tracked through ≥80% of them, 24 within 150
+px of the pole, per-frame standard error on the pole **0.058 px**.
+
+The radial pole displacement is locked to the dither, peak-to-peak **1.083 px**,
+largest folded point 7.4σ. But folded on the header LENSPOS it is a mess — a
+linear fit explains 12.5%, with an apparent 1.08 px discontinuity between 1.38
+and 1.40 and *no* discontinuity at the actual flyback.
+
+Sweeping the assumed cycle start over all 15 steps:
+
+```
+start at LENSPOS 1.30 (header reset): linear ramp explains  12.5%
+start at LENSPOS 1.38               : linear ramp explains  36.7%
+start at LENSPOS 1.40               : linear ramp explains  98.9%   <--
+start at LENSPOS 1.42               : linear ramp explains  42.5%
+```
+
+**Folded five frames back, the breathing is a 98.9% linear sawtooth** —
+residual 0.036 px against a per-point standard error of 0.076, i.e. it fits to
+better than the noise.
+
+```
+slope +3.943 px/dioptre at r=484 px  =  +8147 ppm/dioptre magnification
+1.083 px peak-to-peak at the pole; ~2.97 px at r=1300 over the 0.28 D ramp
+```
+
+**So the LENSPOS written into a frame's header is not the lens position during
+that exposure — it leads it by 5 frames.** To get the focus in force during
+frame k, read LENSPOS from frame k−5. It is a *pure delay*, not a lag: a
+first-order thermal response with a 5-minute time constant would round the
+sawtooth corners visibly, and the residual is 0.036 px. That points at a capture
+pipeline / request-queue offset in the streaming daemon, not physics — and it
+should be confirmed at the source rather than left as an inference.
+
+**This retracts the hysteresis hypothesis.** The two-branch pattern seen at
+6-minute sampling was the 5-step phase error splitting the ramp at exactly step
+5. There is no evidence of VCM hysteresis; Peter's scepticism was right.
+
+**It also revises the earlier "focus dither measured — fix LENSPOS ~1.441"
+result.** If that used per-frame header LENSPOS, the optimum is off by 5 steps =
+0.10 dioptres, putting true best focus nearer **1.34**. Worth re-deriving before
+anything is pinned.
+
+**And it changes the dither decision.** The breathing is not noise to be
+eliminated — it is a single coefficient, linear in off-axis radius, with a known
+phase, fitting to 0.036 px. It can be *corrected* rather than switched off, once
+the frame offset is fixed. Turning the dither off would still be the simpler
+path, but it is no longer forced.
+
+Earlier in this session the 6-minute data gave −2924 ± 938 ppm/dioptre. Both the
+sign and the magnitude were wrong, for the same reason: aliasing plus the phase
+error. **+8147 ppm/dioptre** supersedes it.
