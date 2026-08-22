@@ -2781,3 +2781,21 @@ aliasing and would separate hysteresis from a sampling artefact.
   noise floor, so ~0.9 px of structure is still unmodelled.
 - Repeat the whole night-fit on a second night: the projection must be identical
   and only the pole and drift may differ.
+
+### Tilt, not roll; and the only scale change is the focus one
+
+Peter: *"we are expecting only the pole position to change - the lens will tilt
+slightly"* and *"we are not expecting the scale to change"*. Both tested against
+the night, decomposing each frame's camera motion after removing the clock:
+
+```
+tilt (px of pole motion)   median 0.61   span 4.91
+roll (px at r=1300)        median 0.27   span 1.55      tilt/roll = 3.2x
+rotation only               0.9916 px
+rotation + per-frame scale  0.9089 px    (8.3% better; noise floor 0.42 px)
+```
+
+Tilt dominates, as predicted, though roll is not quite zero. Scale is *nearly*
+fixed — and the residual scale term that does exist is the same one that
+correlates with LENSPOS at 3.1σ. So the two statements reconcile: **the camera
+motion contributes no scale change; the focus dither does.**
