@@ -403,6 +403,47 @@ retirement notice. The six offline Pis pick the role up on their next converge.
     — likely just extending that role to astrocam. Not urgent, no deadline; it's
     the last hand-installed corner of an otherwise-automated camera.
 
+  - **muppet bond ATTEMPTED AND ROLLED BACK — netplan-backed NM crashes**
+    (2026-08-22). muppet was the strongest candidate in the fleet: `.10` is
+    pinned outside the host in pip's four NFS mounts, astrocam's uploader,
+    eclipticam, puppy (by IP) and the fleet `/etc/hosts` block, and it serves
+    bigstore. Its WiFi was proven to associate first (signal 67, DHCP `.17`).
+    The cutover still failed, and the failure is worth knowing:
+
+    muppet is Ubuntu 24.04 with the **netplan.io integration**, so NM stores
+    every connection as `/etc/netplan/90-NM-<uuid>.yaml`. Emitting a *bond*
+    that way produced netplan that NM itself rejects — `bond0: interface
+    'enx9c69d37c35f2' is not defined` — which tripped an assertion in
+    `nms-keyfile-writer.c:551` and **aborted the daemon** (`status=6/ABRT`,
+    core dumped). Every subsequent `nmcli` failed with "NetworkManager is not
+    running", and an orphaned netplan file defining a broken `bond0` was left
+    on disk, which would have broken the next boot. Rolled back cleanly:
+    `.10` back on `ethernet-static-10`, radio off, orphan moved to
+    `/root/nm-pre-bond/orphaned/`, NFS verified serving and astrocam's mount
+    verified writable.
+
+    `roles/network/tasks/nmbond.yml` now **refuses to run on a netplan-backed
+    host** (asserts on `/etc/netplan/90-NM-*.yaml`), verified by enabling it in
+    check mode and watching it fail with the explanation.
+
+  - **The real split is layer count, not Debian vs Ubuntu** (2026-08-22, swept
+    the fleet after Peter asked). It happens to fall exactly on distro lines
+    here: **Ubuntu** hosts (muppet 24.04, puppy 24.04, pip 25.10) all route NM
+    through netplan storage; **Debian trixie** hosts (homepi, astrocam,
+    eclipticam) run NM writing real keyfiles with no netplan at all, and vole
+    runs ifupdown. So the bug is in the extra serialisation layer, not in NM's
+    bonding.
+
+    Consequence worth acting on: **`nmbond.yml` should work on the Debian NM
+    hosts**, and homepi is the one that most wants it — it is the bastion, so
+    its cable dying costs fleet entry. homepi is also the *safest* host to test
+    a bond on, because it is on Tailscale (`100.127.158.37`): an out-of-band
+    path that survives losing the LAN link entirely. Untested so far.
+
+    For the Ubuntu three, the route is a netplan-NATIVE bond definition, or
+    moving those NM installs to keyfile storage (`[main] plugins=keyfile`) to
+    make the fleet uniform. Peter's call; not attempted.
+
   - **vole's bond has NOT been reboot-tested** (2026-08-22). The config is
     right on paper — `auto bond0`, `allow-hotplug` on both slaves, `bonding` in
     `/etc/modules-load.d/`, `wpa_supplicant@wlp1s0` enabled — and the cutover
