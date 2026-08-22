@@ -577,6 +577,42 @@ Standing / not-yet-scheduled items (were in IDEAS.md, promoted 2026-07-29):
   re-converge `changed=0`, all have `zip`, and eclipticam still has
   `gpu_mem=16` so the Pi path is intact.
 
+- **zog completed `site.yml` for the first time** (2026-08-22, `~/ansible`
+  `5054e50`, pushed). Following the aarch64/Pi fix above, a full run surfaced
+  two more faults of exactly the same shape — a hardcoded assumption that was
+  false on this host, failing hard and taking everything downstream with it.
+
+  - **`vscode` hardcoded `arch=amd64`** in the Microsoft apt repo line.
+    Microsoft publishes arm64 at that same repo, so the hardcode described
+    nothing real; it just made `code` uninstallable on zog. The role then
+    hard-failed and **aborted nodejs, claude-code, rclone, claude-oauth-sync
+    and ansible-auto** — all of which had therefore never run on zog either.
+    Now mapped from `ansible_architecture`, same idiom as `roles/rclone`.
+  - **`gcp`'s keyring trio reported `changed` on every converge**: `force: yes`
+    download, `changed_when: true` dearmor, and the armored copy deleted at the
+    end so the next run always re-fetched. Gated on the dearmored keyring
+    existing. This one matters beyond tidiness — a host that is permanently
+    "changed" is indistinguishable from one that has genuinely drifted, which
+    is precisely what `drift-watch` is supposed to tell us.
+
+  zog now runs the whole playbook `failed=0` and re-converges at `changed=2`.
+  The two residuals are always-changed by design: the dotfiles install script
+  (forced by `dotfiles_install_force`) and `git-repos`' pre-pull stash. Both
+  could take a `changed_when` if drift-watch noise ever becomes a problem.
+
+  **Three of these in one session** — aarch64-means-Pi, amd64-means-x86,
+  gcp-key-always-changed — says the roles were written against the fleet as it
+  was (amd64 laptops + armv7 Pis) and zog is the first host that is neither.
+  Expect more of it on the next unusual host. The tell is always the same: a
+  `PLAY RECAP` with `failed=1` that nobody reads, because the host it is about
+  looks fine from the outside.
+
+  Side note worth knowing: `git-repos` **stashes the control node's own dirty
+  `~/ansible` before pulling** (`safe_pull.yml`, deliberate, warns, message
+  `ansible-auto <iso8601>`). Editing roles on zog and then running `site.yml`
+  on zog will stash the edits mid-run. Nothing is lost — `git stash list` then
+  `pop` — but commit before converging and it never comes up.
+
 ## Decisions
 
 - **Seam with pifleet** (2026-07-20): pifleet owns *membership + dashboard
