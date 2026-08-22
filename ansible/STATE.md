@@ -248,36 +248,56 @@
     pip (192.168.0.19) does not answer at all. zog has the same shape. Worth a
     decision: give pip a real `ansible_host` like the other laptops, or the
     inventory will keep lying about it.
-- **Own Google OAuth client: WORKING on zog, deliberately NOT rolled out**
-  (2026-08-22). rclone's shared client_id is being retired "during 2026", so
-  Peter created a Desktop-app client; it is in SSM as **`/rclone/client-id` +
-  `/rclone/client-secret`** (AWS only — zog has no `google-cloud-storage`, so
-  **`secrets sync` is owed** from muppet/puppy). Consent completed, and
-  `rclone about gdrive:` on zog now returns the quota **with no retirement
-  notice**, against the same Drive (5 TiB, 487.714 MiB used).
-  - **BLOCKER — the app is in Testing, so Google expires the refresh token
-    after 7 days.** That is why SSM `/rclone/config` still holds the
-    shared-client token: rolling the new one out would trade a credential good
-    until 2026 for one that dies in a week, on every host at once. zog's
-    pre-change config is backed up at `~/.config/rclone/rclone.conf.bak-sharedclient`.
-  - **Why publishing is blocked, and why this cost Peter two days a few months
-    ago**: the remote's scope is the full `https://www.googleapis.com/auth/drive`,
-    which Google classes **restricted** — "Publish app" is greyed out, and
-    leaving Testing needs verification plus a third-party security assessment.
-    **That path cannot produce a durable headless credential, by design.** The
-    way out is almost certainly **`drive.file`** (non-sensitive, publishable
-    with no verification, no 7-day expiry). Cost of that switch, undecided: with
-    `drive.file` rclone sees only files it created itself, so the ~488 MiB
-    already uploaded under the shared client becomes invisible — which bears
-    directly on the unverified-RESTORE question that keeps gdrive-sync disarmed.
+- **Own Google OAuth client: DONE, LIVE, and durable** (2026-08-22). rclone's
+  shared client_id is being retired "during 2026". Peter's Desktop-app client is
+  in SSM as **`/rclone/client-id` + `/rclone/client-secret`** (AWS only — no host
+  reachable today has `google-cloud-storage`, so **`secrets sync` is still
+  owed**). `/rclone/config` now holds the new credential; the previous
+  shared-client config is kept at
+  `scratchpad/rclone.conf.ssm-previous` and per-host backups
+  `~/.config/rclone/rclone.conf.bak-sharedclient`.
+  - **Scope is now `drive.file`, not `drive` — that was the whole game.** Full
+    `drive` is a *restricted* scope: "Publish app" stays greyed, and leaving
+    Testing needs verification plus a third-party security assessment. Apps in
+    Testing have their refresh tokens **expired by Google after 7 days**, so the
+    restricted-scope path *cannot* produce a durable headless credential no
+    matter how the client is rebuilt. This is why the earlier multi-day attempt
+    (a few months back) could never have succeeded. `drive.file` is
+    non-sensitive: publishable with no verification, no expiry, and least
+    privilege — the token cannot touch anything rclone did not create.
+  - **Cost of `drive.file`, accepted by Peter**: rclone can no longer see the
+    ~488 MiB uploaded under the shared client. A re-seed is needed. This bears
+    on the unverified-RESTORE question that keeps `enable_gdrive_sync: false` on
+    puppy — the old upload is now invisible to the tool that would restore it.
+  - **Publishing required an App domain after all.** App name + support email +
+    developer contact were not enough: the Audience page showed "Your app's
+    OAuth configuration is incomplete". The missing part was **Branding → App
+    domain** (home page + privacy policy). Note the greyed *Save* there means
+    "form not dirty", NOT "form valid" — that misreading cost two rounds.
+  - **DEBT: the privacy policy URL is a lie.** `https://www.petergrecian.co.uk/privacy`
+    was entered to satisfy publishing, but the site has a catch-all that returns
+    the homepage (`<title>Peter Grecian</title>`) with HTTP 200 for any path. It
+    is on the consent screen as this app's privacy policy. **A real page should
+    be added to `mywebsite`** (not cloned on zog). Low urgency — nobody but
+    Peter ever sees that consent screen — but it should not be left indefinitely.
+  - **Verified live** on muppet, puppy, eclipticam and zog: `scope = drive.file`,
+    `rclone about gdrive:` returns the quota with **no retirement notice**, and a
+    real write→list→delete round trip against Drive succeeded. vole skips the
+    credential (no aws CLI) and has the binary only. Rolled out with
+    `-e rclone_force_config=true`.
   - Project is **`sublime-state-506311-v9`** (number 240837326956) — NOT
     `petergrecian-personal`, and not the project holding the calendar/photos/ytm
-    clients (822459252559). Drive API had to be enabled on it by hand.
+    clients (822459252559). The Drive API had to be enabled on it by hand.
   - Console trail worth not re-deriving: audience had to be flipped Internal →
     External (the "can only be used within its organisation" block); Peter
     cannot add himself as a **test user** — project owners are "ineligible"
     because they can already consent; the support-email dropdown offers only
     groups he owns (`pppgrecian@googlegroups.com`), which is cosmetic.
+  - **Open question**: `rclone_deploy_config` is gated on the aws CLI existing,
+    which is broad — eclipticam got the credential because it happens to have
+    aws, not because it runs gdrive-sync. With `drive.file` the blast radius is
+    small (the token can only reach files rclone made), but narrowing this to
+    hosts that actually sync would be tidier.
   - **Mechanics that worked, for next time**: ChromeOS's browser cannot reach
     the crostini container's loopback, so `rclone config reconnect` is the wrong
     tool (it also has no `--auth-no-open-browser` flag). Use
