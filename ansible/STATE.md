@@ -549,12 +549,33 @@ Standing / not-yet-scheduled items (were in IDEAS.md, promoted 2026-07-29):
   the drift sweep (scheduled `/loop` or cron routine) rather than ad-hoc.
   Decide interval + form with Peter; ties into the drift-watch role.
 
-- **`zip` is missing from `common_packages`** (found 2026-08-22 on zog, when
-  `mywebsite`'s `./deploy` died at the packaging step). The list carries `unzip`
-  but not `zip`, so any host that has to *build* an archive fails late, after
-  the smoke tests have passed. Installed by hand on zog; the one-line fix to
-  `group_vars/all.yml` is still pending. Same shape as the `unzip` gap the
-  rclone role hit on vole — assume nothing about what the base image ships.
+- **`zip` added, and the reason zog was never converged at all** (2026-08-22,
+  `~/ansible` `0e1ead5`, pushed). Chasing a one-line packaging fix turned up the
+  real fault. `zip` did join `unzip` in `common_packages` — no host had it
+  declared, so anything that had to *build* an archive failed late, after the
+  smoke tests passed. But the dry run then failed on zog, and that failure was
+  the interesting one:
+
+  **`Set gpu_mem=16 for headless Pis` was gated on `ansible_architecture in
+  ['armv6l','armv7l','aarch64']`.** zog is an aarch64 ChromeOS crostini laptop,
+  so it matched, and the task hard-failed on a missing
+  `/boot/firmware/config.txt` — which **aborted zog for the entire rest of
+  `site.yml`**. That is why zog had no aws CLI despite `enable_aws: true` since
+  onboarding, and why it looked converged when nothing past `common` had ever
+  run on it. Architecture is not a test for "is a Pi". Now gated on the boot
+  config existing, which also picks up the pre-Bookworm `/boot/config.txt`
+  without a second task.
+
+  Lesson worth keeping, and the same one as the samba `ss`-vs-`testparm` note
+  above: **a host that fails early in a play looks identical to a host that was
+  skipped.** Nothing reported zog as unconverged — the gaps only showed up when
+  something concrete (`./deploy`) tried to use the machine. A `PLAY RECAP` with
+  `failed=1` on one host is not cosmetic; it means every later role was silently
+  not applied there.
+
+  Rolled out and verified: zog, muppet, pip, puppy, vole and eclipticam all
+  re-converge `changed=0`, all have `zip`, and eclipticam still has
+  `gpu_mem=16` so the Pi path is intact.
 
 ## Decisions
 
