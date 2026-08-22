@@ -613,6 +613,40 @@ Standing / not-yet-scheduled items (were in IDEAS.md, promoted 2026-07-29):
   on zog will stash the edits mid-run. Nothing is lost — `git stash list` then
   `pop` — but commit before converging and it never comes up.
 
+- **apt was completely broken on pip** (2026-08-22, `~/ansible` `e02ffed`,
+  pushed). Found while checking the vscode arch fix had not regressed the amd64
+  laptops. The VS Code `.deb` installs and maintains its **own** deb822 source
+  at `/etc/apt/sources.list.d/vscode.sources` signed by
+  `/usr/share/keyrings/microsoft.gpg`; the role also wrote `vscode.list` for the
+  same repo signed by `/etc/apt/keyrings/packages.microsoft.gpg`. apt refuses to
+  read its **entire** source list when one repo carries two `Signed-By` values,
+  so **no package could be installed or updated on pip at all** — nothing to do
+  with VS Code.
+
+  Two things about this are worth remembering more than the fix:
+
+  - **Nothing reported it.** pip was on the pi-fleet board, reachable, running.
+    The fault only surfaced because `site.yml` failed on the `vscode` tag. Had
+    nobody run that tag, pip would have sat there un-updatable indefinitely.
+  - **The playbook could not repair it.** The play's own `Update package cache`
+    task is tagged `always` and runs before any role, so it hit the broken apt
+    and aborted before reaching the role that would have fixed it. It needed one
+    manual `rm` (backed up at `/root/vscode.list.bak-2026-08-22`) to break the
+    cycle. Worth knowing that ansible cannot bootstrap itself out of a broken
+    apt source.
+
+  The role is now bootstrap-only: if `vscode.sources` exists it removes its own
+  `vscode.list` and leaves the package to manage the repo. zog has no
+  `vscode.sources` yet so the bootstrap path still applies there; the cleanup
+  fires on whichever converge follows Microsoft adding it.
+
+  Swept the rest of the fleet afterwards — `apt-get update` reports no errors on
+  zog, pip, puppy, muppet, vole or eclipticam. The six offline Pis are unchecked.
+
+  Loose end: pip's `/etc/apt/sources.list.d/google-chrome.list` has the same
+  repo on lines 3 and 4, which apt warns about on every update. Harmless today,
+  same shape as the fault above.
+
 ## Decisions
 
 - **Seam with pifleet** (2026-07-20): pifleet owns *membership + dashboard
