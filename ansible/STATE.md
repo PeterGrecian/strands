@@ -205,6 +205,95 @@
 
 ## Pending / loose ends
 
+- **rclone: fleet-wide install/auth — DONE on the reachable laptop-class hosts,
+  RESIDUAL elsewhere** (2026-08-22, from mailbox "ensure rclone is installed on
+  all hosts"). `roles/rclone` rewritten: it now installs the **pinned upstream
+  release** (`rclone_version: 1.75.0`) to `/usr/local/bin` and **removes the
+  distro package** — Debian 13 and Ubuntu 24.04 both ship 1.60.1 (2022), and
+  puppy had ended up carrying *both* binaries, so `which rclone` was the only
+  way to know what you got. `enable_rclone` moved to `group_vars/all.yml`
+  (fleet-wide); `rclone` dropped from `common_packages` so one thing owns it.
+  - **The FUSE mount is now opt-in** (`rclone_mount`, default false). That
+    separation is what makes the role safe fleet-wide: "installed and
+    authenticated" no longer drags a permanent Drive mount onto a capture host.
+    No host had the mount running anyway — GLOBAL.md's `~/gdrive` is aspirational.
+  - **Config deploy is `force: no`** (`-e rclone_force_config=true` to push a
+    rotation). rclone REWRITES `rclone.conf` on every OAuth access-token
+    refresh, so an unconditional copy reported `changed` on every converge and
+    rolled the live token back to SSM's — whose access_token expired
+    2026-03-18. Verified the two differ *only* in `access_token`/`expiry`: the
+    `refresh_token` is identical, which is why deploying from SSM authenticates
+    anyway. Same treatment applied to the duplicate copy in `roles/apps/gdrive-sync`.
+  - **Credential fetch is gated on the aws CLI existing, not on `enable_aws`.**
+    zog has `enable_aws` true but no `aws` binary — intent is not fact. A host
+    that wants the credential, has no aws CLI *and* no existing rclone.conf now
+    **fails loudly**; one that already has a config gets a warning that a
+    rotation will not reach it. Silent skipping is exactly how puppy came to run
+    gdrive-sync against a token-less config.
+  - **Verified**: muppet (had **no rclone at all**), puppy (dual binaries
+    reconciled), zog — all 1.75.0, `rclone about gdrive:` returns the quota,
+    re-converge `changed=0`.
+  - **Rolled out to five hosts**: muppet, puppy, zog, vole, eclipticam — all
+    `rclone v1.75.0`, all re-converging `changed=0`. The rest of the fleet was
+    offline (astrocam, cloudcam, deskpi, homepi, starcam, xoverpi) and picks the
+    role up on next converge.
+  - **Role bug found on vole: `unzip` was assumed, not ensured.** The upstream
+    release is a zip and vole had no unzip, so `unarchive` failed through every
+    handler. `unzip` is in `common_packages`, but a role must not depend on
+    `common` having run first — same class of latent portability bug as the
+    nfs-server generator-dir one. Role now installs it.
+  - **`pip` CANNOT be converged from another host** — inventory has it as
+    `ansible_host=localhost ansible_connection=local`, so `--limit pip` from zog
+    silently targets *zog*. `ansible pip -m ping` returns SUCCESS while the real
+    pip (192.168.0.19) does not answer at all. zog has the same shape. Worth a
+    decision: give pip a real `ansible_host` like the other laptops, or the
+    inventory will keep lying about it.
+- **Own Google OAuth client: WORKING on zog, deliberately NOT rolled out**
+  (2026-08-22). rclone's shared client_id is being retired "during 2026", so
+  Peter created a Desktop-app client; it is in SSM as **`/rclone/client-id` +
+  `/rclone/client-secret`** (AWS only — zog has no `google-cloud-storage`, so
+  **`secrets sync` is owed** from muppet/puppy). Consent completed, and
+  `rclone about gdrive:` on zog now returns the quota **with no retirement
+  notice**, against the same Drive (5 TiB, 487.714 MiB used).
+  - **BLOCKER — the app is in Testing, so Google expires the refresh token
+    after 7 days.** That is why SSM `/rclone/config` still holds the
+    shared-client token: rolling the new one out would trade a credential good
+    until 2026 for one that dies in a week, on every host at once. zog's
+    pre-change config is backed up at `~/.config/rclone/rclone.conf.bak-sharedclient`.
+  - **Why publishing is blocked, and why this cost Peter two days a few months
+    ago**: the remote's scope is the full `https://www.googleapis.com/auth/drive`,
+    which Google classes **restricted** — "Publish app" is greyed out, and
+    leaving Testing needs verification plus a third-party security assessment.
+    **That path cannot produce a durable headless credential, by design.** The
+    way out is almost certainly **`drive.file`** (non-sensitive, publishable
+    with no verification, no 7-day expiry). Cost of that switch, undecided: with
+    `drive.file` rclone sees only files it created itself, so the ~488 MiB
+    already uploaded under the shared client becomes invisible — which bears
+    directly on the unverified-RESTORE question that keeps gdrive-sync disarmed.
+  - Project is **`sublime-state-506311-v9`** (number 240837326956) — NOT
+    `petergrecian-personal`, and not the project holding the calendar/photos/ytm
+    clients (822459252559). Drive API had to be enabled on it by hand.
+  - Console trail worth not re-deriving: audience had to be flipped Internal →
+    External (the "can only be used within its organisation" block); Peter
+    cannot add himself as a **test user** — project owners are "ineligible"
+    because they can already consent; the support-email dropdown offers only
+    groups he owns (`pppgrecian@googlegroups.com`), which is cosmetic.
+  - **Mechanics that worked, for next time**: ChromeOS's browser cannot reach
+    the crostini container's loopback, so `rclone config reconnect` is the wrong
+    tool (it also has no `--auth-no-open-browser` flag). Use
+    `rclone authorize "drive" <id> <secret> --auth-no-open-browser` as a
+    background task, then `xdg-open` the consent URL — garcon hands it to
+    ChromeOS Chrome, and the redirect lands back on the container's listener.
+    Terminal-wrapped URLs get truncated when copied; `xdg-open` avoids that
+    entirely, and there is no `xclip` in the container.
+  - **Corrected a wrong root cause on the record**: puppy.yml and the
+    gdrive-sync role both blamed the `enable_rclone` gate and called puppy a Pi.
+    puppy is a laptop, in `[laptops]`, and `enable_rclone` has always resolved
+    **true** for it (`ansible puppy -m debug -a var=enable_rclone`). The real
+    cause was that the `rclone` role had simply never been run there. Both
+    comments fixed.
+  - **Uncommitted in `~/ansible`** at time of writing.
+
 - **Triaged in from `ideas/` 2026-08-16** (three items; the fourth, a forkchat
   UI-zones note, belongs to an aifabric-pane strand and was left for it):
 
